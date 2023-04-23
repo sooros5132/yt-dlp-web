@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  yt-dlp-web:
+    container_name: yt-dlp-web
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ../downloads/:/downloads
+    working_dir: /app
+    ports:
+      - 3000:3000
+    restart: unless-stopped
