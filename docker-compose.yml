@@ -7,7 +7,7 @@ services:
       context: ./
       dockerfile: Dockerfile
     volumes:
-      - ../downloads/:/downloads
+      - ~/Desktop/downloads:/downloads
     working_dir: /app
     ports:
       - 3000:3000
