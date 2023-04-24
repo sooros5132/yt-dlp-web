@@ -213,7 +213,7 @@ const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
           )}
         </div>
         <div className='card-body basis-[60%] grow shrink p-4 overflow-hidden'>
-          <h2 className='card-title line-clamp-2'>{metadata.fulltitle}</h2>
+          <h2 className='card-title line-clamp-2'>{metadata.title}</h2>
           <p className='line-clamp-3 grow-0 text-sm text-base-content/60'>{metadata.description}</p>
           <div className='mt-auto line-clamp-2 break-all text-base-content/60'>
             <a
@@ -240,10 +240,10 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   const videoFormat = [] as Array<any>;
 
   for (const format of metadata.formats) {
-    if (format.video_ext !== 'none') {
-      videoFormat.push(format);
-    } else if (format.acodec !== 'none') {
+    if (format.resolution === 'audio only') {
       audioFormat.push(format);
+    } else if (format.video_ext !== 'none') {
+      videoFormat.push(format);
     }
   }
   const [isOpen, setOpen] = useState(false);
@@ -312,100 +312,101 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   };
 
   return (
-    <section className='my-4 mb-2'>
-      <div className='text-center my-6'>
+    <section className='my-6 mb-2'>
+      <div className='text-center'>
         <button className='btn btn-sm btn-primary normal-case' onClick={handleClickBestButton}>
-          BEST: {metadata.resolution} {metadata.vcodec}
-          {metadata.acodec && metadata.vcodec && '+'}
-          {metadata.acodec}
+          BEST: {metadata.best.resolution} {metadata.best.vcodec}
+          {metadata.best.acodec && metadata.best.vcodec && '+'}
+          {metadata.best.acodec}
         </button>
       </div>
-      {audioFormat.length || videoFormat.length ? (
-        <form
-          onSubmit={handleSubmit}
-          className='rounded-b-md'
-          style={
-            !isOpen
-              ? {
-                  maxHeight: 133,
-                  overflow: 'hidden',
-                  background: 'linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.25))'
-                }
-              : undefined
-          }
-        >
-          <div className='my-6 mt-8 divider select-none'>
-            <button
-              type='button'
-              className='btn btn-sm btn-primary btn-outline opacity-70 gap-x-2 text-md normal-case'
-              onClick={() => setOpen((prev) => !prev)}
-            >
-              Optional
-              {isOpen ? (
-                <HiOutlineBarsArrowUp className='inline' />
-              ) : (
-                <HiOutlineBarsArrowDown className='inline' />
-              )}
-            </button>
-          </div>
-          <div
-            className={classNames(
-              'flex flex-wrap gap-2 sm:flex-nowrap',
-              !isOpen && 'pointer-events-none select-none opacity-60'
-            )}
+      <div className={'pt-6'}>
+        {audioFormat.length || videoFormat.length ? (
+          <form
+            onSubmit={handleSubmit}
+            className='rounded-b-md'
+            style={
+              !isOpen
+                ? {
+                    maxHeight: 120,
+                    overflow: 'hidden',
+                    background: 'linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.25))'
+                  }
+                : undefined
+            }
           >
-            <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
-              <div>
-                <b>Video</b>
-              </div>
-              {videoFormat.map((format) => (
-                <VideoDownloadRadio
-                  key={format.format_id}
-                  type='video'
-                  isBest={false}
-                  format={format}
-                  onClickRadio={handleClickRadio}
-                />
-              ))}
+            <div className='mb-6 divider select-none'>
+              <button
+                type='button'
+                className='btn btn-sm btn-primary btn-outline opacity-70 gap-x-2 text-md normal-case'
+                onClick={() => setOpen((prev) => !prev)}
+              >
+                Optional
+                {isOpen ? (
+                  <HiOutlineBarsArrowUp className='inline' />
+                ) : (
+                  <HiOutlineBarsArrowDown className='inline' />
+                )}
+              </button>
             </div>
-            <div className='hidden divider divider-horizontal shrink-0 sm:flex' />
-            <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
-              <div>
-                <b>Audio</b>
+            <div className={classNames(!isOpen && 'pointer-events-none select-none opacity-60')}>
+              <div className='flex flex-wrap gap-2 sm:flex-nowrap'>
+                <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
+                  <div>
+                    <b>Video</b>
+                  </div>
+                  {videoFormat.map((format) => (
+                    <VideoDownloadRadio
+                      key={format.format_id}
+                      type='video'
+                      isBest={false}
+                      format={format}
+                      onClickRadio={handleClickRadio}
+                    />
+                  ))}
+                </div>
+                <div className='hidden divider divider-horizontal shrink-0 sm:flex' />
+                <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
+                  <div>
+                    <b>Audio</b>
+                  </div>
+                  {audioFormat.map((format) => (
+                    <VideoDownloadRadio
+                      key={format.format_id}
+                      type='audio'
+                      isBest={false}
+                      format={format}
+                      onClickRadio={handleClickRadio}
+                    />
+                  ))}
+                </div>
               </div>
-              {audioFormat.map((format) => (
-                <VideoDownloadRadio
-                  key={format.format_id}
-                  type='audio'
-                  isBest={false}
-                  format={format}
-                  onClickRadio={handleClickRadio}
-                />
-              ))}
+              <div className='my-4 text-center'>
+                <button
+                  className={classNames(
+                    'btn btn-sm btn-primary px-3 normal-case',
+                    isValidating && 'loading'
+                  )}
+                  type='submit'
+                >
+                  {!selectedFormats.video && !selectedFormats.audio ? (
+                    'Download'
+                  ) : (
+                    <>
+                      {selectedFormats?.video?.format_id &&
+                        `${
+                          selectedFormats?.video?.format_note || selectedFormats?.video?.resolution
+                        } ${selectedFormats?.video?.vcodec}`}
+                      {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
+                      {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec} Download
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-          <div className='my-4 text-center'>
-            <button
-              className={classNames(
-                'btn btn-sm btn-primary px-3 normal-case',
-                isValidating && 'loading'
-              )}
-              type='submit'
-            >
-              {!selectedFormats.video && !selectedFormats.audio ? (
-                'Download'
-              ) : (
-                <>
-                  {selectedFormats?.video?.format_id &&
-                    `${selectedFormats?.video?.format_note} ${selectedFormats?.video?.vcodec}`}
-                  {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
-                  {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec} Download
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      ) : null}
+          </form>
+        ) : null}
+      </div>
     </section>
   );
 }, isEquals);

@@ -1,4 +1,4 @@
-import childProcess from 'node:child_process';
+import { YtDlpProcess } from '../../../server/YtDlpProcess';
 
 const encoder = new TextEncoder();
 const downloadRegex =
@@ -37,30 +37,18 @@ export async function GET(request: Request, context: { params: { url: string } }
 
   const stream = new ReadableStream({
     async start(controller) {
-      const ytDlp = childProcess.spawn(
-        'yt-dlp',
-        [
-          // '-s',
-          // '-F',
-          ...format,
-          '--merge-output-format',
-          'mp4',
-          '--wait-for-video',
-          '120',
-          '-o',
-          '/downloads/%(title)s (%(id)s).%(ext)s',
-          url
-        ],
-        {
-          signal
-        }
-      );
+      const ytdlp = new YtDlpProcess({
+        url,
+        parmas: [...format, '--wait-for-video', '120']
+      });
 
-      ytDlp.stdout.setEncoding('utf-8');
+      await ytdlp.start();
+
+      const stdout = ytdlp.getStdout();
+      const stderr = ytdlp.getStderr();
 
       const handleStdoutData = (_text: string) => {
-        const text = _text.trim();
-
+        const text = _text?.trim();
         if (text?.startsWith('[download]')) {
           controller.enqueue(
             encoder.encode(
@@ -75,37 +63,18 @@ export async function GET(request: Request, context: { params: { url: string } }
           try {
             controller?.close?.();
           } catch (e) {}
-          ytDlp.stdout.off('data', handleStdoutData);
-          return;
+          stdout.off('data', handleStdoutData);
         }
       };
+      stdout.setEncoding('utf-8');
+      stdout.on('data', handleStdoutData);
 
-      ytDlp.stdout.on('data', handleStdoutData);
-
-      // ytDlp.stdout.setEncoding('utf-8');
-      // ytDlp.stdout.on('data', (_text: string) => {
-      //   controller.enqueue(encoder.encode(_text));
-      //   const text = _text.trim();
-
-      //   if (typeof text !== 'string' || !text?.startsWith('[download]')) {
-      //     return;
-      //   }
-      //   const execResult = downloadRegex.exec(text);
-      //   if (execResult) {
-      //     // const match = execResult[0];
-      //     const progress = execResult[1];
-      //     const size = execResult[2];
-      //     const downloadSpeed = execResult[3];
-      //     console.log(progress, size, downloadSpeed);
-      //   }
-      // });
-
-      ytDlp.stderr.setEncoding('utf-8');
-      ytDlp.stderr.on('data', (data) => {
+      stderr.setEncoding('utf-8');
+      stderr.on('data', (data) => {
         controller.enqueue(
           encoder.encode(
             JSON.stringify({
-              error: data
+              error: data?.trim()
             })
           )
         );
@@ -113,7 +82,7 @@ export async function GET(request: Request, context: { params: { url: string } }
           controller?.close?.();
           abortController?.abort?.();
         }
-        ytDlp.kill();
+        ytdlp.kill();
       });
     }
   });
@@ -124,3 +93,20 @@ export async function GET(request: Request, context: { params: { url: string } }
     }
   });
 }
+// ytDlp.stdout.setEncoding('utf-8');
+// ytDlp.stdout.on('data', (_text: string) => {
+//   controller.enqueue(encoder.encode(_text));
+//   const text = _text.trim();
+
+//   if (typeof text !== 'string' || !text?.startsWith('[download]')) {
+//     return;
+//   }
+//   const execResult = downloadRegex.exec(text);
+//   if (execResult) {
+//     // const match = execResult[0];
+//     const progress = execResult[1];
+//     const size = execResult[2];
+//     const downloadSpeed = execResult[3];
+//     console.log(progress, size, downloadSpeed);
+//   }
+// });
