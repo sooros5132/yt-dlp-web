@@ -1,14 +1,27 @@
 import { spawn } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { Readable } from 'node:stream';
+import numeral from 'numeral';
+import { Stats, promises as fs } from 'fs';
+import { randomUUID } from 'node:crypto';
+import { Cache, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './Cache';
+import path from 'path';
+import { throttle } from 'lodash';
+import { VideoInfo } from '@/types/video';
+
+const downloadRegex =
+  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
+const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/i;
 
 export class YtDlpProcess {
   public readonly url: string;
   public readonly parmas: Array<string>;
   public abortController?: AbortController;
+  private ytdlp?: ChildProcessWithoutNullStreams;
   private pid?: number;
   private metadata?: any;
-  private stdout: Readable;
-  private stderr: Readable;
+  private stdout?: Readable;
+  private stderr?: Readable;
 
   constructor(querys: { url: string; parmas?: Array<string>; pid?: number }) {
     this.url = querys.url;
@@ -22,14 +35,14 @@ export class YtDlpProcess {
     return new Promise((resolve) => {
       const abortController = new AbortController();
 
-      const ytldp = spawn(
+      const ytdlp = spawn(
         'yt-dlp',
         [
           ...this.parmas,
           '--merge-output-format',
           'mp4',
           '-o',
-          '/downloads/%(title)s (%(id)s).%(ext)s',
+          path.join(DOWNLOAD_PATH, `%(title)s (%(id)s).%(ext)s`),
           this.url
         ],
         {
@@ -38,17 +51,18 @@ export class YtDlpProcess {
       );
 
       this.abortController = abortController;
-      this.pid = ytldp.pid;
-      this.stdout = ytldp.stdout;
-      this.stderr = ytldp.stderr;
+      this.pid = ytdlp.pid;
+      this.stdout = ytdlp.stdout;
+      this.stderr = ytdlp.stderr;
+      this.ytdlp = ytdlp;
 
-      console.log('proc', `Spawned a new process, pid: ${this.pid}`);
+      console.log(`new process, \`${this.pid}\``);
       callback?.();
       resolve(this);
     });
   }
 
-  public async getMetadata() {
+  public async getMetadata(): Promise<any> {
     if (this.metadata) {
       return new Promise((resolve) => {
         resolve(this.metadata!);
@@ -98,8 +112,8 @@ export class YtDlpProcess {
                 })
                 .filter((format: any) => format.format_note !== 'storyboard') || []
           };
-          resolve(metadata);
           this.metadata = metadata;
+          resolve(metadata);
         } catch (e) {
           reject('failed fetching formats, downloading best available');
         }
@@ -115,16 +129,114 @@ export class YtDlpProcess {
   }
 
   getStdout(): Readable {
-    return this.stdout;
+    return this.stdout!;
   }
 
   getStderr(): Readable {
-    return this.stderr;
+    return this.stderr!;
+  }
+
+  async writeDownloadStatusToDB() {
+    let mergerIsExecuted = false;
+    const stdout = this.stdout;
+    const metadata = this.metadata;
+    const uuid = randomUUID();
+
+    if (!stdout || !metadata) {
+      return;
+    }
+    const cacheData: VideoInfo = {
+      uuid,
+      url: this.url,
+      title: metadata?.title || '',
+      description: metadata?.description || '',
+      thumbnail: metadata?.thumbnail || '',
+      resolution: null,
+      createdAt: Date.now(),
+      file: {
+        path: null,
+        name: null
+      },
+      download: {
+        completed: false,
+        pid: null,
+        filesize: null,
+        progress: null,
+        speed: null,
+        format: null
+      }
+    };
+    try {
+      const uuidList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+      uuidList.unshift(uuid);
+      await Cache.set(VIDEO_LIST_FILE, uuidList);
+      const cacheSetThrottle = throttle(Cache.set, 500);
+
+      const handleData = async (_text: string) => {
+        const text = _text.trim();
+
+        if (typeof text !== 'string') {
+          return;
+        }
+
+        if (!text?.startsWith('[download]')) {
+          if (text?.startsWith('[Merger]')) {
+            const filePath = fileRegex.exec(text)?.[1];
+            if (filePath) {
+              try {
+                mergerIsExecuted = true;
+                let stat: Stats | null = null;
+                try {
+                  stat = await fs.stat(filePath);
+                } catch (e) {}
+
+                cacheData.file.path = filePath;
+                cacheData.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
+                cacheData.download.pid = this.pid!;
+                cacheData.download.progress = '1';
+                if (stat) cacheData.download.filesize = numeral(stat.size).format('0.0b');
+                await Cache.set(uuid, cacheData);
+              } catch (e) {}
+            }
+          }
+          return;
+        }
+
+        const execResult = downloadRegex.exec(text);
+        if (execResult) {
+          // const match = execResult[0];
+          const progress = execResult[1];
+          const filesize = execResult[2];
+          const speed = execResult[3];
+          cacheData.download.pid = this.pid!;
+          cacheData.download.progress = numeral(progress).format('0.00');
+          cacheData.download.filesize = numeral(filesize).format('0.0b');
+          cacheData.download.speed = numeral(speed).format('0.0b') + '/s';
+          await cacheSetThrottle(uuid, cacheData);
+        }
+      };
+
+      stdout.setEncoding('utf-8');
+      stdout.on('data', handleData);
+      stdout.on('end', async () => {
+        if (mergerIsExecuted) {
+          console.log('complete && pid remove');
+          cacheData.download.pid = null;
+          cacheData.download.completed = true;
+          cacheData.download.progress = '1';
+          await Cache.set(uuid, cacheData);
+        }
+      });
+    } catch (e) {
+      cacheData.download.progress = null;
+      await Cache.set(uuid, cacheData);
+      console.error(e);
+    }
   }
 
   async kill() {
     spawn('kill', [String(this.pid)]).on('exit', () => {
-      console.log('proc', `Stopped ${this.pid} because SIGKILL`);
+      console.log(`stopped process \`${this.pid}\``);
     });
   }
 }

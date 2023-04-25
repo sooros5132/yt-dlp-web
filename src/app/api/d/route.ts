@@ -1,9 +1,6 @@
 import { YtDlpProcess } from '../../../server/YtDlpProcess';
 
 const encoder = new TextEncoder();
-const downloadRegex =
-  /^\[download\]\s+([0-9\.]+)\%\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
-
 export async function GET(request: Request, context: { params: { url: string } }) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
@@ -23,9 +20,6 @@ export async function GET(request: Request, context: { params: { url: string } }
     });
   }
 
-  const abortController = new AbortController();
-  const { signal } = abortController;
-
   const videoId =
     typeof searchParams.get('videoId') === 'string' ? searchParams.get('videoId') : '';
   const audioId =
@@ -42,28 +36,40 @@ export async function GET(request: Request, context: { params: { url: string } }
         parmas: [...format, '--wait-for-video', '120']
       });
 
+      const metadata = await ytdlp.getMetadata();
+      if (!metadata.id) {
+        return;
+      }
       await ytdlp.start();
 
       const stdout = ytdlp.getStdout();
       const stderr = ytdlp.getStderr();
+      let isDownloadStarted = false;
 
-      const handleStdoutData = (_text: string) => {
+      const handleStdoutData = async (_text: string) => {
         const text = _text?.trim();
-        if (text?.startsWith('[download]')) {
+        if (!isDownloadStarted && text?.startsWith('[download]')) {
+          isDownloadStarted = true;
+          const isAlready = /already been downloaded$/.test(text);
           controller.enqueue(
             encoder.encode(
               JSON.stringify({
                 success: true,
                 url,
-                status: /already been downloaded$/.test(text) ? 'already' : 'downloading',
+                status: isAlready ? 'already' : 'downloading',
                 timestamp: Date.now()
               })
             )
           );
+          controller?.close?.();
           try {
-            controller?.close?.();
-          } catch (e) {}
-          stdout.off('data', handleStdoutData);
+            if (!isAlready) {
+              ytdlp.writeDownloadStatusToDB();
+            }
+          } catch (e) {
+          } finally {
+            stdout.off('data', handleStdoutData);
+          }
         }
       };
       stdout.setEncoding('utf-8');
@@ -78,11 +84,6 @@ export async function GET(request: Request, context: { params: { url: string } }
             })
           )
         );
-        if (!signal.aborted) {
-          controller?.close?.();
-          abortController?.abort?.();
-        }
-        ytdlp.kill();
       });
     }
   });
@@ -93,20 +94,3 @@ export async function GET(request: Request, context: { params: { url: string } }
     }
   });
 }
-// ytDlp.stdout.setEncoding('utf-8');
-// ytDlp.stdout.on('data', (_text: string) => {
-//   controller.enqueue(encoder.encode(_text));
-//   const text = _text.trim();
-
-//   if (typeof text !== 'string' || !text?.startsWith('[download]')) {
-//     return;
-//   }
-//   const execResult = downloadRegex.exec(text);
-//   if (execResult) {
-//     // const match = execResult[0];
-//     const progress = execResult[1];
-//     const size = execResult[2];
-//     const downloadSpeed = execResult[3];
-//     console.log(progress, size, downloadSpeed);
-//   }
-// });

@@ -7,13 +7,14 @@ import React, { FormEvent, memo, useState } from 'react';
 import { ChangeEvent } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AiOutlineLink, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { AiOutlineLink } from 'react-icons/ai';
 import { toast } from 'react-toastify';
 import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import numeral from 'numeral';
 import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '../store/siteSetting';
+import { mutate } from 'swr';
 
 interface State {
   url: string;
@@ -111,6 +112,7 @@ export function DownloadForm() {
           if (result?.status === 'already') {
             toast.info('already been downloaded');
           } else if (result?.status === 'downloading') {
+            mutate('/api/list');
             toast.success('download requested');
           }
         }
@@ -260,7 +262,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
     if (selectedFormats[type] === format) {
       return;
     }
-    setSelectedFormats((prev) => ({
+    setSelectedFormats((prev: any) => ({
       ...prev,
       [type]: format
     }));
@@ -304,6 +306,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
         if (result?.status === 'already') {
           toast.info('already been downloaded');
         } else if (result?.status === 'downloading') {
+          mutate('/api/list');
           toast.success('download requested');
         }
       }
