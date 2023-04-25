@@ -1,5 +1,6 @@
 import React from 'react';
-import { DownloadForm } from '../components/DownloadForm';
+import { DownloadForm } from '@/components/DownloadForm';
+import { VideoList } from '@/components/VideoList';
 
 export default function Home() {
   return (
@@ -7,7 +8,7 @@ export default function Home() {
       <h1 className='text-center text-2xl'>yt-dlp-web Download Station</h1>
       <div className='my-2 p-4 text-base-content rounded-md'>
         <DownloadForm />
-        {/* <Video /> */}
+        <VideoList />
       </div>
     </main>
   );
