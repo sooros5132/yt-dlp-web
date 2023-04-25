@@ -7,7 +7,7 @@ import React, { FormEvent, memo, useState } from 'react';
 import { ChangeEvent } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AiOutlineLink } from 'react-icons/ai';
+import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
 import { toast } from 'react-toastify';
 import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
@@ -164,12 +164,22 @@ export function DownloadForm() {
         <div className='text-right'>
           <button
             className={classNames(
-              'btn btn-sm btn-primary px-3 normal-case',
+              'btn btn-sm btn-primary px-3 normal-case gap-x-1',
               isValidating && 'loading'
             )}
             type='submit'
           >
-            {!hydrated || enabledBestFormat ? 'Download' : 'Search'}
+            {!hydrated || enabledBestFormat ? (
+              <>
+                <AiOutlineCloudDownload />
+                <span>Download</span>
+              </>
+            ) : (
+              <>
+                <AiOutlineSearch />
+                <span>Search</span>
+              </>
+            )}
           </button>
         </div>
       </form>

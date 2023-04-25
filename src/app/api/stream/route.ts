@@ -7,12 +7,12 @@ export async function GET(request: Request) {
   try {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
-    const id = searchParams.get('id');
+    const uuid = searchParams.get('uuid');
     // const url = context?.params?.url;
 
     try {
-      if (typeof id !== 'string') {
-        throw 'Param `id` is only string type';
+      if (typeof uuid !== 'string') {
+        throw 'Param `uuid` is only string type';
       }
     } catch (e) {
       return new Response(e as string, {
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       throw 'Requires Range header';
     }
 
-    const videoInfo = await Cache.get<VideoInfo>(id);
+    const videoInfo = await Cache.get<VideoInfo>(uuid);
 
     const videoPath = videoInfo?.file.path!;
     if (!videoPath) {

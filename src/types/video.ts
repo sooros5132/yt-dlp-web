@@ -16,6 +16,6 @@ export interface VideoInfo {
     filesize: string | null;
     progress: string | null;
     speed: string | null;
-    format: string | null;
+    format: string[] | null;
   };
 }

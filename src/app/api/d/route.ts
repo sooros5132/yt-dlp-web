@@ -64,7 +64,16 @@ export async function GET(request: Request, context: { params: { url: string } }
           controller?.close?.();
           try {
             if (!isAlready) {
-              ytdlp.writeDownloadStatusToDB();
+              ytdlp.writeDownloadStatusToDB({
+                download: {
+                  format,
+                  completed: false,
+                  filesize: null,
+                  pid: null,
+                  progress: null,
+                  speed: null
+                }
+              });
             }
           } catch (e) {
           } finally {

@@ -8,12 +8,12 @@ export async function GET(request: Request) {
   try {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
-    const id = searchParams.get('id');
+    const uuid = searchParams.get('uuid');
     // const url = context?.params?.url;
 
     try {
-      if (typeof id !== 'string') {
-        throw 'Param `id` is only string type';
+      if (typeof uuid !== 'string') {
+        throw 'Param `uuid` is only string type';
       }
     } catch (e) {
       return new Response(e as string, {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const videoInfo = await Cache.get<VideoInfo>(id);
+    const videoInfo = await Cache.get<VideoInfo>(uuid);
 
     const videoPath = videoInfo?.file.path;
     if (!videoPath) {
@@ -61,21 +61,21 @@ export async function DELETE(request: Request) {
   try {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
-    const id = searchParams.get('id');
-    if (typeof id !== 'string') {
-      throw 'Param `id` is only string type';
+    const uuid = searchParams.get('uuid');
+    const deleteFile = searchParams.get('deleteFile') === 'true';
+    if (typeof uuid !== 'string') {
+      throw 'Param `uuid` is only string type';
     }
-    // const video = await prisma.video.findUnique({ where: { id } });
+    // const video = await prisma.video.findUnique({ where: { uuid } });
 
     // const videoPath = video?.filePath!;
     // if (!videoPath) {
     //   throw 'videoPath is not found';
     // }
-
     try {
       // await fs.unlink(videoPath);
 
-      const videoInfo = await Cache.get<VideoInfo>(id);
+      const videoInfo = await Cache.get<VideoInfo>(uuid);
       const videoList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
 
       if (!videoInfo) {
@@ -93,7 +93,12 @@ export async function DELETE(request: Request) {
         ytdlp.kill();
       }
 
-      const newVideoList = videoList.filter((uuid) => uuid !== videoInfo.uuid);
+      const newVideoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);
+      try {
+        if (deleteFile && videoInfo.file.path) {
+          await fs.unlink(videoInfo.file.path);
+        }
+      } catch (e) {}
       await Cache.delete(videoInfo.uuid);
       await Cache.set(VIDEO_LIST_FILE, newVideoList);
       return NextResponse.json({

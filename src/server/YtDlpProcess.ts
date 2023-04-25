@@ -136,11 +136,11 @@ export class YtDlpProcess {
     return this.stderr!;
   }
 
-  async writeDownloadStatusToDB() {
+  async writeDownloadStatusToDB(_cacheData?: Partial<VideoInfo>, isRestartDownload = false) {
     let mergerIsExecuted = false;
     const stdout = this.stdout;
     const metadata = this.metadata;
-    const uuid = randomUUID();
+    const uuid = _cacheData?.uuid || randomUUID();
 
     if (!stdout || !metadata) {
       return;
@@ -163,13 +163,16 @@ export class YtDlpProcess {
         filesize: null,
         progress: null,
         speed: null,
-        format: null
-      }
+        format: _cacheData?.download?.format || null
+      },
+      ..._cacheData
     };
     try {
-      const uuidList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
-      uuidList.unshift(uuid);
-      await Cache.set(VIDEO_LIST_FILE, uuidList);
+      if (!isRestartDownload) {
+        const uuidList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+        uuidList.unshift(uuid);
+        await Cache.set(VIDEO_LIST_FILE, uuidList);
+      }
       const cacheSetThrottle = throttle(Cache.set, 500);
 
       const handleData = async (_text: string) => {
