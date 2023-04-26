@@ -2,6 +2,8 @@ import { Cache, VIDEO_LIST_FILE } from '@/server/Cache';
 import { VideoInfo } from '@/types/video';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const uuids = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
@@ -25,15 +27,4 @@ export async function GET() {
       }
     );
   }
-}
-
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: 'not supported'
-    },
-    {
-      status: 400
-    }
-  );
 }

@@ -4,6 +4,8 @@ import { YtDlpProcess } from '@/server/YtDlpProcess';
 import { Cache, VIDEO_LIST_FILE } from '@/server/Cache';
 import { VideoInfo } from '@/types/video';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const urlObject = new URL(request.url);
