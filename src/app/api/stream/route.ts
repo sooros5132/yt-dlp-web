@@ -10,14 +10,8 @@ export async function GET(request: Request) {
     const uuid = searchParams.get('uuid');
     // const url = context?.params?.url;
 
-    try {
-      if (typeof uuid !== 'string') {
-        throw 'Param `uuid` is only string type';
-      }
-    } catch (e) {
-      return new Response(e as string, {
-        status: 400
-      });
+    if (typeof uuid !== 'string') {
+      throw '`uuid` can only be string type.';
     }
     const range = request.headers.get('range');
 
@@ -27,7 +21,7 @@ export async function GET(request: Request) {
 
     const videoInfo = await Cache.get<VideoInfo>(uuid);
 
-    const videoPath = videoInfo?.file.path!;
+    const videoPath = videoInfo?.file?.path;
     if (!videoPath) {
       throw 'videoPath is not found';
     }
@@ -35,7 +29,8 @@ export async function GET(request: Request) {
     const stat = await fs.stat(videoPath);
     const videoSize = stat.size;
 
-    const CHUNK_SIZE = 1024 * 1024 * 3; // 3MB (4K 는 1MB로 부족하다.)
+    // 1024 * 1024 * 3 = 3MB (4K 이상은 1MB로 부족해서 3으로 늘렸다.)
+    const CHUNK_SIZE = 1024 * 1024 * 3;
     const start = Number(range.replace(/\D/g, ''));
     const end = Math.min(start + CHUNK_SIZE, videoSize - 1);
     const contentLength = end - start + 1;
