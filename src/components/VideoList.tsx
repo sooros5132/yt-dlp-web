@@ -229,8 +229,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               </div>
             )}
             {!video?.download?.completed && (
-              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl pointer-events-none'>
-                <AiOutlineLoading3Quarters className='animate-spin' />
+              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
+                <AiOutlineLoading3Quarters className=' animate-spin' />
                 {recommendedDownloadRetry && (
                   <div className='text-sm text-center'>
                     {"If you can't download it, try again with the button below."}
@@ -245,11 +245,19 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           <div className='flex items-center justify-between'>
             <div className='btn-group rounded-xl'>
               {!video?.download?.completed ? (
-                <button className='btn btn-sm btn-outline btn-error btn-disabled text-lg'>
-                  <MdOutlineVideocamOff />
+                <button className='btn btn-sm btn-outline btn-error text-lg'>
+                  <MdOutlineVideocamOff
+                    key={'no-completed'}
+                    onClick={() =>
+                      toast.warn(
+                        'The file cannot be erased while downloading. Please erase it yourself.'
+                      )
+                    }
+                  />
                 </button>
               ) : (
                 <button
+                  key={'completed'}
                   className='btn btn-sm btn-outline btn-error text-lg'
                   onClick={handleClickDelete(video, 'deleteFile')}
                 >
