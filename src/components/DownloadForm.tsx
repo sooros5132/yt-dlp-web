@@ -157,9 +157,9 @@ export function DownloadForm() {
           />
         </div>
         <div>
-          <label className='inline-flex items-center gap-x-1 cursor-pointer'>
+          <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
             <input
-              className={classNames('checkbox checkbox-sm')}
+              className='checkbox checkbox-xs'
               name='enabledBestFormat'
               type='checkbox'
               checked={!hydrated ? true : enabledBestFormat}

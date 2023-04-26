@@ -13,12 +13,15 @@ import { toast } from 'react-toastify';
 import classNames from 'classnames';
 import { VideoInfo } from '@/types/video';
 import { MdOutlineVideocamOff, MdPlaylistRemove } from 'react-icons/md';
+import { BsDatabaseGear } from 'react-icons/bs';
 import isEqual from 'react-fast-compare';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
 
 export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
+  const [isSynchronizing, setSynchronizing] = useState(false);
+
   const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
   const {
     data: videos,
@@ -48,12 +51,40 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
     }
   );
 
+  const handleClickCleanMissingCacheButton = async () => {
+    if (isSynchronizing) {
+      return;
+    }
+    setSynchronizing(true);
+
+    const result = await axios.post('/api/sync-cache').then((res) => res.data);
+
+    if (result?.success) {
+      toast.success('Reloaded video information(size, length).');
+    } else {
+      toast.error('Failed to synchronize.');
+    }
+    setTimeout(() => {
+      mutate();
+    }, 300);
+    setSynchronizing(false);
+  };
+
   return (
     <div className='my-8 bg-base-content/5 rounded-md p-4 overflow-hidden'>
       <div className='grid grid-cols-[30px_auto_30px] place-items-center mb-4'>
-        <div></div>
+        <div>
+          <button
+            className='tooltip tooltip-right before:w-[300px] btn btn-sm btn-ghost btn-circle text-xl justify-center normal-case font-normal'
+            data-tip='File info re-verificate and Clean up the missing cache'
+            disabled={isSynchronizing}
+            onClick={handleClickCleanMissingCacheButton}
+          >
+            <BsDatabaseGear className={classNames('w-full', isSynchronizing && 'animate-pulse')} />
+          </button>
+        </div>
         <h1 className='text-center text-3xl font-bold'>Videos</h1>
-        <div className=''>
+        <div>
           <button
             className={classNames(
               'btn btn-sm btn-ghost btn-circle text-2xl',
