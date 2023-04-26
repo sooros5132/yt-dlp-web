@@ -19,7 +19,9 @@ export class Cache {
       const content = await fs.readFile(filePath, 'utf-8');
       const parsedData = JSON.parse(content);
 
-      console.log(`Get cache \`${filePath}\``);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Get cache \`${filePath}\``);
+      }
 
       return parsedData as T;
     } catch (e) {
@@ -36,7 +38,9 @@ export class Cache {
       }
 
       await fs.writeFile(filePath, JSON.stringify(content), 'utf-8');
-      console.log(`Saved content to ${filePath}.`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Saved content to ${filePath}.`);
+      }
       return true;
     } catch (e) {
       return false;
@@ -69,7 +73,9 @@ export class Cache {
 
     try {
       await fs.unlink(filePath);
-      console.log(`Delete cache \`${filePath}\``);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Delete cache \`${filePath}\``);
+      }
       return true;
     } catch (e) {
       return false;
