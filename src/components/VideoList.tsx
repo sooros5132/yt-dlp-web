@@ -14,6 +14,9 @@ import { VideoInfo } from '@/types/video';
 import { MdOutlineVideocamOff, MdPlaylistRemove } from 'react-icons/md';
 import isEqual from 'react-fast-compare';
 
+const MAX_INTERVAL_Time = 120 * 1000;
+const MIN_INTERVAL_Time = 3 * 1000;
+
 export function VideoList() {
   const refreshIntervalTimeRef = useRef(3 * 1000);
   const {
@@ -24,7 +27,10 @@ export function VideoList() {
     '/api/list',
     async () => {
       const videos = await axios.get<Array<VideoInfo>>('/api/list').then((res) => res.data);
-      let nextIntervalTime = 60 * 1000;
+      let nextIntervalTime = Math.min(
+        Math.max(MIN_INTERVAL_Time, refreshIntervalTimeRef.current * 3),
+        MAX_INTERVAL_Time
+      );
       for (const video of videos) {
         if (video.download && !video.download.completed) {
           nextIntervalTime = 3 * 1000;
