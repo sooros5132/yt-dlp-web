@@ -23,7 +23,7 @@ module.exports = {
   },
   daisyui: {
     darkTheme: 'forest',
-    themes: ['light', 'forest']
+    themes: ['emerald', 'forest']
   },
   plugins: [require('@tailwindcss/line-clamp'), require('daisyui')]
 };

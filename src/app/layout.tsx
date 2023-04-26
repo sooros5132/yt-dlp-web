@@ -15,9 +15,9 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='en' data-theme='forest'>
+    <html lang='en'>
       <body className={classNames(inter.className, 'min-w-[300px]')}>
-        <Header />
+        {/* <Header /> */}
         {children}
         <ToastContainerWrapper />
         <ClientWorks />
