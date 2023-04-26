@@ -1,7 +1,7 @@
-import { YtDlpProcess } from '../../../server/YtDlpProcess';
+import { YtDlpProcess } from '@/server/YtDlpProcess';
 
 const encoder = new TextEncoder();
-export async function GET(request: Request, context: { params: { url: string } }) {
+export async function GET(request: Request) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
   const url = searchParams.get('url');

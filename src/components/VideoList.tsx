@@ -175,7 +175,6 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     const initialProgress = prevVideoRef?.current?.download?.progress;
     const timeout = setTimeout(() => {
       const nextProgress = prevVideoRef?.current?.download?.progress;
-      console.log(initialProgress, nextProgress);
       if (!prevVideoRef?.current?.download?.completed && initialProgress === nextProgress) {
         setRecommendedDownloadRetry(true);
       }

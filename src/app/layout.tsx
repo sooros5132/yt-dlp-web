@@ -1,14 +1,14 @@
-import React from 'react';
+import type { PropsWithChildren } from 'react';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ToastContainerWrapper } from '../components/ToastContainerWrapper';
-import { ClientWorks } from '../components/ClientWorks';
+import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
+import { ClientWorks } from '@/components/ClientWorks';
 import classNames from 'classnames';
 import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang='en'>
       <body className={classNames(inter.className, 'min-w-[300px]')}>

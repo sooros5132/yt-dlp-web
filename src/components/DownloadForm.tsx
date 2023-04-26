@@ -13,7 +13,7 @@ import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import numeral from 'numeral';
 import isEquals from 'react-fast-compare';
-import { useSiteSettingStore } from '../store/siteSetting';
+import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
 
 interface State {

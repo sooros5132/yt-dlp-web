@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { YtDlpProcess } from '../../../server/YtDlpProcess';
+import { YtDlpProcess } from '@/server/YtDlpProcess';
 
 const encoder = new TextEncoder();
 

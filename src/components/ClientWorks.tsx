@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useLayoutEffect } from 'react';
-import { useSiteSettingStore } from '../store/siteSetting';
+import { useSiteSettingStore } from '@/store/siteSetting';
 
 export function ClientWorks() {
   useLayoutEffect(() => {

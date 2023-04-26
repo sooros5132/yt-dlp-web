@@ -1,5 +1,5 @@
 import { VideoInfo } from '@/types/video';
-import { YtDlpProcess } from '../../../server/YtDlpProcess';
+import { YtDlpProcess } from '@/server/YtDlpProcess';
 import { Cache, DOWNLOAD_PATH } from '@/server/Cache';
 import { NextResponse } from 'next/server';
 import { Stats, promises as fs } from 'fs';
@@ -8,7 +8,7 @@ import numeral from 'numeral';
 const encoder = new TextEncoder();
 
 // Restart Download
-export async function GET(request: Request, context: { params: { uuid: string } }) {
+export async function GET(request: Request) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
   const uuid = searchParams.get('uuid');
@@ -61,11 +61,9 @@ export async function GET(request: Request, context: { params: { uuid: string } 
       const stdout = ytdlp.getStdout();
       const stderr = ytdlp.getStderr();
       let isDownloadStarted = false;
-      console.log('start', uuid);
 
       const handleStdoutData = async (_text: string) => {
         const text = _text?.trim();
-        console.log(text);
 
         if (!isDownloadStarted && text?.startsWith('[download]')) {
           isDownloadStarted = true;
