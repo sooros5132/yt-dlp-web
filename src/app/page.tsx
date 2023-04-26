@@ -5,7 +5,7 @@ import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 
-export async function getVideoListData(): Promise<VideoInfo[]> {
+async function getVideoListData(): Promise<VideoInfo[]> {
   const uuids = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
 
   if (!Array.isArray(uuids) || !uuids.length) {
