@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import React, { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR, { mutate } from 'swr';
 import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
-import { VscLinkExternal, VscRefresh } from 'react-icons/vsc';
+import { VscRefresh } from 'react-icons/vsc';
 import { TbExternalLink } from 'react-icons/tb';
 import numeral from 'numeral';
 import { toast } from 'react-toastify';
@@ -18,7 +18,7 @@ import isEqual from 'react-fast-compare';
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
 
-export function VideoList() {
+export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
   const refreshIntervalTimeRef = useRef(3 * 1000);
   const {
     data: videos,
@@ -43,7 +43,8 @@ export function VideoList() {
     {
       refreshInterval: refreshIntervalTimeRef.current,
       revalidateOnFocus: false,
-      errorRetryCount: 0
+      errorRetryCount: 0,
+      fallbackData: videoList
     }
   );
 
