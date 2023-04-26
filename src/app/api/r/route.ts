@@ -68,6 +68,7 @@ export async function GET(request: Request) {
         if (!isDownloadStarted && text?.startsWith('[download]')) {
           isDownloadStarted = true;
           const filePath = /^\[download\]\s(.+)\shas\salready\sbeen\sdownloaded$/.exec(text)?.[1];
+          const isFileMessage = /^\[download\]\sDestination\:\s(.+)$/.exec(text)?.[1];
           controller.enqueue(
             encoder.encode(
               JSON.stringify({
@@ -80,33 +81,27 @@ export async function GET(request: Request) {
           );
           controller?.close?.();
           try {
-            const isCompleted = filePath?.endsWith('.mp4') || false;
-
-            if (filePath && isCompleted) {
-              let stat: Stats | null = null;
-              try {
-                stat = await fs.stat(filePath);
-              } catch (e) {}
-              const newVideoInfo: VideoInfo = {
-                ...videoInfo,
-                file: {
-                  name: filePath || null,
-                  path: filePath?.replace(DOWNLOAD_PATH + '/', '') || null
-                },
-                download: {
-                  ...videoInfo.download,
-                  completed: true,
-                  progress: '1',
-                  pid: null,
-                  filesize: stat
-                    ? numeral(stat.size).format('0.0b')
-                    : videoInfo.download.filesize || ''
-                }
-              };
-              await Cache.set(newVideoInfo.uuid, newVideoInfo);
-            } else {
-              ytdlp.writeDownloadStatusToDB({ ...videoInfo }, true);
-            }
+            let stat: Stats | null = null;
+            try {
+              if (filePath) stat = await fs.stat(filePath!);
+            } catch (e) {}
+            const newVideoInfo: VideoInfo = {
+              ...videoInfo,
+              file: {
+                name: isFileMessage || filePath || null,
+                path: (isFileMessage || filePath)?.replace?.(DOWNLOAD_PATH + '/', '') || null
+              },
+              download: {
+                ...videoInfo.download,
+                completed: false,
+                progress: '0',
+                pid: null,
+                filesize: stat
+                  ? numeral(stat.size).format('0.0b')
+                  : videoInfo.download.filesize || ''
+              }
+            };
+            ytdlp.writeDownloadStatusToDB(newVideoInfo, true);
           } catch (e) {
           } finally {
             stdout.off('data', handleStdoutData);

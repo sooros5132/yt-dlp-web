@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { Cache, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './Cache';
 import path from 'path';
 import { throttle } from 'lodash';
-import { VideoInfo } from '@/types/video';
+import { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
 
 const downloadRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
@@ -17,6 +17,7 @@ export class YtDlpProcess {
   public readonly url: string;
   public readonly parmas: Array<string>;
   public abortController?: AbortController;
+  private isDownloadStarted = false;
   private ytdlp?: ChildProcessWithoutNullStreams;
   private pid?: number;
   private metadata?: any;
@@ -56,13 +57,19 @@ export class YtDlpProcess {
       this.stderr = ytdlp.stderr;
       this.ytdlp = ytdlp;
 
+      if (process.env.NODE_ENV === 'development') {
+        ytdlp.stdout.on('data', (data) => {
+          console.log(data?.trim());
+        });
+      }
+
       console.log(`new process, \`${this.pid}\``);
       callback?.();
       resolve(this);
     });
   }
 
-  public async getMetadata(): Promise<any> {
+  public async getMetadata(): Promise<VideoMetadata> {
     if (this.metadata) {
       return new Promise((resolve) => {
         resolve(this.metadata!);
@@ -79,13 +86,18 @@ export class YtDlpProcess {
       ytdlp.on('exit', () => {
         try {
           const buffer = Buffer.concat(stdoutChunks);
+          if (!buffer.length) {
+            reject('Not found. Please check the url again.');
+            return;
+          }
+
           const json = JSON.parse(buffer.toString());
-          const metadata = {
-            id: json.id,
-            original_url: json.original_url,
-            title: json.title,
-            description: json.description,
-            thumbnail: json.thumbnail,
+          const metadata: VideoMetadata = {
+            id: json.id || '',
+            original_url: json.original_url || '',
+            title: json.title || '',
+            description: json.description || '',
+            thumbnail: json.thumbnail || '',
             best: {
               format_id: json.format_id ?? '',
               format_note: json.format_note ?? '',
@@ -97,7 +109,7 @@ export class YtDlpProcess {
             },
             formats:
               json.formats
-                ?.map((format: any) => {
+                ?.map((format: VideoFormat) => {
                   return {
                     format_id: format.format_id ?? '',
                     format_note: format.format_note ?? '',
@@ -136,6 +148,14 @@ export class YtDlpProcess {
     return this.stderr!;
   }
 
+  getIsDownloadStarted() {
+    return this.isDownloadStarted;
+  }
+
+  setIsDownloadStarted(isDownloadStarted: boolean) {
+    this.isDownloadStarted = isDownloadStarted;
+  }
+
   async writeDownloadStatusToDB(_cacheData?: Partial<VideoInfo>, isRestartDownload = false) {
     let mergerIsExecuted = false;
     const stdout = this.stdout;
@@ -153,6 +173,7 @@ export class YtDlpProcess {
       thumbnail: metadata?.thumbnail || '',
       resolution: null,
       createdAt: Date.now(),
+      status: 'downloading',
       file: {
         path: null,
         name: null
@@ -172,6 +193,7 @@ export class YtDlpProcess {
         const uuidList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
         uuidList.unshift(uuid);
         await Cache.set(VIDEO_LIST_FILE, uuidList);
+        await Cache.set(uuid, cacheData);
       }
       const cacheSetThrottle = throttle(Cache.set, 500);
 
@@ -197,6 +219,8 @@ export class YtDlpProcess {
                 cacheData.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
                 cacheData.download.pid = this.pid!;
                 cacheData.download.progress = '1';
+                cacheData.download.completed = false;
+                cacheData.status = 'merging';
                 if (stat) cacheData.download.filesize = numeral(stat.size).format('0.0b');
                 await Cache.set(uuid, cacheData);
               } catch (e) {}
@@ -211,9 +235,11 @@ export class YtDlpProcess {
           const progress = execResult[1];
           const filesize = execResult[2];
           const speed = execResult[3];
+          cacheData.status = 'downloading';
           cacheData.download.pid = this.pid!;
           cacheData.download.progress = numeral(progress).format('0.00');
           cacheData.download.filesize = numeral(filesize).format('0.0b');
+          cacheData.download.completed = false;
           cacheData.download.speed = numeral(speed).format('0.0b') + '/s';
           await cacheSetThrottle(uuid, cacheData);
         }
@@ -222,16 +248,46 @@ export class YtDlpProcess {
       stdout.setEncoding('utf-8');
       stdout.on('data', handleData);
       stdout.on('end', async () => {
-        if (mergerIsExecuted) {
-          console.log('complete && pid remove');
-          cacheData.download.pid = null;
-          cacheData.download.completed = true;
-          cacheData.download.progress = '1';
-          await Cache.set(uuid, cacheData);
+        console.log('complete && pid remove');
+        if (cacheData.file.path) {
+          let stat: Stats | null = null;
+          try {
+            stat = await fs.stat(cacheData.file.path);
+            if (stat) {
+              cacheData.file.size = stat.size;
+
+              const buf = Buffer.alloc(100);
+              const file = await fs.open(cacheData.file.path);
+              const { buffer } = await file.read({
+                buffer: buf,
+                length: 100,
+                offset: 0,
+                position: 0
+              });
+              await file.close();
+
+              const start = buffer.indexOf(Buffer.from('mvhd')) + 16;
+              const timeScale = buffer.readUInt32BE(start);
+              const duration = buffer.readUInt32BE(start + 4);
+              const movieLength = Math.floor(duration / timeScale);
+
+              cacheData.file.length = movieLength;
+            }
+          } catch (e) {}
         }
+        cacheData.download.pid = null;
+        cacheData.download.completed = true;
+        cacheData.download.progress = '1';
+        cacheData.status = 'completed';
+        await Cache.set(uuid, cacheData);
+        this.ytdlp?.kill();
       });
     } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(e);
+      }
       cacheData.download.progress = null;
+      cacheData.download.pid = null;
       await Cache.set(uuid, cacheData);
       console.error(e);
     }

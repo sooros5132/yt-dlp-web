@@ -23,12 +23,23 @@ export default async function Home() {
   const videoList = await getVideoListData();
 
   return (
-    <main className='mx-auto max-w-3xl pb-10'>
+    <main className='mx-auto max-w-3xl pb-5'>
       <h1 className='text-center text-2xl mt-16 mb-8'>yt-dlp-web Download Station</h1>
       <div className='p-4 text-base-content rounded-md'>
         <DownloadForm />
         <VideoList videoList={videoList} />
       </div>
+      <p className='mt-10 text-center text-xs text-zinc-500'>
+        Powered By{' '}
+        <a
+          className='link link-hover'
+          href='https://github.com/sooros5132/yt-dlp-web'
+          rel='noopener noreferrer'
+          target='_blank'
+        >
+          yt-dlp-web
+        </a>
+      </p>
     </main>
   );
 }

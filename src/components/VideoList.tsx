@@ -19,7 +19,7 @@ const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
 
 export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
-  const refreshIntervalTimeRef = useRef(3 * 1000);
+  const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
   const {
     data: videos,
     isValidating,
@@ -29,7 +29,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
     async () => {
       const videos = await axios.get<Array<VideoInfo>>('/api/list').then((res) => res.data);
       let nextIntervalTime = Math.min(
-        Math.max(MIN_INTERVAL_Time, refreshIntervalTimeRef.current * 3),
+        Math.max(MIN_INTERVAL_Time, refreshIntervalTimeRef.current * 2),
         MAX_INTERVAL_Time
       );
       for (const video of videos) {
@@ -101,7 +101,9 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             }
           }
         });
-      mutate('/api/list');
+      setTimeout(() => {
+        mutate('/api/list');
+      }, 100);
     };
 
   const handleMouseLeave = () => {
@@ -157,19 +159,22 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
       toast.error(result?.error || 'download failed');
     } else if (result?.success) {
       if (result?.status === 'already') {
-        toast.info('already been downloaded');
+        if (video.status === 'merging') {
+          toast.success('already been downloaded');
+        } else {
+          toast.success('Download Retryed');
+        }
       } else if (result?.status === 'downloading') {
-        mutate('/api/list');
+        setTimeout(() => {
+          mutate('/api/list');
+        }, 100);
         toast.success('Download Retryed');
       }
     }
   };
 
   useEffect(() => {
-    if (
-      prevVideoRef?.current?.download?.completed ||
-      prevVideoRef?.current?.download?.progress === '1'
-    ) {
+    if (prevVideoRef?.current?.download?.completed) {
       return;
     }
     const initialProgress = prevVideoRef?.current?.download?.progress;
@@ -178,7 +183,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
       if (!prevVideoRef?.current?.download?.completed && initialProgress === nextProgress) {
         setRecommendedDownloadRetry(true);
       }
-    }, 5000);
+    }, 8000);
 
     return () => {
       clearTimeout(timeout);
@@ -230,15 +235,32 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             )}
             {!video?.download?.completed && (
               <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
-                <AiOutlineLoading3Quarters className=' animate-spin' />
-                {recommendedDownloadRetry && (
-                  <div className='text-sm text-center'>
-                    {"If you can't download it, try again with the button below."}
-                  </div>
-                )}
+                <div>
+                  <AiOutlineLoading3Quarters className='animate-spin' />
+                </div>
+                <div
+                  className={classNames(
+                    'text-sm text-center',
+                    recommendedDownloadRetry && 'animate-pulse'
+                  )}
+                >
+                  {recommendedDownloadRetry
+                    ? "Video and audio may be merging, but can't you download it? try again with the button below."
+                    : `${video.status}...`}
+                </div>
               </div>
             )}
           </div>
+          {!isMouseEntered && typeof video.file.size === 'number' && (
+            <div className='absolute left-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+              {numeral(video.file.size).format('0.0b')}
+            </div>
+          )}
+          {!isMouseEntered && typeof video.file.length === 'number' && (
+            <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+              {numeral(video.file.length).format(video.file.length >= 3600 ? '00:00:00' : '00:00')}
+            </div>
+          )}
         </div>
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
           <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>{video.title}</h2>
@@ -304,11 +326,13 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             </div>
           </div>
         </div>
-        {!video?.download?.completed && (
+        {!video?.download?.completed ? (
           <progress
             className='progress progress-info w-full h-1'
             value={Number(numeral(video.download.progress).format('0.00') || 0)}
           />
+        ) : (
+          <div className='h-1'></div>
         )}
       </div>
     </div>

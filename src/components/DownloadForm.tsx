@@ -15,6 +15,7 @@ import numeral from 'numeral';
 import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
+import { VideoFormat, VideoMetadata } from '@/types/video';
 
 interface State {
   url: string;
@@ -68,7 +69,7 @@ export function DownloadForm() {
   const { changeUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useBearStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
-  const [videoMetadata, setVideoMetadata] = useState<any>(null);
+  const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
     changeUrl(evt.target.value || '');
@@ -105,7 +106,8 @@ export function DownloadForm() {
               url
             }
           })
-          .then((res) => res.data);
+          .then((res) => res.data)
+          .catch((res) => res.response.data);
         if (result?.error) {
           toast.error(result?.error || 'download failed');
         } else if (result?.success) {
@@ -113,7 +115,10 @@ export function DownloadForm() {
             toast.info('already been downloaded');
           } else if (result?.status === 'downloading') {
             mutate('/api/list');
-            toast.success('download requested');
+            toast.success('download requested!');
+          } else if (result?.status === 'restart') {
+            mutate('/api/list');
+            toast.success('download restart');
           }
         }
         return;
@@ -124,7 +129,8 @@ export function DownloadForm() {
               url
             }
           })
-          .then((res) => res.data);
+          .then((res) => res.data)
+          .catch((res) => res.response.data);
         if (metadata?.error) {
           toast.error(metadata?.error || 'search failed');
         } else if (metadata?.id) {
@@ -143,7 +149,8 @@ export function DownloadForm() {
           <input
             name='url'
             type='text'
-            className='w-full input input-sm'
+            className={classNames('w-full input input-sm', !hydrated && 'input-disabled')}
+            readOnly={!hydrated}
             value={url}
             placeholder='https://...'
             onChange={handleChangeUrl}
@@ -152,10 +159,11 @@ export function DownloadForm() {
         <div>
           <label className='inline-flex items-center gap-x-1 cursor-pointer'>
             <input
-              className='checkbox checkbox-sm'
+              className={classNames('checkbox checkbox-sm')}
               name='enabledBestFormat'
               type='checkbox'
               checked={!hydrated ? true : enabledBestFormat}
+              readOnly={!hydrated}
               onChange={handleChangeCheckBox}
             />
             <span className='text-sm'>Download at the best quality</span>
@@ -165,8 +173,10 @@ export function DownloadForm() {
           <button
             className={classNames(
               'btn btn-sm btn-primary px-3 normal-case gap-x-1',
+              !hydrated && 'btn-disabled',
               isValidating && 'loading'
             )}
+            disabled={!hydrated}
             type='submit'
           >
             {!hydrated || enabledBestFormat ? (
@@ -199,7 +209,7 @@ export function DownloadForm() {
   );
 }
 
-type VideoMetadataProps = { metadata: any };
+type VideoMetadataProps = { metadata: VideoMetadata };
 const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
   const [isImageError, setImageError] = useState(false);
 
@@ -208,12 +218,11 @@ const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
       <div className='divider my-4' />
       <div className='card card-side bg-base-100 shadow-xl rounded-xl flex-col sm:flex-row-reverse sm:h-[220px] overflow-hidden'>
         <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%]'>
-          {(metadata.thumbnail || metadata.thumbnails[metadata.thumbnails?.length - 1]?.url) &&
-          !isImageError ? (
+          {!isImageError && metadata.thumbnail ? (
             <figure className='w-full h-full'>
               <img
                 className='w-full h-full object-cover'
-                src={metadata.thumbnail || metadata.thumbnails[metadata.thumbnails.length - 1]?.url}
+                src={metadata.thumbnail}
                 alt={'thumbnail'}
                 onError={() => setImageError(true)}
               />
@@ -245,17 +254,16 @@ const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
 }, isEquals);
 VideoMetadata.displayName = 'VideoMetadata';
 
-type VideoDownloadProps = { metadata: any };
+type VideoDownloadProps = { metadata: VideoMetadata };
 
 const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
-  const audioFormat = [] as Array<any>;
-  const videoFormat = [] as Array<any>;
-
-  for (const format of metadata.formats) {
+  const audioFormat: Array<VideoFormat> = [];
+  const videoFormat: Array<VideoFormat> = [];
+  for (const format of metadata?.formats) {
     if (format.resolution === 'audio only') {
-      audioFormat.push(format);
+      audioFormat.unshift(format);
     } else if (format.video_ext !== 'none') {
-      videoFormat.push(format);
+      videoFormat.unshift(format);
     }
   }
   const [isOpen, setOpen] = useState(false);
@@ -302,6 +310,9 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   };
 
   const requestDownload = async (params: { url: string; videoId?: string; audioId?: string }) => {
+    if (isValidating) {
+      return;
+    }
     setValidating(true);
     try {
       const result = await axios
@@ -314,10 +325,14 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
         toast.error(result?.error || 'download failed');
       } else if (result?.success) {
         if (result?.status === 'already') {
+          mutate('/api/list');
           toast.info('already been downloaded');
         } else if (result?.status === 'downloading') {
           mutate('/api/list');
           toast.success('download requested');
+        } else if (result?.status === 'restart') {
+          mutate('/api/list');
+          toast.success('download restart');
         }
       }
     } catch (e) {}
@@ -327,7 +342,10 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   return (
     <section className='my-6 mb-2'>
       <div className='text-center'>
-        <button className='btn btn-sm btn-primary normal-case' onClick={handleClickBestButton}>
+        <button
+          className={classNames('btn btn-sm btn-primary normal-case', isValidating && 'loading')}
+          onClick={handleClickBestButton}
+        >
           BEST: {metadata.best.resolution} {metadata.best.vcodec}
           {metadata.best.acodec && metadata.best.vcodec && '+'}
           {metadata.best.acodec}
@@ -351,7 +369,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
             <div className='mb-6 divider select-none'>
               <button
                 type='button'
-                className='btn btn-sm btn-primary btn-outline opacity-70 gap-x-2 text-md normal-case'
+                className='btn btn-sm btn-primary btn-outline opacity-80 gap-x-2 text-md normal-case'
                 onClick={() => setOpen((prev) => !prev)}
               >
                 Optional
