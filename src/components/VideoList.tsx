@@ -7,6 +7,7 @@ import useSWR, { mutate } from 'swr';
 import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { VscLinkExternal, VscRefresh } from 'react-icons/vsc';
+import { TbExternalLink } from 'react-icons/tb';
 import numeral from 'numeral';
 import { toast } from 'react-toastify';
 import classNames from 'classnames';
@@ -75,6 +76,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const [isImageError, setImageError] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
+  const [firstPlay, setFirstPlay] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
 
@@ -105,10 +107,12 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     if (!video?.download?.completed) {
       return;
     }
-    setMouseEntered(false);
-    const videoEl = videoRef.current;
-    if (videoEl) {
-      videoEl?.pause?.();
+    if (!document.fullscreenElement) {
+      setMouseEntered(false);
+      const videoEl = videoRef.current;
+      if (videoEl) {
+        videoEl?.pause?.();
+      }
     }
   };
 
@@ -120,7 +124,12 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     if (videoEl) {
       try {
         await videoEl?.play?.();
-        videoEl.volume = 0.5;
+        if (firstPlay) {
+          setTimeout(() => {
+            videoEl.volume = 0.5;
+          }, 1);
+          setFirstPlay(false);
+        }
         setMouseEntered(true);
       } catch (e) {}
     }
@@ -236,36 +245,36 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           <div className='flex items-center justify-between'>
             <div className='btn-group rounded-xl'>
               {!video?.download?.completed ? (
-                <button className='btn btn-sm text-lg btn-error btn-disabled'>
+                <button className='btn btn-sm btn-outline btn-error btn-disabled text-lg'>
                   <MdOutlineVideocamOff />
                 </button>
               ) : (
                 <button
-                  className='btn btn-sm text-lg btn-error'
+                  className='btn btn-sm btn-outline btn-error text-lg'
                   onClick={handleClickDelete(video, 'deleteFile')}
                 >
                   <MdOutlineVideocamOff />
                 </button>
               )}
               <button
-                className='btn btn-sm text-lg btn-warning'
+                className='btn btn-sm btn-outline btn-warning text-lg'
                 onClick={handleClickDelete(video, 'deleteList')}
               >
                 <MdPlaylistRemove />
               </button>
             </div>
-            <div className='btn-group rounded-xl'>
+            <div className='btn-group'>
               <a
-                className='btn btn-sm text-lg btn-info'
+                className='btn btn-sm btn-info text-lg'
                 href={video.url || ''}
                 rel='noopener noreferrer'
                 target='_blank'
               >
-                <VscLinkExternal />
+                <TbExternalLink />
               </a>
               {video?.download?.completed ? (
                 <a
-                  className={'btn btn-sm text-xl btn-secondary'}
+                  className={'btn btn-sm btn-primary text-xl dark:btn-secondary'}
                   href={video?.download?.completed ? `/api/file?id=${video.uuid}` : ''}
                   rel='noopener noreferrer'
                   target='_blank'
@@ -276,7 +285,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               ) : (
                 <button
                   className={classNames(
-                    'btn btn-sm text-lg btn-secondary',
+                    'btn btn-sm btn-primary text-lg dark:btn-secondary',
                     recommendedDownloadRetry && 'animate-pulse'
                   )}
                   onClick={handleClickRestartDownload}
