@@ -275,7 +275,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               {video?.download?.completed ? (
                 <a
                   className={'btn btn-sm btn-primary text-xl dark:btn-secondary'}
-                  href={video?.download?.completed ? `/api/file?id=${video.uuid}` : ''}
+                  href={video?.download?.completed ? `/api/file?uuid=${video.uuid}` : ''}
                   rel='noopener noreferrer'
                   target='_blank'
                   download={video?.download?.completed ? video.file.name : false}
