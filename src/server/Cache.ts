@@ -5,8 +5,10 @@ export const DOWNLOAD_PATH = path.join('/', 'downloads');
 export const CACHE_PATH = path.join('/', 'downloads', '.cache');
 export const VIDEO_LIST_FILE = 'video-list';
 
+export const CACHE_FILE_PREFIX = 'yt-dlp-cache-';
+
 function getCacheFilePath(uuid: string) {
-  return path.join(CACHE_PATH, `${uuid}.json`);
+  return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.json`);
 }
 
 export class Cache {
