@@ -102,6 +102,7 @@ export async function POST() {
               const resolution = await ffmpegHelper.getVideoResolution();
               data.file.resolution = resolution;
             } catch (error) {}
+            data.updatedAt = Date.now();
             await CacheHelper.set(uuid, data);
           } catch (e) {}
         })

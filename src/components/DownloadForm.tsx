@@ -16,6 +16,7 @@ import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
 import { VideoFormat, VideoMetadata } from '@/types/video';
+import { GoPrimitiveDot } from 'react-icons/go';
 
 interface State {
   url: string;
@@ -344,13 +345,26 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
     <section className='my-6 mb-2'>
       <div className='text-center'>
         <button
-          className={classNames('btn btn-sm btn-primary normal-case', isValidating && 'loading')}
+          className={classNames(
+            'btn btn-sm btn-primary normal-case',
+            isValidating && 'loading',
+            metadata.is_live && 'text-white gradient-background border-0'
+          )}
           onClick={handleClickBestButton}
         >
+          {metadata.is_live && (
+            <div className='relative pointer-events-none text-xl text-rose-600'>
+              <GoPrimitiveDot className='animate-ping' />
+              <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+            </div>
+          )}
           BEST: {metadata.best.resolution} {metadata.best.vcodec}
           {metadata.best.acodec && metadata.best.vcodec && '+'}
           {metadata.best.acodec}
         </button>
+        {metadata.is_live && (
+          <div className='mt-1 text-center text-xs text-base-content/60'>Live Stream!</div>
+        )}
       </div>
       <div className={'pt-6'}>
         {audioFormat.length || videoFormat.length ? (
@@ -417,23 +431,27 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 <button
                   className={classNames(
                     'btn btn-sm btn-primary btn-info px-3 normal-case',
-                    isValidating && 'loading'
+                    isValidating && 'loading',
+                    metadata.is_live && 'text-white gradient-background border-0'
                   )}
                   type='submit'
                 >
-                  {!selectedFormats.video && !selectedFormats.audio ? (
-                    'Optional Download'
-                  ) : (
-                    <>
-                      {selectedFormats?.video?.format_id &&
-                        `${
-                          selectedFormats?.video?.format_note || selectedFormats?.video?.resolution
-                        } ${selectedFormats?.video?.vcodec}`}
-                      {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
-                      {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec} Optional
-                      Download
-                    </>
+                  {metadata.is_live && (
+                    <div className='relative pointer-events-none text-xl text-rose-600'>
+                      <GoPrimitiveDot className='animate-ping' />
+                      <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+                    </div>
                   )}
+                  {selectedFormats?.video?.format_id &&
+                    `${selectedFormats?.video?.format_note || selectedFormats?.video?.resolution} ${
+                      selectedFormats?.video?.vcodec
+                    }`}
+                  {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
+                  {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec}
+                  <span>
+                    {(selectedFormats?.video || selectedFormats?.audio) && <>&nbsp;</>}Optional
+                    Download
+                  </span>
                 </button>
               </div>
             </div>

@@ -4,7 +4,7 @@ import { VideoInfo } from '@/types/video';
 import { NextResponse } from 'next/server';
 
 const encoder = new TextEncoder();
-const filePathRegex = new RegExp(`^${DOWNLOAD_PATH}/((.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
+const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
 
 export async function GET(request: Request) {
   const urlObject = new URL(request.url);
@@ -28,6 +28,18 @@ export async function GET(request: Request) {
     const _format = `${videoId}${videoId && audioId ? '+' : ''}${audioId}`;
     const format = ['-f', _format || 'bv+ba/b'];
 
+    let isAlreadyFormat = false;
+
+    const ytdlp = new YtDlpHelper({
+      url
+    });
+
+    const metadata = await ytdlp.getMetadata();
+
+    if (!metadata.id) {
+      throw 'Not found. Please check the url again.';
+    }
+
     //? 중복 확인
     const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
     if (Array.isArray(uuids) && uuids.length) {
@@ -38,24 +50,19 @@ export async function GET(request: Request) {
           Array.isArray(video?.download?.format) &&
           video.download.format[1] === format[1]
         ) {
-          throw 'You are already downloading in the same format.';
+          isAlreadyFormat = true;
+          // throw 'You are already downloading in the same format.';
         }
       }
     }
     //? 중복 확인
+    if (isAlreadyFormat && !metadata.is_live) {
+      throw 'You are already downloading in the same format.';
+    }
 
     const stream = new ReadableStream({
       async start(controller) {
-        const ytdlp = new YtDlpHelper({
-          url,
-          parmas: [...format, '--wait-for-video', '120']
-        });
-
-        const metadata = await ytdlp.getMetadata();
-        if (!metadata.id) {
-          return;
-        }
-        await ytdlp.start();
+        await ytdlp.start(metadata.is_live ? 'stream' : undefined);
 
         const stdout = ytdlp.getStdout();
         const stderr = ytdlp.getStderr();
@@ -66,7 +73,7 @@ export async function GET(request: Request) {
             return;
           }
 
-          const isAlready = filePathRegex.exec(text)?.[1];
+          const isAlready = filePathRegex.exec(text)?.[0];
 
           ytdlp.setIsDownloadStarted(true);
 
@@ -105,10 +112,36 @@ export async function GET(request: Request) {
             stderr.off('data', handleStdoutData);
           }
         };
-        stdout.setEncoding('utf-8');
-        stdout.on('data', handleStdoutData);
-        stderr.setEncoding('utf-8');
-        stderr.on('data', handleStdoutData);
+
+        if (metadata.is_live) {
+          ytdlp.writeStreamDownloadStatusToDB({
+            download: {
+              format,
+              completed: false,
+              pid: null,
+              progress: null,
+              speed: null
+            }
+          });
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                success: true,
+                url,
+                status: 'downloading',
+                timestamp: Date.now()
+              })
+            )
+          );
+          try {
+            controller?.close?.();
+          } catch (e) {}
+        } else {
+          stdout.setEncoding('utf-8');
+          stdout.on('data', handleStdoutData);
+          stderr.setEncoding('utf-8');
+          stderr.on('data', handleStdoutData);
+        }
 
         stdout.on('end', () => {
           try {

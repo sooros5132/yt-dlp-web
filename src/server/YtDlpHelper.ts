@@ -12,7 +12,11 @@ import { FFmpegHelper } from './FFmpegHelper';
 const downloadRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/i;
-const filePathRegex = new RegExp(`^${DOWNLOAD_PATH}/((.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
+const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|part))$`);
+const streamFilePathRegex = new RegExp(
+  `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|part))'$`
+);
+("tHKJoWRIySU29KrFbtbN/playlist/index.m3u8 -c copy -f mpegts 'file:/downloads/lofi hip hop radio 📚 - beats to relax⧸study to 2023-04-27 17_00 (1920x1080)(jfKfPfyJRdk).mp4'");
 
 export class YtDlpHelper {
   public readonly url: string;
@@ -33,31 +37,33 @@ export class YtDlpHelper {
     this.parmas = querys.parmas || [];
   }
 
-  public async start(callback?: Function): Promise<this> {
+  public async start(type: 'stream' | 'video' = 'video'): Promise<this> {
     return new Promise((resolve) => {
       const abortController = new AbortController();
 
-      const ytdlp = spawn(
-        'yt-dlp',
-        [
-          ...this.parmas,
-          '--verbose',
-          '--progress',
-          '--no-continue',
-          '--print',
-          'after_move:filepath',
-          '--merge-output-format',
-          'mp4',
-          '-P',
-          DOWNLOAD_PATH,
-          '-o',
-          `%(title)s (%(id)s)(%(width)sx%(height)s).%(ext)s`,
-          this.url
-        ],
-        {
-          signal: abortController.signal
-        }
-      );
+      const options = [
+        ...this.parmas,
+        '--verbose',
+        '--progress',
+        '--no-continue',
+        '--windows-filenames',
+        '--print',
+        'after_move:filepath',
+        '--merge-output-format',
+        'mp4',
+        '-P',
+        DOWNLOAD_PATH,
+        '-o',
+        `%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`,
+        this.url
+      ];
+
+      if (type === 'stream') options.push('--no-part');
+
+      const ytdlp = spawn('yt-dlp', options, {
+        killSignal: 'SIGINT',
+        cwd: DOWNLOAD_PATH
+      });
 
       this.abortController = abortController;
       this.pid = ytdlp.pid;
@@ -66,18 +72,20 @@ export class YtDlpHelper {
       this.ytdlp = ytdlp;
 
       if (process.env.NODE_ENV === 'development') {
+        ytdlp.stderr.setEncoding('utf-8');
         ytdlp.stderr.on('data', (data) => {
           console.log('[stderr]', data?.trim?.());
         });
       }
       if (process.env.NODE_ENV === 'development') {
+        ytdlp.stdout.setEncoding('utf-8');
         ytdlp.stdout.on('data', (data) => {
           console.log('[stdout]', data?.trim?.());
         });
       }
 
       console.log(`new process, \`${this.pid}\``);
-      callback?.();
+
       resolve(this);
     });
   }
@@ -111,6 +119,7 @@ export class YtDlpHelper {
             title: json.title || '',
             description: json.description || '',
             thumbnail: json.thumbnail || '',
+            is_live: json.is_live || false,
             best: {
               format_id: json.format_id ?? '',
               format_note: json.format_note ?? '',
@@ -185,6 +194,8 @@ export class YtDlpHelper {
       title: metadata?.title || '',
       description: metadata?.description || '',
       thumbnail: metadata?.thumbnail || '',
+      is_live: metadata.is_live,
+      updatedAt: Date.now(),
       createdAt: Date.now(),
       status: 'downloading',
       file: {
@@ -259,6 +270,7 @@ export class YtDlpHelper {
               cacheData.download.progress = '1';
               cacheData.download.completed = false;
               cacheData.status = 'merging';
+              cacheData.updatedAt = Date.now();
               await CacheHelper.set(uuid, cacheData);
               break;
             }
@@ -305,8 +317,8 @@ export class YtDlpHelper {
             }
           } catch (e) {}
         }
+        cacheData.updatedAt = Date.now();
         await CacheHelper.set(uuid, cacheData);
-        this.ytdlp?.kill();
       };
 
       // stdout
@@ -324,13 +336,168 @@ export class YtDlpHelper {
       cacheData.download.progress = null;
       cacheData.download.pid = null;
       if ((await CacheHelper.get<VideoInfo>(uuid))?.id) {
+        cacheData.updatedAt = Date.now();
         await CacheHelper.set(uuid, cacheData);
       }
     }
   }
 
-  async kill() {
-    spawn('kill', [String(this.pid)]).on('exit', () => {
+  async writeStreamDownloadStatusToDB(_cacheData?: Partial<VideoInfo>) {
+    const stdout = this.stdout;
+    const stderr = this.stderr;
+    const metadata = this.metadata;
+    const uuid = _cacheData?.uuid || randomUUID();
+
+    if (!stderr || !stdout || !metadata) {
+      return;
+    }
+
+    const cacheData: VideoInfo = {
+      uuid,
+      id: metadata?.id || '',
+      url: this.url,
+      title: metadata?.title || '',
+      description: metadata?.description || '',
+      thumbnail: metadata?.thumbnail || '',
+      is_live: metadata.is_live,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      status: 'recording',
+      file: {
+        path: null,
+        name: null
+      },
+      download: {
+        completed: false,
+        pid: null,
+        progress: null,
+        speed: null,
+        format: _cacheData?.download?.format || null
+      },
+      ..._cacheData
+    };
+    try {
+      const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
+      uuidList.unshift(uuid);
+      await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
+      await CacheHelper.set(uuid, cacheData);
+      let _fileDestination: string | null = null;
+
+      const setCacheInterval = setInterval(async () => {
+        cacheData.updatedAt = Date.now();
+        cacheData.download.pid = this.ytdlp?.pid || null;
+        await CacheHelper.set(uuid, cacheData);
+      }, 3000);
+
+      const handleDataMessage = async (_text: string) => {
+        const message = _text?.trim?.();
+
+        if (typeof message !== 'string' || !message) {
+          return;
+        }
+        const fileDestination =
+          streamFilePathRegex.exec(message)?.[1] || filePathRegex.exec(message)?.[1];
+        if (fileDestination) {
+          cacheData.download.pid = this.ytdlp?.pid || null;
+          cacheData.file.path = fileDestination;
+          cacheData.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
+          _fileDestination = fileDestination;
+          return;
+        }
+      };
+
+      const handleEnd = async () => {
+        if (!_fileDestination) {
+          return;
+        }
+        const fileDestination = _fileDestination;
+        let stat: Stats | null = null;
+        try {
+          stat = await fs.stat(fileDestination);
+        } catch (e) {}
+        if (stat) {
+          clearInterval(setCacheInterval);
+          _fileDestination = null;
+          cacheData.download.pid = null;
+          cacheData.download.completed = true;
+          cacheData.download.progress = '1';
+          cacheData.status = 'completed';
+          cacheData.file.path = fileDestination;
+          cacheData.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
+          cacheData.file.size = stat.size;
+          cacheData.updatedAt = Date.now();
+          await CacheHelper.set(uuid, cacheData);
+
+          const buf = Buffer.alloc(100);
+          const file = await fs.open(cacheData.file.path);
+          const { buffer } = await file.read({
+            buffer: buf,
+            length: 100,
+            offset: 0,
+            position: 0
+          });
+          await file.close();
+
+          const start = buffer.indexOf(Buffer.from('mvhd')) + 16;
+          const timeScale = buffer.readUInt32BE(start);
+          const duration = buffer.readUInt32BE(start + 4);
+          const movieLength = Math.floor(duration / timeScale);
+
+          cacheData.file.length = movieLength;
+          try {
+            const ffmpegHelper = new FFmpegHelper({
+              filePath: cacheData.file.path
+            });
+            const resolution = await ffmpegHelper.getVideoResolution();
+            cacheData.file.resolution = resolution;
+          } catch (error) {}
+          cacheData.updatedAt = Date.now();
+          await CacheHelper.set(uuid, cacheData);
+        }
+      };
+
+      stdout.on('data', handleDataMessage);
+      stdout.on('end', handleEnd);
+      stderr.on('close', handleEnd);
+
+      stderr.on('data', handleDataMessage);
+      stderr.on('end', handleEnd);
+      stderr.on('close', handleEnd);
+
+      this.ytdlp?.on('exit', () => {
+        clearInterval(setCacheInterval);
+      });
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(e);
+      }
+    }
+  }
+
+  // 2와 15 사용을 추천, 9번은 클린업 코드가 실행 안된다.
+
+  /**
+   *
+   * @param code SIGCODE
+   *
+   * 1	= SIGHUP							종료(연결끊기, 실행종료)
+   *
+   * 2	= SIGINT		CTRL + C	종료(, 인터럽트)
+   *
+   * 3	= SIGQUIT		CTRL + \	종료+코어 덤프
+   *
+   * 9	=	SIGKILL							강제종료(클린업 핸들러 불가능)
+   *
+   * 15	=	SIGTERM							정상종료
+   *
+   * 18	= SIGCONT							정리된 프로세스 재실행
+   *
+   * 19	=	SIGSTOP							정지(클린업 핸들러 불가능)
+   *
+   * 20	= SIGTSTP		CTRL + Z	정지
+   */
+  async kill(code = 2) {
+    spawn('kill', [`-${code}`, String(this.pid)]).on('exit', () => {
       console.log(`stopped process \`${this.pid}\``);
     });
   }

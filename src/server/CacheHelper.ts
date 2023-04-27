@@ -22,7 +22,7 @@ export class CacheHelper {
       const parsedData = JSON.parse(content);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Get cache \`${filePath}\``);
+        // console.log(`Get cache \`${filePath}\``);
       }
 
       return parsedData as T;
@@ -41,7 +41,7 @@ export class CacheHelper {
 
       await fs.writeFile(filePath, JSON.stringify(content), 'utf-8');
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Saved content to ${filePath}.`);
+        // console.log(`Saved content to ${filePath}.`);
       }
       return true;
     } catch (e) {
@@ -76,7 +76,7 @@ export class CacheHelper {
     try {
       await fs.unlink(filePath);
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Delete cache \`${filePath}\``);
+        // console.log(`Delete cache \`${filePath}\``);
       }
       return true;
     } catch (e) {

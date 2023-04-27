@@ -20,3 +20,21 @@ html,
 body {
   height: 100%;
 }
+
+.gradient-background {
+  background: linear-gradient(to left, #d70fdd, #ff0075, #ff6b00, #caba00, #12eb40);
+  background-size: 400% 400%;
+  animation: gradient 10s linear infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

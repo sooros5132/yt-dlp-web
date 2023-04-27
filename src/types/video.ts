@@ -16,6 +16,7 @@ export interface VideoMetadata {
   title: string;
   description: string;
   thumbnail: string;
+  is_live: boolean;
   best: {
     format_id: string;
     format_note: string;
@@ -35,8 +36,8 @@ export interface VideoInfo {
   title: string | null;
   description: string | null;
   thumbnail: string | null;
-  createdAt: number;
-  status: 'downloading' | 'merging' | 'completed';
+  status: 'downloading' | 'recording' | 'merging' | 'completed';
+  is_live: boolean;
   file: {
     path: string | null;
     name: string | null;
@@ -51,4 +52,6 @@ export interface VideoInfo {
     speed: string | null;
     format: string[] | null;
   };
+  createdAt: number;
+  updatedAt: number;
 }

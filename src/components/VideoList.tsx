@@ -12,9 +12,10 @@ import numeral from 'numeral';
 import { toast } from 'react-toastify';
 import classNames from 'classnames';
 import { VideoInfo } from '@/types/video';
-import { MdOutlineVideocamOff, MdPlaylistRemove } from 'react-icons/md';
+import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
 import isEqual from 'react-fast-compare';
+import { GoPrimitiveDot } from 'react-icons/go';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -209,14 +210,42 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     }
   };
 
+  const handleClickStopRecording = async () => {
+    if (isValidating || !video.uuid) {
+      return;
+    }
+    setValidating(true);
+
+    const result = await axios
+      .patch('/api/recording', {
+        uuid: video.uuid
+      })
+      .then((res) => res.data)
+      .catch((res) => res.response.data);
+
+    if (result?.error) {
+      toast.error('Failed stop recording');
+    } else if (result?.success) {
+      toast.success('Stoped recording');
+    }
+    setValidating(false);
+  };
+
   useEffect(() => {
     if (prevVideoRef?.current?.download?.completed) {
       return;
     }
+    const initialUpdatedAt = prevVideoRef?.current?.updatedAt;
     const initialProgress = prevVideoRef?.current?.download?.progress;
     const timeout = setTimeout(() => {
       const nextProgress = prevVideoRef?.current?.download?.progress;
-      if (!prevVideoRef?.current?.download?.completed && initialProgress === nextProgress) {
+      const nextUpdatedAt = prevVideoRef.current.updatedAt;
+
+      if (
+        !prevVideoRef?.current?.download?.completed &&
+        initialProgress === nextProgress &&
+        initialUpdatedAt === nextUpdatedAt
+      ) {
         setRecommendedDownloadRetry(true);
       }
     }, 8000);
@@ -247,15 +276,19 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           >
             {video?.download?.completed && (
               <video
+                key={video.status || 'completed'}
                 ref={videoRef}
                 className='w-full h-full'
-                src={`/api/stream?uuid=${video.uuid}`}
+                src={`/api/file?uuid=${video.uuid}`}
                 controls
                 muted
               />
             )}
           </div>
-          <div className={classNames('w-full h-full', isMouseEntered ? 'hidden' : 'block')}>
+          <div
+            className={classNames('w-full h-full', isMouseEntered ? 'hidden' : 'block')}
+            onTouchEnd={handleMouseEnter}
+          >
             {video.thumbnail && !isImageError ? (
               <figure className='w-full h-full'>
                 <img
@@ -307,7 +340,15 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           )}
         </div>
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
-          <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>{video.title}</h2>
+          <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>
+            {video.is_live && video.status === 'recording' && (
+              <div className='relative inline-block pointer-events-none text-xl text-rose-600'>
+                <GoPrimitiveDot className='animate-ping' />
+                <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+              </div>
+            )}
+            {video.title}
+          </h2>
           <div className='flex items-center justify-between'>
             <div className='btn-group rounded-xl'>
               {!video?.download?.completed ? (
@@ -337,6 +378,14 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <MdPlaylistRemove />
               </button>
             </div>
+            {video.is_live && video.status === 'recording' && (
+              <button
+                className='btn btn-sm btn-circle btn-outline btn-error text-lg'
+                onClick={handleClickStopRecording}
+              >
+                <MdStop />
+              </button>
+            )}
             <div className='btn-group'>
               <a
                 className='btn btn-sm btn-info text-lg'
@@ -354,7 +403,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   }
                   rel='noopener noreferrer'
                   target='_blank'
-                  download={video?.download?.completed ? video.file.name : false}
+                  download={video?.status === 'completed' ? video.file.name : false}
                 >
                   <AiOutlineCloudDownload />
                 </a>
@@ -364,6 +413,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                     'btn btn-sm btn-primary text-lg dark:btn-secondary',
                     recommendedDownloadRetry && 'animate-pulse'
                   )}
+                  disabled={video?.is_live}
                   onClick={handleClickRestartDownload}
                 >
                   <VscRefresh />

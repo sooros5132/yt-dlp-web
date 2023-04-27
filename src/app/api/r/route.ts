@@ -6,7 +6,7 @@ import { Stats, promises as fs } from 'fs';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
 
 const encoder = new TextEncoder();
-const filePathRegex = new RegExp(`^${DOWNLOAD_PATH}/((.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
+const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
 
 // Restart Download
 export async function GET(request: Request) {
@@ -35,7 +35,6 @@ export async function GET(request: Request) {
       }
     );
   }
-  const format = videoInfo.download.format || [];
   const url = videoInfo.url;
 
   if (videoInfo.download.pid) {
@@ -46,17 +45,17 @@ export async function GET(request: Request) {
     ytdlp.kill();
   }
 
+  const ytdlp = new YtDlpHelper({
+    url
+  });
+
+  const metadata = await ytdlp.getMetadata();
+  if (!metadata.id) {
+    return;
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
-      const ytdlp = new YtDlpHelper({
-        url,
-        parmas: [...format, '--wait-for-video', '120']
-      });
-
-      const metadata = await ytdlp.getMetadata();
-      if (!metadata.id) {
-        return;
-      }
       await ytdlp.start();
 
       const stdout = ytdlp.getStdout();
@@ -117,6 +116,7 @@ export async function GET(request: Request) {
             newVideoInfo.download.completed = true;
             newVideoInfo.download.progress = '1';
             newVideoInfo.status = 'completed';
+            newVideoInfo.updatedAt = Date.now();
             await CacheHelper.set(uuid, newVideoInfo);
           } else {
             ytdlp.writeDownloadStatusToDB(newVideoInfo, true);
