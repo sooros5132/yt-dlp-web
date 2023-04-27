@@ -36,13 +36,19 @@ export async function GET(request: Request) {
     const stat = await fs.stat(videoPath);
 
     const file = await fs.open(videoPath, 'r');
-    const videoSize = stat.size;
+    const videoSize = stat?.size;
 
     // File Stream
-    if (range) {
+    if (range && stat) {
+      // 1024 * 1024 * 2 = 2MB (4K 이상은 1MB로 부족해서 2MB로 늘렸다.)
+      const CHUNK_SIZE = 1024 * 1024 * 2;
+
       const parts = range.replace(/bytes=/, '').split('-');
       const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : videoSize - 1;
+      const end =
+        parts[1] && parseInt(parts[1]) < CHUNK_SIZE
+          ? parseInt(parts[1], 10)
+          : Math.min(start + CHUNK_SIZE, videoSize - 1);
       const chunksize = end - start + 1;
 
       const videoStream = file.createReadStream({ start, end });
@@ -51,7 +57,7 @@ export async function GET(request: Request) {
           'Content-Range': `bytes ${start}-${end}/${videoSize}`,
           'Accept-Ranges': 'bytes',
           'Content-Length': `${chunksize}`,
-          'Content-Type': lookup(videoPath) || 'text/plain'
+          'Content-Type': lookup(videoPath) || 'video/mp4'
         },
         status: 206
       });
@@ -60,17 +66,19 @@ export async function GET(request: Request) {
     // File Get
     const videoStream = file.createReadStream();
     videoStream.on('finish', () => {
-      videoStream.close();
+      try {
+        videoStream?.close?.();
+      } catch (e) {}
     });
 
     return new Response(videoStream as any, {
       headers: {
         'Content-Length': `${videoSize}`,
-        'Content-Type': 'video/mp4',
+        'Content-Type': lookup(videoPath) || 'video/mp4',
         //! WARNING: encodeURIComponent 사용하면 파일이름이 깨짐.
-        'Content-Disposition': `${download ? 'attachment; ' : ''}filename=${Buffer.from(
+        'Content-Disposition': `${download ? 'attachment; ' : ''}filename="${Buffer.from(
           videoInfo.file.name || 'Untitled.mp4'
-        ).toString('binary')};`
+        ).toString('binary')}";`
       },
       status: 200
     });
