@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { YtDlpProcess } from '@/server/YtDlpProcess';
+import { YtDlpHelper } from '@/server/YtDlpHelper';
 
 const encoder = new TextEncoder();
 
@@ -19,7 +19,7 @@ export async function GET(request: Request, context: { params: { url: string } }
       throw 'Please add `http://` or `https://`. ex) https://www.youtube.com/xxxxx';
     }
 
-    const ytdlp = new YtDlpProcess({
+    const ytdlp = new YtDlpHelper({
       url
     });
 

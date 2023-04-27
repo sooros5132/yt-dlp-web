@@ -1,6 +1,4 @@
 import { spawn } from 'node:child_process';
-import { DOWNLOAD_PATH } from './Cache';
-import path from 'path';
 
 const ffprobeResolutionRegex = /^([0-9]+)x([0-9]+)$/i;
 

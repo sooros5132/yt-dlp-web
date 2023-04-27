@@ -1,20 +1,20 @@
 import { DownloadForm } from '@/components/DownloadForm';
 import { VideoList } from '@/components/VideoList';
-import { Cache, VIDEO_LIST_FILE } from '@/server/Cache';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 
 async function getVideoListData(): Promise<VideoInfo[]> {
-  const uuids = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+  const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
 
   if (!Array.isArray(uuids) || !uuids.length) {
     return [];
   }
 
-  const videoList = (await Promise.all(uuids.map((uuid) => Cache.get<VideoInfo>(uuid)))).filter(
-    (video) => video
-  ) as VideoInfo[];
+  const videoList = (
+    await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)))
+  ).filter((video) => video) as VideoInfo[];
 
   return videoList;
 }

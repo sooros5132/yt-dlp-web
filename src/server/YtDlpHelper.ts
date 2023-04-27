@@ -4,8 +4,7 @@ import type { Readable } from 'node:stream';
 import numeral from 'numeral';
 import { Stats, promises as fs } from 'fs';
 import { randomUUID } from 'node:crypto';
-import { Cache, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './Cache';
-import path from 'path';
+import { CacheHelper, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './CacheHelper';
 import { throttle } from 'lodash';
 import { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
 import { FFmpegHelper } from './FFmpegHelper';
@@ -13,8 +12,9 @@ import { FFmpegHelper } from './FFmpegHelper';
 const downloadRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/i;
+const filePathRegex = new RegExp(`^${DOWNLOAD_PATH}/((.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
 
-export class YtDlpProcess {
+export class YtDlpHelper {
   public readonly url: string;
   public readonly parmas: Array<string>;
   public abortController?: AbortController;
@@ -41,10 +41,16 @@ export class YtDlpProcess {
         'yt-dlp',
         [
           ...this.parmas,
+          '--verbose',
+          '--progress',
+          '--print',
+          'after_move:filepath',
           '--merge-output-format',
           'mp4',
+          '-P',
+          DOWNLOAD_PATH,
           '-o',
-          path.join(DOWNLOAD_PATH, `%(title)s (%(id)s).%(ext)s`),
+          `%(title)s (%(id)s)(%(width)sx%(height)s).%(ext)s`,
           this.url
         ],
         {
@@ -59,8 +65,13 @@ export class YtDlpProcess {
       this.ytdlp = ytdlp;
 
       if (process.env.NODE_ENV === 'development') {
+        ytdlp.stderr.on('data', (data) => {
+          console.log('[stderr]', data?.trim?.());
+        });
+      }
+      if (process.env.NODE_ENV === 'development') {
         ytdlp.stdout.on('data', (data) => {
-          console.log(data?.trim());
+          console.log('[stdout]', data?.trim?.());
         });
       }
 
@@ -158,16 +169,17 @@ export class YtDlpProcess {
   }
 
   async writeDownloadStatusToDB(_cacheData?: Partial<VideoInfo>, isRestartDownload = false) {
-    let mergerIsExecuted = false;
     const stdout = this.stdout;
+    const stderr = this.stderr;
     const metadata = this.metadata;
     const uuid = _cacheData?.uuid || randomUUID();
 
-    if (!stdout || !metadata) {
+    if (!stderr || !stdout || !metadata) {
       return;
     }
     const cacheData: VideoInfo = {
       uuid,
+      id: metadata?.id || '',
       url: this.url,
       title: metadata?.title || '',
       description: metadata?.description || '',
@@ -181,7 +193,6 @@ export class YtDlpProcess {
       download: {
         completed: false,
         pid: null,
-        filesize: null,
         progress: null,
         speed: null,
         format: _cacheData?.download?.format || null
@@ -190,70 +201,81 @@ export class YtDlpProcess {
     };
     try {
       if (!isRestartDownload) {
-        const uuidList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+        const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
         uuidList.unshift(uuid);
-        await Cache.set(VIDEO_LIST_FILE, uuidList);
-        await Cache.set(uuid, cacheData);
+        await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
+        await CacheHelper.set(uuid, cacheData);
       }
-      const cacheSetThrottle = throttle(Cache.set, 500);
+      const cacheSetThrottle = throttle(CacheHelper.set, 500);
 
-      const handleData = async (_text: string) => {
-        const text = _text.trim();
+      const handleDataMessage = async (_text: string) => {
+        const message = _text?.trim?.();
 
-        if (typeof text !== 'string') {
+        if (typeof message !== 'string' || !message) {
           return;
         }
 
-        if (!text?.startsWith('[download]')) {
-          if (text?.startsWith('[Merger]')) {
-            const filePath = fileRegex.exec(text)?.[1];
-            if (filePath) {
-              try {
-                mergerIsExecuted = true;
-                let stat: Stats | null = null;
-                try {
-                  stat = await fs.stat(filePath);
-                } catch (e) {}
-
-                cacheData.file.path = filePath;
-                cacheData.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
-                cacheData.download.pid = this.pid!;
-                cacheData.download.progress = '1';
-                cacheData.download.completed = false;
-                cacheData.status = 'merging';
-                if (stat) cacheData.download.filesize = numeral(stat.size).format('0.0b');
-                await Cache.set(uuid, cacheData);
-              } catch (e) {}
-            }
+        const messageType = /^\[([a-z]+)\]\s/i.exec(message)?.[1];
+        if (!messageType) {
+          const isFilePathMessage = filePathRegex.test(message);
+          if (isFilePathMessage) {
+            cacheData.file.path = message;
+            cacheData.file.name = message.replace(DOWNLOAD_PATH + '/', '');
+            cacheData.download.pid = null;
+            cacheData.download.completed = true;
+            cacheData.download.progress = '1';
+            cacheData.status = 'completed';
           }
           return;
         }
+        try {
+          switch (messageType) {
+            case 'download': {
+              const execResult = downloadRegex.exec(message);
+              if (execResult) {
+                // const match = execResult[0];
+                const progress = execResult[1];
+                // const filesize = execResult[2];
+                const speed = execResult[3];
+                cacheData.status = 'downloading';
+                cacheData.download.pid = this.pid!;
+                cacheData.download.progress = numeral(progress).format('0.00');
+                cacheData.download.completed = false;
+                cacheData.download.speed = numeral(speed).format('0.0b') + '/s';
+                await cacheSetThrottle(uuid, cacheData);
+              }
+              break;
+            }
+            case 'Merger': {
+              const filePath = fileRegex.exec(message)?.[1];
+              if (!filePath) {
+                break;
+              }
 
-        const execResult = downloadRegex.exec(text);
-        if (execResult) {
-          // const match = execResult[0];
-          const progress = execResult[1];
-          const filesize = execResult[2];
-          const speed = execResult[3];
-          cacheData.status = 'downloading';
-          cacheData.download.pid = this.pid!;
-          cacheData.download.progress = numeral(progress).format('0.00');
-          cacheData.download.filesize = numeral(filesize).format('0.0b');
-          cacheData.download.completed = false;
-          cacheData.download.speed = numeral(speed).format('0.0b') + '/s';
-          await cacheSetThrottle(uuid, cacheData);
-        }
+              cacheData.file.path = filePath;
+              cacheData.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
+              cacheData.download.pid = this.pid!;
+              cacheData.download.progress = '1';
+              cacheData.download.completed = false;
+              cacheData.status = 'merging';
+              await CacheHelper.set(uuid, cacheData);
+              break;
+            }
+          }
+        } catch (e) {}
       };
 
-      stdout.setEncoding('utf-8');
-      stdout.on('data', handleData);
-      stdout.on('end', async () => {
+      const handleEndMessage = async (_text: string) => {
         console.log('complete && pid remove');
         if (cacheData.file.path) {
           let stat: Stats | null = null;
           try {
             stat = await fs.stat(cacheData.file.path);
             if (stat) {
+              cacheData.download.pid = null;
+              cacheData.download.completed = true;
+              cacheData.download.progress = '1';
+              cacheData.status = 'completed';
               cacheData.file.size = stat.size;
 
               const buf = Buffer.alloc(100);
@@ -282,21 +304,27 @@ export class YtDlpProcess {
             }
           } catch (e) {}
         }
-        cacheData.download.pid = null;
-        cacheData.download.completed = true;
-        cacheData.download.progress = '1';
-        cacheData.status = 'completed';
-        await Cache.set(uuid, cacheData);
+        await CacheHelper.set(uuid, cacheData);
         this.ytdlp?.kill();
-      });
+      };
+
+      // stdout
+      stdout.setEncoding('utf-8');
+      stdout.on('data', handleDataMessage);
+      stdout.on('end', handleEndMessage);
+
+      // stderr
+      stderr.setEncoding('utf-8');
+      stderr.on('data', handleDataMessage);
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {
         console.log(e);
       }
       cacheData.download.progress = null;
       cacheData.download.pid = null;
-      await Cache.set(uuid, cacheData);
-      console.error(e);
+      if ((await CacheHelper.get<VideoInfo>(uuid))?.id) {
+        await CacheHelper.set(uuid, cacheData);
+      }
     }
   }
 

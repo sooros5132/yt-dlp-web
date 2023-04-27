@@ -11,7 +11,7 @@ function getCacheFilePath(uuid: string) {
   return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.json`);
 }
 
-export class Cache {
+export class CacheHelper {
   static async list() {
     return [];
   }

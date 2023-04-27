@@ -1,4 +1,4 @@
-import { CACHE_FILE_PREFIX, CACHE_PATH, Cache, VIDEO_LIST_FILE } from '@/server/Cache';
+import { CACHE_FILE_PREFIX, CACHE_PATH, CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { NextResponse } from 'next/server';
 import { Stats, promises as fs } from 'fs';
 import path from 'path';
@@ -13,7 +13,7 @@ const cacheFileRegex =
 
 export async function POST() {
   try {
-    const uuids = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+    const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
 
     if (!Array.isArray(uuids) || !uuids.length) {
       return NextResponse.json({
@@ -48,7 +48,7 @@ export async function POST() {
         fs.unlink(path.join(CACHE_PATH, filename)).catch(() => {});
       })
     );
-    await Cache.set(VIDEO_LIST_FILE, newUuids);
+    await CacheHelper.set(VIDEO_LIST_FILE, newUuids);
 
     {
       await Promise.all(
@@ -61,7 +61,7 @@ export async function POST() {
               return;
             }
 
-            const data = await Cache.get<VideoInfo>(uuid);
+            const data = await CacheHelper.get<VideoInfo>(uuid);
 
             if (!data?.file?.path) {
               return;
@@ -102,7 +102,7 @@ export async function POST() {
               const resolution = await ffmpegHelper.getVideoResolution();
               data.file.resolution = resolution;
             } catch (error) {}
-            await Cache.set(uuid, data);
+            await CacheHelper.set(uuid, data);
           } catch (e) {}
         })
       );

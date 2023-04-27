@@ -319,7 +319,8 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
         .get('/api/d', {
           params
         })
-        .then((res) => res.data);
+        .then((res) => res.data)
+        .catch((res) => res.response.data);
 
       if (result?.error) {
         toast.error(result?.error || 'download failed');
@@ -415,13 +416,13 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
               <div className='my-4 text-center'>
                 <button
                   className={classNames(
-                    'btn btn-sm btn-primary px-3 normal-case',
+                    'btn btn-sm btn-primary btn-info px-3 normal-case',
                     isValidating && 'loading'
                   )}
                   type='submit'
                 >
                   {!selectedFormats.video && !selectedFormats.audio ? (
-                    'Download'
+                    'Optional Download'
                   ) : (
                     <>
                       {selectedFormats?.video?.format_id &&
@@ -429,7 +430,8 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                           selectedFormats?.video?.format_note || selectedFormats?.video?.resolution
                         } ${selectedFormats?.video?.vcodec}`}
                       {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
-                      {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec} Download
+                      {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec} Optional
+                      Download
                     </>
                   )}
                 </button>

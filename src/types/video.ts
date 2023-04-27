@@ -30,6 +30,7 @@ export interface VideoMetadata {
 
 export interface VideoInfo {
   uuid: string;
+  id: string | null;
   url: string;
   title: string | null;
   description: string | null;
@@ -46,7 +47,6 @@ export interface VideoInfo {
   download: {
     completed: boolean;
     pid: number | null;
-    filesize: string | null;
     progress: string | null;
     speed: string | null;
     format: string[] | null;

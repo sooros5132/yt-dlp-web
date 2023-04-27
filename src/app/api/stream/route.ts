@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import { VideoInfo } from '@/types/video';
-import { Cache } from '@/server/Cache';
+import { CacheHelper } from '@/server/CacheHelper';
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       throw 'Requires Range header';
     }
 
-    const videoInfo = await Cache.get<VideoInfo>(uuid);
+    const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
 
     const videoPath = videoInfo?.file?.path;
     if (!videoPath) {

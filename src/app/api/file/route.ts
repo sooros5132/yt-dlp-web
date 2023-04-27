@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import { YtDlpProcess } from '@/server/YtDlpProcess';
-import { Cache, VIDEO_LIST_FILE } from '@/server/Cache';
+import { YtDlpHelper } from '@/server/YtDlpHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const videoInfo = await Cache.get<VideoInfo>(uuid);
+    const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
 
     const videoPath = videoInfo?.file.path;
     if (!videoPath) {
@@ -77,8 +77,8 @@ export async function DELETE(request: Request) {
     try {
       // await fs.unlink(videoPath);
 
-      const videoInfo = await Cache.get<VideoInfo>(uuid);
-      const videoList = (await Cache.get<string[]>(VIDEO_LIST_FILE)) || [];
+      const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
+      const videoList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
 
       if (!videoInfo) {
         return NextResponse.json({
@@ -88,7 +88,7 @@ export async function DELETE(request: Request) {
       }
 
       if (videoInfo?.download?.pid) {
-        const ytdlp = new YtDlpProcess({
+        const ytdlp = new YtDlpHelper({
           url: videoInfo.url,
           pid: videoInfo.download.pid
         });
@@ -101,8 +101,8 @@ export async function DELETE(request: Request) {
           await fs.unlink(videoInfo.file.path);
         }
       } catch (e) {}
-      await Cache.delete(videoInfo.uuid);
-      await Cache.set(VIDEO_LIST_FILE, newVideoList);
+      await CacheHelper.delete(videoInfo.uuid);
+      await CacheHelper.set(VIDEO_LIST_FILE, newVideoList);
       return NextResponse.json({
         uuid: videoInfo.uuid,
         success: true

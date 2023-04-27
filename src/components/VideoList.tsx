@@ -246,6 +246,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 className='w-full h-full'
                 src={`/api/stream?uuid=${video.uuid}`}
                 controls
+                muted
               />
             )}
           </div>
