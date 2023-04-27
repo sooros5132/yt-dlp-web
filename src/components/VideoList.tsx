@@ -116,22 +116,26 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     (video: VideoInfo, deleteType: 'deleteFile' | 'deleteList') => async () => {
       const deleteFile = deleteType === 'deleteFile';
 
-      await axios
+      const result = await axios
         .delete('/api/file', {
           params: {
             uuid: video.uuid,
             deleteFile
           }
         })
-        .then((res) => {
-          if (res.data.success) {
-            if (deleteFile) {
-              toast.success('Deleted list and file.');
-            } else {
-              toast.success('Deleted from list. (File will be retained)');
-            }
-          }
-        });
+        .then((res) => res.data)
+        .catch((res) => res.response.data);
+
+      if (result.success) {
+        if (deleteFile) {
+          toast.success('Deleted list and file.');
+        } else {
+          toast.success('Deleted from list. (File will be retained)');
+        }
+      } else {
+        toast.error(result.error || 'Failed to delete.');
+      }
+
       setTimeout(() => {
         mutate('/api/list');
       }, 100);
@@ -182,7 +186,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           uuid: video.uuid
         }
       })
-      .then((res) => res.data);
+      .then((res) => res.data)
+      .catch((res) => res.response.data);
 
     setValidating(false);
 

@@ -13,7 +13,14 @@ export async function GET() {
     }
 
     const videoList = (
-      await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)))
+      await Promise.all(
+        uuids.map((uuid) =>
+          // one more retry
+          CacheHelper.get<VideoInfo>(uuid).then(
+            async (res) => res || (await CacheHelper.get<VideoInfo>(uuid))
+          )
+        )
+      )
     ).filter((video) => video);
 
     return NextResponse.json(videoList);
