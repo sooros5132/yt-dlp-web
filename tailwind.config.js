@@ -25,5 +25,5 @@ module.exports = {
     darkTheme: 'forest',
     themes: ['emerald', 'forest']
   },
-  plugins: [require('@tailwindcss/line-clamp'), require('daisyui')]
+  plugins: [require('daisyui')]
 };

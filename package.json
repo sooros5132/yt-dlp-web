@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tailwindcss/line-clamp": "^0.4.4",
     "@types/lodash": "^4.14.194",
     "@types/node": "18.16.0",
     "@types/numeral": "^2.0.2",
