@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import { YtDlpHelper } from '@/server/YtDlpHelper';
 import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { VideoInfo } from '@/types/video';
+import { lookup } from 'mime-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
     const uuid = searchParams.get('uuid');
-    // const url = context?.params?.url;
+    const download = searchParams.get('download') === 'true';
 
     try {
       if (typeof uuid !== 'string') {
@@ -19,20 +20,44 @@ export async function GET(request: Request) {
       }
     } catch (e) {
       return new Response(e as string, {
-        status: 400
+        status: 404
       });
     }
 
+    const range = request.headers.get('range');
+
     const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
 
-    const videoPath = videoInfo?.file.path;
+    const videoPath = videoInfo?.file?.path;
     if (!videoPath) {
       throw 'videoPath is not found';
     }
 
     const stat = await fs.stat(videoPath);
 
-    const file = await fs.open(videoPath);
+    const file = await fs.open(videoPath, 'r');
+    const videoSize = stat.size;
+
+    // File Stream
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : videoSize - 1;
+      const chunksize = end - start + 1;
+
+      const videoStream = file.createReadStream({ start, end });
+      return new Response(videoStream as any, {
+        headers: {
+          'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': `${chunksize}`,
+          'Content-Type': lookup(videoPath) || 'text/plain'
+        },
+        status: 206
+      });
+    }
+
+    // File Get
     const videoStream = file.createReadStream();
     videoStream.on('finish', () => {
       videoStream.close();
@@ -40,12 +65,14 @@ export async function GET(request: Request) {
 
     return new Response(videoStream as any, {
       headers: {
-        'Content-Length': `${stat.size}`,
+        'Content-Length': `${videoSize}`,
+        'Content-Type': 'video/mp4',
         //! WARNING: encodeURIComponent 사용하면 파일이름이 깨짐.
-        'Content-Disposition': `attachment; filename=${Buffer.from(
+        'Content-Disposition': `${download ? 'attachment; ' : ''}filename=${Buffer.from(
           videoInfo.file.name || 'Untitled.mp4'
         ).toString('binary')};`
-      }
+      },
+      status: 200
     });
   } catch (error) {
     return NextResponse.json(
