@@ -43,6 +43,7 @@ export class YtDlpHelper {
           ...this.parmas,
           '--verbose',
           '--progress',
+          '--no-continue',
           '--print',
           'after_move:filepath',
           '--merge-output-format',
