@@ -34,7 +34,6 @@ export interface VideoInfo {
   title: string | null;
   description: string | null;
   thumbnail: string | null;
-  resolution: string | null;
   createdAt: number;
   status: 'downloading' | 'merging' | 'completed';
   file: {
@@ -42,6 +41,7 @@ export interface VideoInfo {
     name: string | null;
     size?: number;
     length?: number;
+    resolution?: [number, number];
   };
   download: {
     completed: boolean;

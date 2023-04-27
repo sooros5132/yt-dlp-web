@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { Stats, promises as fs } from 'fs';
 import path from 'path';
 import { VideoInfo } from '@/types/video';
+import { FFmpegHelper } from '@/server/FFmpegHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +94,14 @@ export async function POST() {
 
             data.file.size = size;
             data.file.length = length;
+
+            try {
+              const ffmpegHelper = new FFmpegHelper({
+                filePath
+              });
+              const resolution = await ffmpegHelper.getVideoResolution();
+              data.file.resolution = resolution;
+            } catch (error) {}
             await Cache.set(uuid, data);
           } catch (e) {}
         })

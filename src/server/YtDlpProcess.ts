@@ -8,6 +8,7 @@ import { Cache, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './Cache';
 import path from 'path';
 import { throttle } from 'lodash';
 import { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
+import { FFmpegHelper } from './FFmpegHelper';
 
 const downloadRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/i;
@@ -171,7 +172,6 @@ export class YtDlpProcess {
       title: metadata?.title || '',
       description: metadata?.description || '',
       thumbnail: metadata?.thumbnail || '',
-      resolution: null,
       createdAt: Date.now(),
       status: 'downloading',
       file: {
@@ -272,6 +272,13 @@ export class YtDlpProcess {
               const movieLength = Math.floor(duration / timeScale);
 
               cacheData.file.length = movieLength;
+              try {
+                const ffmpegHelper = new FFmpegHelper({
+                  filePath: cacheData.file.path
+                });
+                const resolution = await ffmpegHelper.getVideoResolution();
+                cacheData.file.resolution = resolution;
+              } catch (error) {}
             }
           } catch (e) {}
         }

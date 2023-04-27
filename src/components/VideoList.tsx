@@ -282,6 +282,13 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               </div>
             )}
           </div>
+          {!isMouseEntered &&
+            Array.isArray(video.file.resolution) &&
+            video.file.resolution[1] > 0 && (
+              <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+                {video.file.resolution[1]}p
+              </div>
+            )}
           {!isMouseEntered && typeof video.file.size === 'number' && (
             <div className='absolute left-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
               {numeral(video.file.size).format('0.0b')}
