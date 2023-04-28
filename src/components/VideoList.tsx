@@ -76,7 +76,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
       <div className='grid grid-cols-[30px_auto_30px] place-items-center mb-4'>
         <div>
           <button
-            className='tooltip tooltip-right before:w-[300px] btn btn-sm btn-ghost btn-circle text-xl justify-center normal-case font-normal'
+            className='tooltip tooltip-right before:w-[300px] btn btn-sm btn-ghost btn-circle text-xl normal-case font-normal'
             data-tip='Reload video information and Clean up the missing cache'
             disabled={isSynchronizing}
             onClick={handleClickCleanMissingCacheButton}
@@ -88,12 +88,13 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
         <div>
           <button
             className={classNames(
-              'btn btn-sm btn-ghost btn-circle text-2xl',
+              'tooltip tooltip-left btn btn-sm btn-ghost btn-circle text-2xl normal-case font-normal',
               isValidating && 'btn-disabled'
             )}
+            data-tip='Refresh video list'
             onClick={() => mutate()}
           >
-            <VscRefresh className={classNames(isValidating && 'animate-spin')} />
+            <VscRefresh className={classNames('w-full', isValidating && 'animate-spin')} />
           </button>
         </div>
       </div>
