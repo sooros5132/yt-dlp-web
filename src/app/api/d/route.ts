@@ -31,7 +31,8 @@ export async function GET(request: Request) {
     let isAlreadyFormat = false;
 
     const ytdlp = new YtDlpHelper({
-      url
+      url,
+      parmas: [...format]
     });
 
     const metadata = await ytdlp.getMetadata();

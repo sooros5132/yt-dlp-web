@@ -46,7 +46,8 @@ export async function GET(request: Request) {
   }
 
   const ytdlp = new YtDlpHelper({
-    url
+    url,
+    parmas: [...(videoInfo.download.format || [])]
   });
 
   const metadata = await ytdlp.getMetadata();
