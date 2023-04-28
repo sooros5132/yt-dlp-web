@@ -311,8 +311,11 @@ export class YtDlpHelper {
                 const ffmpegHelper = new FFmpegHelper({
                   filePath: cacheData.file.path
                 });
-                const resolution = await ffmpegHelper.getVideoResolution();
-                cacheData.file.resolution = resolution;
+                const streams = await ffmpegHelper.getVideoStreams();
+                cacheData.file = {
+                  ...cacheData.file,
+                  ...streams
+                };
               } catch (error) {}
             }
           } catch (e) {}
@@ -446,8 +449,11 @@ export class YtDlpHelper {
             const ffmpegHelper = new FFmpegHelper({
               filePath: cacheData.file.path
             });
-            const resolution = await ffmpegHelper.getVideoResolution();
-            cacheData.file.resolution = resolution;
+            const streams = await ffmpegHelper.getVideoStreams();
+            cacheData.file = {
+              ...cacheData.file,
+              ...streams
+            };
           } catch (error) {}
           cacheData.updatedAt = Date.now();
           await CacheHelper.set(uuid, cacheData);

@@ -112,8 +112,11 @@ export async function GET(request: Request) {
             const ffmpegHelper = new FFmpegHelper({
               filePath: fileDestination
             });
-            const resolution = await ffmpegHelper.getVideoResolution();
-            newVideoInfo.file.resolution = resolution;
+            const streams = await ffmpegHelper.getVideoStreams();
+            newVideoInfo.file = {
+              ...newVideoInfo.file,
+              ...streams
+            };
             newVideoInfo.download.completed = true;
             newVideoInfo.download.progress = '1';
             newVideoInfo.status = 'completed';

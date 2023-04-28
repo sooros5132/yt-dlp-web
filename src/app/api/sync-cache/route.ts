@@ -101,8 +101,11 @@ export async function POST() {
               const ffmpegHelper = new FFmpegHelper({
                 filePath
               });
-              const resolution = await ffmpegHelper.getVideoResolution();
-              data.file.resolution = resolution;
+              const streams = await ffmpegHelper.getVideoStreams();
+              data.file = {
+                ...data.file,
+                ...streams
+              };
             } catch (error) {}
             await CacheHelper.set(uuid, data);
           } catch (e) {}

@@ -38,12 +38,11 @@ export interface VideoInfo {
   thumbnail: string | null;
   status: 'downloading' | 'recording' | 'merging' | 'completed';
   is_live: boolean;
-  file: {
+  file: Streams & {
     path: string | null;
     name: string | null;
     size?: number;
     length?: number;
-    resolution?: [number, number];
   };
   download: {
     completed: boolean;
@@ -54,4 +53,23 @@ export interface VideoInfo {
   };
   createdAt: number;
   updatedAt: number;
+}
+
+export interface Streams {
+  width?: number;
+  height?: number;
+  rFrameRate?: number;
+  colorPrimaries?: string;
+  codecName?: string;
+}
+
+export interface FFmpegStreamsJson {
+  programs: any[];
+  streams: {
+    width: number;
+    height: number;
+    r_frame_rate: string;
+    color_primaries: string;
+    codec_name: string;
+  }[];
 }

@@ -61,7 +61,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
     const result = await axios.post('/api/sync-cache').then((res) => res.data);
 
     if (result?.success) {
-      toast.success('Reloaded video information(size, length).');
+      toast.success('Reloaded video information');
     } else {
       toast.error('Failed to synchronize.');
     }
@@ -77,7 +77,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
         <div>
           <button
             className='tooltip tooltip-right before:w-[300px] btn btn-sm btn-ghost btn-circle text-xl justify-center normal-case font-normal'
-            data-tip='File info re-verificate and Clean up the missing cache'
+            data-tip='Reload video information and Clean up the missing cache'
             disabled={isSynchronizing}
             onClick={handleClickCleanMissingCacheButton}
           >
@@ -339,13 +339,16 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               </div>
             )}
           </div>
-          {!isMouseEntered &&
-            Array.isArray(video.file.resolution) &&
-            video.file.resolution[1] > 0 && (
-              <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
-                {video.file.resolution[1]}p
-              </div>
-            )}
+          {!isMouseEntered && typeof video.file.height === 'number' && video.file.height > 0 && (
+            <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+              {video.file.height}p
+              {typeof video.file.rFrameRate === 'number' && video.file.rFrameRate > 0
+                ? Math.round(video.file.rFrameRate)
+                : ''}
+              {video.file.codecName ? ' ' + video.file.codecName : ''}
+              {video.file.colorPrimaries === 'bt2020' ? ' HDR' : ''}
+            </div>
+          )}
           {!isMouseEntered && typeof video.file.size === 'number' && (
             <div className='absolute left-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
               {numeral(video.file.size).format('0.0b')}
