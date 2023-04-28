@@ -5,7 +5,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR, { mutate } from 'swr';
 import { FcRemoveImage } from 'react-icons/fc';
-import { AiOutlineCloudDownload, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { VscRefresh } from 'react-icons/vsc';
 import { TbExternalLink } from 'react-icons/tb';
 import numeral from 'numeral';
@@ -15,7 +15,6 @@ import { VideoInfo } from '@/types/video';
 import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
 import isEqual from 'react-fast-compare';
-import { GoPrimitiveDot } from 'react-icons/go';
 import { LoadingSvg } from './LoadingSvg';
 import { PingSvg } from './PingSvg';
 

@@ -76,9 +76,11 @@ export async function GET(request: Request) {
         'Content-Length': `${videoSize}`,
         'Content-Type': lookup(videoPath) || 'video/mp4',
         //! WARNING: encodeURIComponent 사용하면 파일이름이 깨짐.
-        'Content-Disposition': `${download ? 'attachment; ' : ''}filename="${Buffer.from(
+        'Content-Disposition': `${download ? 'attachment; ' : ''} filename="${Buffer.from(
           videoInfo.file.name || 'Untitled.mp4'
-        ).toString('binary')}";`
+        ).toString('binary')}"; filename*=utf-8''${encodeURIComponent(
+          videoInfo.file.name || 'Untitled.mp4'
+        )};`
       },
       status: 200
     });
