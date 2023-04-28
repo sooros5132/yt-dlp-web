@@ -1,7 +1,9 @@
 import { CacheHelper } from '@/server/CacheHelper';
-import { YtDlpHelper } from '@/server/YtDlpHelper';
+import { ProcessHelper } from '@/server/ProcessHelper';
+import { FFmpegHelper } from '@/server/FFmpegHelper';
 import { VideoInfo } from '@/types/video';
 import { NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
 
 export async function PATCH(request: Request, context: any) {
   try {
@@ -18,28 +20,70 @@ export async function PATCH(request: Request, context: any) {
         success: false
       });
     }
+    if (videoInfo.status !== 'recording' || !videoInfo?.file?.path) {
+      videoInfo.download.completed = true;
+      videoInfo.status = 'completed';
+      videoInfo.download.progress = '1';
+      videoInfo.download.pid = null;
+      videoInfo.updatedAt = Date.now();
 
-    const pid = videoInfo.download.pid;
-    const newVideoInfo: VideoInfo = {
-      ...videoInfo,
-      download: { ...videoInfo.download },
-      file: { ...videoInfo.file }
-    };
-    newVideoInfo.download.completed = true;
-    newVideoInfo.status = 'completed';
-    newVideoInfo.download.progress = '1';
-    newVideoInfo.download.pid = null;
-    newVideoInfo.updatedAt = Date.now();
+      await CacheHelper.set(uuid, videoInfo);
 
-    CacheHelper.set(uuid, newVideoInfo);
-
-    if (pid) {
-      const ytdlp = new YtDlpHelper({
-        url: videoInfo.url,
-        pid: pid
+      return NextResponse.json({
+        uuid: videoInfo.uuid,
+        success: true
       });
-      ytdlp.kill();
     }
+
+    try {
+      if (videoInfo?.download?.pid && videoInfo?.url && videoInfo?.download?.format) {
+        const processHelper = new ProcessHelper({ pid: videoInfo.download.pid });
+        const isRunning = await processHelper.isYtDlpProcessRunning(
+          videoInfo.url,
+          videoInfo.download.format
+        );
+        if (isRunning) {
+          // 프로세스가 실행중이니 SIGINT 전송으로 저장 요청
+          processHelper.kill(2);
+          videoInfo.download.pid = null;
+          videoInfo.download.completed = true;
+          videoInfo.updatedAt = Date.now();
+          await CacheHelper.set(uuid, videoInfo);
+          return NextResponse.json({
+            uuid: videoInfo.uuid,
+            success: true
+          });
+        }
+      }
+
+      const filePath = videoInfo.file.path;
+      const stat = await fs.stat(filePath);
+      if (!stat) {
+        throw '';
+      }
+
+      (async function () {
+        const ffmpegHelper = new FFmpegHelper({
+          filePath
+        });
+
+        videoInfo.status = 'merging';
+        videoInfo.download.completed = true;
+        videoInfo.updatedAt = Date.now();
+        await CacheHelper.set(uuid, videoInfo);
+        await ffmpegHelper.repair();
+        videoInfo.status = 'completed';
+        videoInfo.download.pid = null;
+        videoInfo.download.completed = true;
+        videoInfo.download.progress = '1';
+        videoInfo.updatedAt = Date.now();
+        await CacheHelper.set(uuid, videoInfo);
+        return;
+      })();
+    } catch (e) {}
+
+    await CacheHelper.set(uuid, videoInfo);
+
     return NextResponse.json({
       uuid: videoInfo.uuid,
       success: true

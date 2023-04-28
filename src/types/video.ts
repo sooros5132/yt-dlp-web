@@ -49,7 +49,7 @@ export interface VideoInfo {
     pid: number | null;
     progress: string | null;
     speed: string | null;
-    format: string[] | null;
+    format: [string | string] | null;
   };
   createdAt: number;
   updatedAt: number;

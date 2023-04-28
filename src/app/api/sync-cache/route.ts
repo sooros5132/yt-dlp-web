@@ -66,6 +66,9 @@ export async function POST() {
             if (!data?.file?.path) {
               return;
             }
+            if (data.status === 'recording') {
+              return;
+            }
 
             const filePath = data?.file?.path;
             stat = await fs.stat(filePath);
@@ -90,10 +93,9 @@ export async function POST() {
             const movieLength = Math.floor(duration / timeScale);
 
             const size = stat.size;
-            const length = movieLength;
 
             data.file.size = size;
-            data.file.length = length;
+            data.file.length = movieLength;
             data.status = 'completed';
             data.updatedAt = Date.now();
 

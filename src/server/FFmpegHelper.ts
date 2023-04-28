@@ -1,13 +1,13 @@
 import { FFmpegStreamsJson, Streams } from '@/types/video';
 import { spawn } from 'node:child_process';
 
-const ffprobeResolutionRegex = /^([0-9]+)x([0-9]+)$/i;
-
 export class FFmpegHelper {
   public readonly filePath;
+  public readonly fileUuid;
 
-  constructor(querys: { filePath: string }) {
-    this.filePath = querys.filePath;
+  constructor(params: { filePath: string; fileUuid?: string }) {
+    this.filePath = params.filePath;
+    this.fileUuid = params.fileUuid;
   }
 
   async getVideoStreams() {
@@ -68,7 +68,55 @@ export class FFmpegHelper {
     });
   }
 
-  getFilePath() {
-    return this.filePath;
+  async repair() {
+    return new Promise((resolve) => {
+      // const repairShellScriptFile = join(__dirname, 'src', 'server', 'ffmpeg-repair.sh');
+
+      const ffmpeg = spawn(
+        'ffmpeg',
+        // [`${repairShellScriptFile}`]
+        [
+          '-y',
+          '-loglevel',
+          'repeat+info',
+          '-i',
+          `'file:${this.filePath}'`,
+          '-map',
+          '0',
+          '-dn',
+          '-ignore_unknown',
+          '-c',
+          'copy',
+          '-f',
+          'mp4',
+          '-bsf:a',
+          'aac_adtstoasc',
+          '-movflags',
+          '+faststart',
+          `'file:${this.filePath}.temp'`,
+          '&&',
+          'rm',
+          `'${this.filePath}'`,
+          '&&',
+          'mv',
+          `'${this.filePath}.temp'`,
+          `'${this.filePath}'`
+        ],
+        {
+          shell: true
+        }
+      );
+
+      ffmpeg.on('close', () => {
+        resolve(undefined);
+      });
+
+      const interval = setInterval(() => {
+        if (!ffmpeg.connected) {
+          clearInterval(interval);
+          resolve(undefined);
+        }
+      }, 30 * 1000);
+    });
   }
 }

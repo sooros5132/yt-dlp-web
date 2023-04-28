@@ -254,6 +254,7 @@ export class YtDlpHelper {
                 cacheData.download.progress = numeral(progress).format('0.00');
                 cacheData.download.completed = false;
                 cacheData.download.speed = numeral(speed).format('0.0b') + '/s';
+                cacheData.updatedAt = Date.now();
                 await cacheSetThrottle(uuid, cacheData);
               }
               break;
@@ -378,7 +379,7 @@ export class YtDlpHelper {
       ..._cacheData
     };
 
-    const setCacheInterval = setInterval(async () => {
+    const cacheInterval = setInterval(async () => {
       cacheData.updatedAt = Date.now();
       cacheData.download.pid = this.ytdlp?.pid || null;
       await CacheHelper.set(uuid, cacheData);
@@ -418,7 +419,7 @@ export class YtDlpHelper {
           stat = await fs.stat(fileDestination);
         } catch (e) {}
         if (stat) {
-          if (setCacheInterval) clearInterval(setCacheInterval);
+          if (cacheInterval) clearInterval(cacheInterval);
           cacheData.download.pid = null;
           cacheData.download.completed = true;
           cacheData.download.progress = '1';
@@ -469,7 +470,7 @@ export class YtDlpHelper {
       stderr.on('close', handleEnd);
 
       this.ytdlp?.on('exit', async () => {
-        if (setCacheInterval) clearInterval(setCacheInterval);
+        if (cacheInterval) clearInterval(cacheInterval);
       });
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {

@@ -236,7 +236,11 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   };
 
   useEffect(() => {
-    if (video.status === 'completed' || video.download.progress === '1') {
+    if (
+      video.status === 'completed' ||
+      video.download.progress === '1' ||
+      video.createdAt !== prevVideoRef.current.updatedAt
+    ) {
       setRecommendedDownloadRetry(false);
       return () => {
         prevVideoRef.current = video;
@@ -316,16 +320,12 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             {video.status !== 'completed' && (
               <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
                 <LoadingSvg className='text-xl' />
-                {!recommendedDownloadRetry &&
-                  video.status === 'recording' &&
-                  video.createdAt &&
-                  video.updatedAt &&
-                  video.createdAt !== video.updatedAt && (
-                    <div className='text-base text-center'>
-                      {' '}
-                      {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
-                    </div>
-                  )}
+                {video.createdAt !== video.updatedAt && (
+                  <div className='text-xs text-center'>
+                    {'Running time ≈'}
+                    {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
+                  </div>
+                )}
                 <div
                   className={classNames(
                     'text-sm text-center',
