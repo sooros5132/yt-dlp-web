@@ -47,8 +47,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
     },
     {
       refreshInterval: refreshIntervalTimeRef.current,
-      revalidateOnFocus: false,
-      errorRetryCount: 0,
+      errorRetryCount: 1,
       fallbackData: videoList
     }
   );
