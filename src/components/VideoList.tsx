@@ -240,7 +240,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     if (
       video.status === 'completed' ||
       video.download.progress === '1' ||
-      video.createdAt !== prevVideoRef.current.updatedAt
+      video.updatedAt !== prevVideoRef.current.updatedAt
     ) {
       setRecommendedDownloadRetry(false);
       return () => {
@@ -327,12 +327,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                     {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
                   </div>
                 )}
-                <div
-                  className={classNames(
-                    'text-sm text-center',
-                    recommendedDownloadRetry && 'animate-pulse'
-                  )}
-                >
+                <div className={classNames('text-sm text-center animate-pulse')}>
                   {recommendedDownloadRetry
                     ? "Video and audio may be merging, but can't you download it? try again with the button below."
                     : `${video.status}...`}
