@@ -69,15 +69,15 @@ export class YtDlpHelper {
       this.stdout = ytdlp.stdout;
       this.stderr = ytdlp.stderr;
       this.ytdlp = ytdlp;
+      this.stdout.setEncoding('utf-8');
+      this.stderr.setEncoding('utf-8');
 
       if (process.env.NODE_ENV === 'development') {
-        ytdlp.stderr.setEncoding('utf-8');
         ytdlp.stderr.on('data', (data) => {
           console.log('[stderr]', data?.trim?.());
         });
       }
       if (process.env.NODE_ENV === 'development') {
-        ytdlp.stdout.setEncoding('utf-8');
         ytdlp.stdout.on('data', (data) => {
           console.log('[stdout]', data?.trim?.());
         });
@@ -321,12 +321,10 @@ export class YtDlpHelper {
       };
 
       // stdout
-      stdout.setEncoding('utf-8');
       stdout.on('data', handleDataMessage);
       stdout.on('end', handleEndMessage);
 
       // stderr
-      stderr.setEncoding('utf-8');
       stderr.on('data', handleDataMessage);
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {

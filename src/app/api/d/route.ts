@@ -137,9 +137,7 @@ export async function GET(request: Request) {
             controller?.close?.();
           } catch (e) {}
         } else {
-          stdout.setEncoding('utf-8');
           stdout.on('data', handleStdoutData);
-          stderr.setEncoding('utf-8');
           stderr.on('data', handleStdoutData);
         }
 

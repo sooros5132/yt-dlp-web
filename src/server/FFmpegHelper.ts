@@ -29,6 +29,8 @@ export class FFmpegHelper {
         ]);
 
         ffprobe.stdout.setEncoding('utf-8');
+        ffprobe.stderr.setEncoding('utf-8');
+
         ffprobe.stdout.on('data', (data) => {
           try {
             const text = data?.trim?.();
@@ -52,7 +54,6 @@ export class FFmpegHelper {
             reject(e as string);
           }
         });
-        ffprobe.stderr.setEncoding('utf-8');
         ffprobe.stderr.on('data', (data) => {
           return reject(data?.trim?.() || '');
         });

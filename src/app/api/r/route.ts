@@ -129,7 +129,6 @@ export async function GET(request: Request) {
           stdout.off('data', handleStdoutData);
         }
       };
-      stdout.setEncoding('utf-8');
       stdout.on('data', handleStdoutData);
       stdout.on('end', () => {
         try {
