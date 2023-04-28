@@ -34,7 +34,7 @@ export class ProcessHelper {
     });
   }
 
-  async isYtDlpProcessRunning(url: string, format: [string | string]) {
+  async isYtDlpProcessRunning(url: string, format: [string, string]) {
     try {
       const executedCommand = await this.getCommandLine();
       if (

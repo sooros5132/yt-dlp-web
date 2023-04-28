@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       typeof searchParams.get('audioId') === 'string' ? searchParams.get('audioId') : '';
 
     const _format = `${videoId}${videoId && audioId ? '+' : ''}${audioId}`;
-    const format = ['-f', _format || 'bv+ba/b'];
+    const format = ['-f', _format || 'bv+ba/b'] as [string, string];
 
     let isAlreadyFormat = false;
 
