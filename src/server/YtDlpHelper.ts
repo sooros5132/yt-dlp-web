@@ -42,6 +42,7 @@ export class YtDlpHelper {
 
       const options = [
         ...this.parmas,
+        '--no-playlist',
         '--verbose',
         '--progress',
         '--no-continue',
@@ -96,7 +97,7 @@ export class YtDlpHelper {
       });
     }
     let stdoutChunks = [] as Array<any>;
-    const ytdlp = spawn('yt-dlp', ['--dump-json', this.url]);
+    const ytdlp = spawn('yt-dlp', ['--dump-json', '--no-playlist', this.url]);
 
     ytdlp.stdout.on('data', (data) => {
       stdoutChunks.push(data);
