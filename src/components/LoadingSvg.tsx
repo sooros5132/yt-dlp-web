@@ -23,7 +23,7 @@ export const LoadingSvg = ({
         r='20'
         fill='none'
         stroke='#70c542'
-        stroke-width='6'
+        strokeWidth='6'
       />
     </svg>
   );
