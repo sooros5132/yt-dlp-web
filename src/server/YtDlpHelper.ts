@@ -16,7 +16,6 @@ const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4
 const streamFilePathRegex = new RegExp(
   `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|part))'$`
 );
-("tHKJoWRIySU29KrFbtbN/playlist/index.m3u8 -c copy -f mpegts 'file:/downloads/lofi hip hop radio 📚 - beats to relax⧸study to 2023-04-27 17_00 (1920x1080)(jfKfPfyJRdk).mp4'");
 
 export class YtDlpHelper {
   public readonly url: string;
@@ -376,18 +375,18 @@ export class YtDlpHelper {
       },
       ..._cacheData
     };
+
+    const setCacheInterval = setInterval(async () => {
+      cacheData.updatedAt = Date.now();
+      cacheData.download.pid = this.ytdlp?.pid || null;
+      await CacheHelper.set(uuid, cacheData);
+    }, 3000);
     try {
       const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
       uuidList.unshift(uuid);
       await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
       await CacheHelper.set(uuid, cacheData);
       let _fileDestination: string | null = null;
-
-      const setCacheInterval = setInterval(async () => {
-        cacheData.updatedAt = Date.now();
-        cacheData.download.pid = this.ytdlp?.pid || null;
-        await CacheHelper.set(uuid, cacheData);
-      }, 3000);
 
       const handleDataMessage = async (_text: string) => {
         const message = _text?.trim?.();
@@ -396,7 +395,7 @@ export class YtDlpHelper {
           return;
         }
         const fileDestination =
-          streamFilePathRegex.exec(message)?.[1] || filePathRegex.exec(message)?.[1];
+          filePathRegex.exec(message)?.[1] || streamFilePathRegex.exec(message)?.[1];
         if (fileDestination) {
           cacheData.download.pid = this.ytdlp?.pid || null;
           cacheData.file.path = fileDestination;
@@ -407,17 +406,17 @@ export class YtDlpHelper {
       };
 
       const handleEnd = async () => {
-        if (!_fileDestination) {
+        const fileDestination = _fileDestination;
+        if (!fileDestination) {
           return;
         }
-        const fileDestination = _fileDestination;
         let stat: Stats | null = null;
+        _fileDestination = null;
         try {
           stat = await fs.stat(fileDestination);
         } catch (e) {}
         if (stat) {
-          clearInterval(setCacheInterval);
-          _fileDestination = null;
+          if (setCacheInterval) clearInterval(setCacheInterval);
           cacheData.download.pid = null;
           cacheData.download.completed = true;
           cacheData.download.progress = '1';
@@ -458,14 +457,14 @@ export class YtDlpHelper {
 
       stdout.on('data', handleDataMessage);
       stdout.on('end', handleEnd);
-      stderr.on('close', handleEnd);
+      stdout.on('close', handleEnd);
 
       stderr.on('data', handleDataMessage);
       stderr.on('end', handleEnd);
       stderr.on('close', handleEnd);
 
-      this.ytdlp?.on('exit', () => {
-        clearInterval(setCacheInterval);
+      this.ytdlp?.on('exit', async () => {
+        if (setCacheInterval) clearInterval(setCacheInterval);
       });
     } catch (e) {
       if (process.env.NODE_ENV === 'development') {

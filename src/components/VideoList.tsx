@@ -16,6 +16,8 @@ import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
 import isEqual from 'react-fast-compare';
 import { GoPrimitiveDot } from 'react-icons/go';
+import { LoadingSvg } from './LoadingSvg';
+import { PingSvg } from './PingSvg';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -106,8 +108,8 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
 
 const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const [isValidating, setValidating] = useState(false);
-  const [isImageError, setImageError] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
+  const [isThumbnailImageError, setThumbnailImageError] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
   const [firstPlay, setFirstPlay] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -143,7 +145,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     };
 
   const handleMouseLeave = () => {
-    if (!video?.download?.completed) {
+    if (video.status !== 'completed') {
       return;
     }
     if (!document.fullscreenElement) {
@@ -156,7 +158,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   };
 
   const handleMouseEnter = async () => {
-    if (!video?.download?.completed) {
+    if (video.status !== 'completed') {
       return;
     }
     const videoEl = videoRef.current;
@@ -231,10 +233,18 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     setValidating(false);
   };
 
+  const handleImageError = () => {
+    setThumbnailImageError(true);
+  };
+
   useEffect(() => {
-    if (prevVideoRef?.current?.download?.completed) {
-      return;
+    if (video.status === 'completed' || video.download.progress === '1') {
+      setRecommendedDownloadRetry(false);
+      return () => {
+        prevVideoRef.current = video;
+      };
     }
+
     const initialUpdatedAt = prevVideoRef?.current?.updatedAt;
     const initialProgress = prevVideoRef?.current?.download?.progress;
     const timeout = setTimeout(() => {
@@ -251,13 +261,9 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     }, 8000);
 
     return () => {
+      prevVideoRef.current = video;
       clearTimeout(timeout);
     };
-  }, []);
-
-  useEffect(() => {
-    prevVideoRef.current = video;
-    setRecommendedDownloadRetry(false);
   }, [video]);
 
   return (
@@ -274,28 +280,34 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               isMouseEntered ? 'flex' : 'hidden'
             )}
           >
-            {video?.download?.completed && (
+            {video.status === 'completed' && (
               <video
                 key={video.status || 'completed'}
                 ref={videoRef}
                 className='w-full h-full'
                 src={`/api/file?uuid=${video.uuid}`}
-                controls
                 muted
+                controls
+                preload='none'
               />
             )}
           </div>
           <div
             className={classNames('w-full h-full', isMouseEntered ? 'hidden' : 'block')}
-            onTouchEnd={handleMouseEnter}
+            onClick={handleMouseEnter}
           >
-            {video.thumbnail && !isImageError ? (
+            {video.thumbnail && !isThumbnailImageError ? (
               <figure className='w-full h-full'>
                 <img
                   className='w-full h-full object-cover'
-                  src={video.thumbnail}
+                  src={
+                    /^https?:\/?\/?/i.test(video.thumbnail)
+                      ? '/api/image?url=' + encodeURIComponent(video?.thumbnail)
+                      : video.thumbnail
+                  }
                   alt={'thumbnail'}
-                  onError={() => setImageError(true)}
+                  onError={handleImageError}
+                  loading='lazy'
                 />
               </figure>
             ) : (
@@ -303,11 +315,19 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <FcRemoveImage />
               </div>
             )}
-            {!video?.download?.completed && (
+            {video.status !== 'completed' && (
               <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
-                <div>
-                  <AiOutlineLoading3Quarters className='animate-spin' />
-                </div>
+                <LoadingSvg className='text-xl' />
+                {!recommendedDownloadRetry &&
+                  video.status === 'recording' &&
+                  video.createdAt &&
+                  video.updatedAt &&
+                  video.createdAt !== video.updatedAt && (
+                    <div className='text-base text-center'>
+                      {' '}
+                      {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
+                    </div>
+                  )}
                 <div
                   className={classNames(
                     'text-sm text-center',
@@ -342,25 +362,26 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
           <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>
             {video.is_live && video.status === 'recording' && (
-              <div className='relative inline-block pointer-events-none text-xl text-rose-600'>
-                <GoPrimitiveDot className='animate-ping' />
-                <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+              <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
+                <PingSvg />
               </div>
             )}
-            {video.title}
+            <span>{video.title}</span>
           </h2>
           <div className='flex items-center justify-between'>
             <div className='btn-group rounded-xl'>
-              {!video?.download?.completed ? (
-                <button className='btn btn-sm btn-outline btn-error text-lg'>
-                  <MdOutlineVideocamOff
-                    key={'no-completed'}
-                    onClick={() =>
-                      toast.warn(
-                        'The file cannot be erased while downloading. Please erase it yourself.'
-                      )
-                    }
-                  />
+              {video.status !== 'completed' ? (
+                <button
+                  className='btn btn-sm btn-outline btn-error text-lg'
+                  onClick={() =>
+                    toast.warn(
+                      video?.is_live
+                        ? 'Please erase it after stop recording'
+                        : 'The file cannot be erased while downloading. Please erase it yourself.'
+                    )
+                  }
+                >
+                  <MdOutlineVideocamOff key={'no-completed'} />
                 </button>
               ) : (
                 <button
@@ -395,11 +416,11 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               >
                 <TbExternalLink />
               </a>
-              {video?.download?.completed ? (
+              {video.status === 'completed' ? (
                 <a
                   className={'btn btn-sm btn-primary text-xl dark:btn-secondary'}
                   href={
-                    video?.download?.completed ? `/api/file?uuid=${video.uuid}&download=true` : ''
+                    video.status === 'completed' ? `/api/file?uuid=${video.uuid}&download=true` : ''
                   }
                   rel='noopener noreferrer'
                   target='_blank'
@@ -416,19 +437,21 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   disabled={video?.is_live}
                   onClick={handleClickRestartDownload}
                 >
-                  <VscRefresh />
+                  {video?.is_live ? <AiOutlineCloudDownload /> : <VscRefresh />}
                 </button>
               )}
             </div>
           </div>
         </div>
-        {!video?.download?.completed ? (
+        {video.status === 'completed' ? (
+          <div className='h-1'></div>
+        ) : video.status === 'recording' ? (
+          <div className='h-1 gradient-background' />
+        ) : (
           <progress
             className='progress progress-info w-full h-1'
             value={Number(numeral(video.download.progress).format('0.00') || 0)}
           />
-        ) : (
-          <div className='h-1'></div>
         )}
       </div>
     </div>

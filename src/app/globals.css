@@ -21,20 +21,50 @@ body {
   height: 100%;
 }
 
-.gradient-background {
-  background: linear-gradient(to left, #d70fdd, #ff0075, #ff6b00, #caba00, #12eb40);
-  background-size: 400% 400%;
-  animation: gradient 10s linear infinite;
+@layer components {
+  .gradient-background {
+    @apply bg-[length:400%_400%] bg-recording animate-recording;
+  }
+
+  .loader-circle {
+    stroke-dasharray: 150, 200;
+    stroke-dashoffset: -10;
+    animation: dash 1.5s ease-in-out infinite, color 6s linear infinite;
+    stroke-linecap: round;
+  }
 }
 
-@keyframes gradient {
+@keyframes dash {
   0% {
-    background-position: 0% 50%;
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
   }
   50% {
-    background-position: 100% 50%;
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -35;
   }
   100% {
-    background-position: 0% 50%;
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -124;
+  }
+}
+@keyframes color {
+  0% {
+    stroke: #d70fdd;
+  }
+  20% {
+    stroke: #ff0075;
+  }
+  40% {
+    stroke: #ff6b00;
+  }
+  60% {
+    stroke: #caba00;
+  }
+  80% {
+    stroke: #12eb40;
+  }
+  100% {
+    stroke: #d70fdd;
   }
 }

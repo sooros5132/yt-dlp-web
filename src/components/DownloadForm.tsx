@@ -17,6 +17,7 @@ import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
 import { VideoFormat, VideoMetadata } from '@/types/video';
 import { GoPrimitiveDot } from 'react-icons/go';
+import { PingSvg } from './PingSvg';
 
 interface State {
   url: string;
@@ -353,9 +354,8 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
           onClick={handleClickBestButton}
         >
           {metadata.is_live && (
-            <div className='relative pointer-events-none text-xl text-rose-600'>
-              <GoPrimitiveDot className='animate-ping' />
-              <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+            <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
+              <PingSvg />
             </div>
           )}
           BEST: {metadata.best.resolution} {metadata.best.vcodec}
@@ -437,9 +437,8 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   type='submit'
                 >
                   {metadata.is_live && (
-                    <div className='relative pointer-events-none text-xl text-rose-600'>
-                      <GoPrimitiveDot className='animate-ping' />
-                      <GoPrimitiveDot className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ' />
+                    <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
+                      <PingSvg />
                     </div>
                   )}
                   {selectedFormats?.video?.format_id &&

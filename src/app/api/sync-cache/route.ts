@@ -94,6 +94,8 @@ export async function POST() {
 
             data.file.size = size;
             data.file.length = length;
+            data.status = 'completed';
+            data.updatedAt = Date.now();
 
             try {
               const ffmpegHelper = new FFmpegHelper({
@@ -102,7 +104,6 @@ export async function POST() {
               const resolution = await ffmpegHelper.getVideoResolution();
               data.file.resolution = resolution;
             } catch (error) {}
-            data.updatedAt = Date.now();
             await CacheHelper.set(uuid, data);
           } catch (e) {}
         })
