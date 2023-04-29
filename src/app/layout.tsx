@@ -1,10 +1,11 @@
+import './globals.css';
 import type { PropsWithChildren } from 'react';
 import { Inter } from 'next/font/google';
-import './globals.css';
-import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
-import { ClientWorks } from '@/components/ClientWorks';
 import classNames from 'classnames';
 import type { Metadata } from 'next';
+import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
+import { ClientWorks } from '@/components/ClientWorks';
+import { VideoPlayer } from '@/components/VideoPlayer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
         {children}
         <ToastContainerWrapper />
         <ClientWorks />
+        <VideoPlayer />
       </body>
     </html>
   );

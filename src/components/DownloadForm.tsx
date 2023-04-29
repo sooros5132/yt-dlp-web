@@ -16,7 +16,6 @@ import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
 import { VideoFormat, VideoMetadata } from '@/types/video';
-import { GoPrimitiveDot } from 'react-icons/go';
 import { PingSvg } from './PingSvg';
 
 interface State {
@@ -35,7 +34,7 @@ const initialState: State = {
   enabledBestFormat: true
 };
 
-const useBearStore = create(
+const useStore = create(
   persist<Store>(
     (set, get) => ({
       ...initialState,
@@ -68,7 +67,7 @@ const useBearStore = create(
 );
 
 export function DownloadForm() {
-  const { changeUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useBearStore();
+  const { changeUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);

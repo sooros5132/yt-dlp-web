@@ -2,11 +2,12 @@
 
 import React, { useLayoutEffect } from 'react';
 import { useSiteSettingStore } from '@/store/siteSetting';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
 
 export function ClientWorks() {
   useLayoutEffect(() => {
-    const { setHydrated } = useSiteSettingStore.getState();
-    setHydrated();
+    useSiteSettingStore.getState().setHydrated();
+    useVideoPlayerStore.getState().close();
   }, []);
 
   return <></>;

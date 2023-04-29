@@ -17,6 +17,8 @@ import { BsDatabaseGear } from 'react-icons/bs';
 import isEqual from 'react-fast-compare';
 import { LoadingSvg } from './LoadingSvg';
 import { PingSvg } from './PingSvg';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
+import { isMobile } from '@/client/utils';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -109,8 +111,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
+  const [isNotSupportedCodec, setNotSupportedCodec] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
-  const [firstPlay, setFirstPlay] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
 
@@ -163,12 +165,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     const videoEl = videoRef.current;
     if (videoEl) {
       try {
-        await videoEl?.play?.();
-        if (firstPlay) {
-          setTimeout(() => {
-            videoEl.volume = 0.5;
-          }, 1);
-          setFirstPlay(false);
+        if (!isMobile()) {
+          await videoEl?.play?.();
         }
         setMouseEntered(true);
       } catch (e) {}
@@ -236,6 +234,28 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     setThumbnailImageError(true);
   };
 
+  const handleClickVideo = async () => {
+    if (video.status !== 'completed') {
+      return;
+    }
+    const videoEl = videoRef.current;
+    if (videoEl) {
+      try {
+        if (!isMobile()) {
+          await videoEl?.play?.();
+          if (!videoEl.played) {
+            videoEl.pause();
+          }
+        }
+        const openVideo = useVideoPlayerStore.getState().open;
+        setMouseEntered(false);
+        openVideo(video);
+      } catch (e) {
+        if (typeof e === 'string' && e.includes('not supported')) setNotSupportedCodec(true);
+      }
+    }
+  };
+
   useEffect(() => {
     if (
       video.status === 'completed' ||
@@ -273,7 +293,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     <div>
       <div className='group card card-side bg-base-100 shadow-xl rounded-xl flex-col overflow-hidden'>
         <div
-          className='relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video'
+          className='relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video cursor-pointer'
+          onClick={handleClickVideo}
           onMouseLeave={handleMouseLeave}
           onMouseEnter={handleMouseEnter}
         >
@@ -287,10 +308,9 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               <video
                 key={video.status || 'completed'}
                 ref={videoRef}
-                className='w-full h-full'
+                className='w-full h-full outline-none'
                 src={`/api/file?uuid=${video.uuid}`}
                 muted
-                controls
                 preload='none'
               />
             )}
@@ -300,7 +320,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             onClick={handleMouseEnter}
           >
             {video.thumbnail && !isThumbnailImageError ? (
-              <figure className='w-full h-full'>
+              <figure className='relative w-full h-full bg-black/30'>
                 <img
                   className='w-full h-full object-cover'
                   src={
@@ -312,6 +332,16 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   onError={handleImageError}
                   loading='lazy'
                 />
+                {isNotSupportedCodec && (
+                  <div
+                    className='absolute flex top-0 left-0 items-center text-center w-full h-full overflow-hidden cursor-auto'
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className='bg-black/70 text-white py-2'>
+                      {`Your browser does not support playing ${video.file.codecName} codec.`}
+                    </div>
+                  </div>
+                )}
               </figure>
             ) : (
               <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl bg-base-content/5 select-none '>
