@@ -380,9 +380,9 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               {numeral(video.file.size).format('0.0b')}
             </div>
           )}
-          {!isMouseEntered && typeof video.file.length === 'number' && (
+          {!isMouseEntered && video.file.duration && (
             <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
-              {numeral(video.file.length).format(video.file.length >= 3600 ? '00:00:00' : '00:00')}
+              {numeral(video.file.duration).format('00:00:00')}
             </div>
           )}
         </div>

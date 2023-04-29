@@ -77,25 +77,9 @@ export async function POST() {
               return;
             }
 
-            const buf = Buffer.alloc(100);
-            const file = await fs.open(filePath);
-            const { buffer } = await file.read({
-              buffer: buf,
-              length: 100,
-              offset: 0,
-              position: 0
-            });
-            await file.close();
-
-            const start = buffer.indexOf(Buffer.from('mvhd')) + 16;
-            const timeScale = buffer.readUInt32BE(start);
-            const duration = buffer.readUInt32BE(start + 4);
-            const movieLength = Math.floor(duration / timeScale);
-
             const size = stat.size;
 
             data.file.size = size;
-            data.file.length = movieLength;
             data.status = 'completed';
             data.updatedAt = Date.now();
 

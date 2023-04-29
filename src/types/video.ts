@@ -42,7 +42,6 @@ export interface VideoInfo {
     path: string | null;
     name: string | null;
     size?: number;
-    length?: number;
   };
   download: {
     completed: boolean;
@@ -61,6 +60,7 @@ export interface Streams {
   rFrameRate?: number;
   colorPrimaries?: string;
   codecName?: string;
+  duration?: string;
 }
 
 export interface FFmpegStreamsJson {
@@ -71,5 +71,6 @@ export interface FFmpegStreamsJson {
     r_frame_rate: string;
     color_primaries: string;
     codec_name: string;
+    duration: string;
   }[];
 }

@@ -292,22 +292,6 @@ export class YtDlpHelper {
               cacheData.status = 'completed';
               cacheData.file.size = stat.size;
 
-              const buf = Buffer.alloc(100);
-              const file = await fs.open(cacheData.file.path);
-              const { buffer } = await file.read({
-                buffer: buf,
-                length: 100,
-                offset: 0,
-                position: 0
-              });
-              await file.close();
-
-              const start = buffer.indexOf(Buffer.from('mvhd')) + 16;
-              const timeScale = buffer.readUInt32BE(start);
-              const duration = buffer.readUInt32BE(start + 4);
-              const movieLength = Math.floor(duration / timeScale);
-
-              cacheData.file.length = movieLength;
               try {
                 const ffmpegHelper = new FFmpegHelper({
                   filePath: cacheData.file.path
@@ -430,22 +414,6 @@ export class YtDlpHelper {
           cacheData.updatedAt = Date.now();
           await CacheHelper.set(uuid, cacheData);
 
-          const buf = Buffer.alloc(100);
-          const file = await fs.open(cacheData.file.path);
-          const { buffer } = await file.read({
-            buffer: buf,
-            length: 100,
-            offset: 0,
-            position: 0
-          });
-          await file.close();
-
-          const start = buffer.indexOf(Buffer.from('mvhd')) + 16;
-          const timeScale = buffer.readUInt32BE(start);
-          const duration = buffer.readUInt32BE(start + 4);
-          const movieLength = Math.floor(duration / timeScale);
-
-          cacheData.file.length = movieLength;
           try {
             const ffmpegHelper = new FFmpegHelper({
               filePath: cacheData.file.path
