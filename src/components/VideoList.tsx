@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { memo, useEffect, useRef, useState } from 'react';
@@ -238,11 +237,17 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     if (video.status !== 'completed') {
       return;
     }
+    const NOT_SUPPORTED = 'not supported';
     const videoEl = videoRef.current;
     if (videoEl) {
       try {
         if (!isMobile()) {
-          await videoEl?.play?.();
+          try {
+            await videoEl?.play?.();
+            setNotSupportedCodec(false);
+          } catch (e) {
+            throw NOT_SUPPORTED;
+          }
           if (!videoEl.played) {
             videoEl.pause();
           }
@@ -251,7 +256,9 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         setMouseEntered(false);
         openVideo(video);
       } catch (e) {
-        if (typeof e === 'string' && e.includes('not supported')) setNotSupportedCodec(true);
+        if (e === NOT_SUPPORTED) {
+          setNotSupportedCodec(true);
+        }
       }
     }
   };
@@ -319,8 +326,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             className={classNames('w-full h-full', isMouseEntered ? 'hidden' : 'block')}
             onClick={handleMouseEnter}
           >
-            {video.thumbnail && !isThumbnailImageError ? (
-              <figure className='relative w-full h-full bg-black/30'>
+            <figure className='relative w-full h-full bg-black/30'>
+              {video.thumbnail && !isThumbnailImageError ? (
                 <img
                   className='w-full h-full object-cover'
                   src={
@@ -332,22 +339,22 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   onError={handleImageError}
                   loading='lazy'
                 />
-                {isNotSupportedCodec && (
-                  <div
-                    className='absolute flex top-0 left-0 items-center text-center w-full h-full overflow-hidden cursor-auto'
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className='bg-black/70 text-white py-2'>
-                      {`Your browser does not support playing ${video.file.codecName} codec.`}
-                    </div>
+              ) : (
+                <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl bg-base-content/5 select-none '>
+                  <FcRemoveImage />
+                </div>
+              )}
+              {isNotSupportedCodec && (
+                <div
+                  className='absolute flex top-0 left-0 items-center text-center w-full h-full overflow-hidden cursor-auto'
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className='w-full bg-black/70 text-white text-sm md:text-base py-2'>
+                    {`The file does not exist or cannot be played.`}
                   </div>
-                )}
-              </figure>
-            ) : (
-              <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl bg-base-content/5 select-none '>
-                <FcRemoveImage />
-              </div>
-            )}
+                </div>
+              )}
+            </figure>
             {video.status !== 'completed' && (
               <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
                 <LoadingSvg className='text-xl' />

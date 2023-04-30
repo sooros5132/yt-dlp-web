@@ -1,37 +1,47 @@
 'use client';
 
 import { useVideoPlayerStore } from '@/store/videoPlayer';
-import { AiOutlineClose } from 'react-icons/ai';
+import { AiOutlineClose, AiOutlineFullscreen } from 'react-icons/ai';
 import { useEffect, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useSiteSettingStore } from '@/store/siteSetting';
-import { TbExternalLink } from 'react-icons/tb';
+import { TbExternalLink, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
+import classNames from 'classnames';
 
 export const VideoPlayer = () => {
-  const { video } = useVideoPlayerStore((state) => ({ video: state.video }), shallow);
+  const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen } = useVideoPlayerStore(
+    (state) => ({
+      video: state.video,
+      isVideoPlayerOpen: state.isVideoPlayerOpen,
+      isNotSupportedCodec: state.isNotSupportedCodec,
+      enableWideScreen: state.enableWideScreen
+    }),
+    shallow
+  );
   const hydrated = useSiteSettingStore((state) => state.hydrated, shallow);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const videoEl = videoRef.current;
-    if (!video || !videoEl) {
+    if (!isVideoPlayerOpen || !video || !videoEl) {
       return;
     }
     (async function () {
+      const { currentTime, volume, setNotSupportedCodec } = useVideoPlayerStore.getState();
+
+      videoEl.volume = volume || 0.75;
+      videoEl.currentTime = currentTime || 0;
+
       try {
-        const { currentTime, volume } = useVideoPlayerStore.getState();
-
-        videoEl.volume = volume || 0.75;
-        videoEl.currentTime = currentTime || 0;
-
         await videoEl?.play?.();
+        setNotSupportedCodec(false);
       } catch (e) {
-        return;
+        setNotSupportedCodec(true);
       }
     })();
-  }, [video]);
+  }, [isVideoPlayerOpen, video]);
 
-  if (!video || !hydrated) {
+  if (!hydrated || !isVideoPlayerOpen || !video) {
     return null;
   }
 
@@ -69,8 +79,23 @@ export const VideoPlayer = () => {
     } catch (e) {}
   };
 
+  const handleClickWideButton = () => {
+    const { setEnableWideScreen, enableWideScreen } = useVideoPlayerStore.getState();
+    setEnableWideScreen(!enableWideScreen);
+  };
+
+  const handleClickFullScreenButton = async () => {
+    const videoEl = videoRef.current as any;
+    if (!videoEl) {
+      return;
+    }
+    try {
+      if (videoEl?.requestFullscreen) return videoEl?.requestFullscreen?.();
+    } catch (e) {}
+  };
+
   return (
-    <div className='fixed top-0 left-0 w-full h-full flex flex-col items-center space-between bg-black/80 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden'>
+    <div className='fixed top-0 left-0 w-full h-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden'>
       <div className='flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/70 dark:bg-black/30 text-white'>
         <div className='pl-2 font-bold line-clamp-2'>{video.title}</div>
         <div className='flex gap-x-1.5 whitespace-nowrap'>
@@ -85,6 +110,20 @@ export const VideoPlayer = () => {
           </a>
           <button
             className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+            onClick={handleClickWideButton}
+          >
+            {enableWideScreen ? <TbViewportNarrow /> : <TbViewportWide />}
+          </button>
+          {document && document.fullscreenEnabled && (
+            <button
+              className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+              onClick={handleClickFullScreenButton}
+            >
+              <AiOutlineFullscreen />
+            </button>
+          )}
+          <button
+            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
             onClick={handleClose}
           >
             <AiOutlineClose />
@@ -92,16 +131,29 @@ export const VideoPlayer = () => {
         </div>
       </div>
       <div
-        className='flex-auto flex flex-col items-center justify-center w-full h-full cursor-pointer overflow-hidden'
+        className='relative flex-auto flex flex-col items-center justify-center w-full h-full cursor-pointer overflow-hidden'
         onClick={handleClose}
       >
         <video
           ref={videoRef}
-          className='max-w-full max-h-full object-contain outline-none'
+          className={classNames(
+            'max-w-full max-h-full object-contain outline-none',
+            enableWideScreen && 'w-full'
+          )}
           src={`/api/file?uuid=${video.uuid}`}
           controls
           onClick={handleClickVideo}
         />
+        {isNotSupportedCodec && (
+          <div
+            className='absolute flex top-0 left-0 items-center text-center w-full h-full pointer-events-none cursor-auto'
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className='w-full bg-black/70 text-white text-sm md:text-base py-2'>
+              {`The file does not exist or cannot be played.`}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

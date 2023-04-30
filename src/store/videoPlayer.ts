@@ -4,6 +4,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface VideoPlayerState {
   isVideoPlayerOpen: boolean;
+  isNotSupportedCodec: boolean;
+  enableWideScreen: boolean;
   videoUuid: string;
   video: VideoInfo | null;
   currentTime: number;
@@ -15,10 +17,14 @@ interface VideoPlayerStore extends VideoPlayerState {
   close: () => void;
   setVolume: (volume: number) => void;
   setCurrentTime: (currentTime: number) => void;
+  setNotSupportedCodec: (isNotSupportedCodec: boolean) => void;
+  setEnableWideScreen: (enableWideScreen: boolean) => void;
 }
 
 const initialState: VideoPlayerState = {
   isVideoPlayerOpen: false,
+  isNotSupportedCodec: false,
+  enableWideScreen: false,
   video: null,
   videoUuid: '',
   currentTime: 0,
@@ -35,6 +41,7 @@ export const useVideoPlayerStore = create(
 
           return {
             isVideoPlayerOpen: true,
+            isNotSupportedCodec: false,
             video,
             videoUuid: video?.uuid || '',
             currentTime: nextCurrentTime
@@ -44,6 +51,7 @@ export const useVideoPlayerStore = create(
       close() {
         set({
           isVideoPlayerOpen: false,
+          isNotSupportedCodec: false,
           video: null
         });
       },
@@ -52,6 +60,12 @@ export const useVideoPlayerStore = create(
       },
       setCurrentTime(currentTime: number) {
         set({ currentTime });
+      },
+      setNotSupportedCodec(isNotSupportedCodec: boolean) {
+        set({ isNotSupportedCodec });
+      },
+      setEnableWideScreen(enableWideScreen: boolean) {
+        set({ enableWideScreen });
       }
     }),
     {

@@ -65,6 +65,10 @@ body {
   .scrollbar-hidden::-webkit-scrollbar-thumb:hover {
     background-color: #717171;
   }
+  :root {
+    --site-min-width: 300px;
+  }
+
   .gradient-background {
     @apply bg-[length:400%_400%] bg-recording animate-recording;
   }
