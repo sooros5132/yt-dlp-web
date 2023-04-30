@@ -239,12 +239,12 @@ const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
           <div className='mt-auto line-clamp-2 break-all text-base-content/60'>
             <a
               className='link link-hover text-sm'
-              href={metadata.original_url}
+              href={metadata.originalUrl}
               rel='noopener noreferrer'
               target='_blank'
             >
               <AiOutlineLink className='inline' />
-              {metadata.original_url}
+              {metadata.originalUrl}
             </a>
           </div>
         </div>
@@ -262,7 +262,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   for (const format of metadata?.formats) {
     if (format.resolution === 'audio only') {
       audioFormat.unshift(format);
-    } else if (format.video_ext !== 'none') {
+    } else if (format.videoExt !== 'none') {
       videoFormat.unshift(format);
     }
   }
@@ -297,15 +297,15 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
       return;
     }
     await requestDownload({
-      url: metadata.original_url,
-      videoId: selectedFormats?.video?.format_id,
-      audioId: selectedFormats?.audio?.format_id
+      url: metadata.originalUrl,
+      videoId: selectedFormats?.video?.formatId,
+      audioId: selectedFormats?.audio?.formatId
     });
   };
 
   const handleClickBestButton = async () => {
     await requestDownload({
-      url: metadata.original_url
+      url: metadata.originalUrl
     });
   };
 
@@ -347,11 +347,11 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
           className={classNames(
             'btn btn-sm btn-primary normal-case',
             isValidating && 'loading',
-            metadata.is_live && 'text-white gradient-background border-0'
+            metadata.isLive && 'text-white gradient-background border-0'
           )}
           onClick={handleClickBestButton}
         >
-          {metadata.is_live && (
+          {metadata.isLive && (
             <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
               <PingSvg />
             </div>
@@ -360,7 +360,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
           {metadata.best.acodec && metadata.best.vcodec && '+'}
           {metadata.best.acodec}
         </button>
-        {metadata.is_live && (
+        {metadata.isLive && (
           <div className='mt-1 text-center text-xs text-base-content/60'>Live Stream!</div>
         )}
       </div>
@@ -401,7 +401,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   </div>
                   {videoFormat.map((format) => (
                     <VideoDownloadRadio
-                      key={format.format_id}
+                      key={format.formatId}
                       type='video'
                       isBest={false}
                       format={format}
@@ -416,7 +416,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   </div>
                   {audioFormat.map((format) => (
                     <VideoDownloadRadio
-                      key={format.format_id}
+                      key={format.formatId}
                       type='audio'
                       isBest={false}
                       format={format}
@@ -430,21 +430,21 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   className={classNames(
                     'btn btn-sm btn-primary btn-info px-3 normal-case',
                     isValidating && 'loading',
-                    metadata.is_live && 'text-white gradient-background border-0'
+                    metadata.isLive && 'text-white gradient-background border-0'
                   )}
                   type='submit'
                 >
-                  {metadata.is_live && (
+                  {metadata.isLive && (
                     <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
                       <PingSvg />
                     </div>
                   )}
-                  {selectedFormats?.video?.format_id &&
-                    `${selectedFormats?.video?.format_note || selectedFormats?.video?.resolution} ${
+                  {selectedFormats?.video?.formatId &&
+                    `${selectedFormats?.video?.formatNote || selectedFormats?.video?.resolution} ${
                       selectedFormats?.video?.vcodec
                     }`}
                   {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
-                  {selectedFormats?.audio?.format_id && selectedFormats?.audio?.acodec}
+                  {selectedFormats?.audio?.formatId && selectedFormats?.audio?.acodec}
                   <span>
                     {(selectedFormats?.video || selectedFormats?.audio) && <>&nbsp;</>}Optional
                     Download
@@ -482,12 +482,10 @@ const VideoDownloadRadio = ({
 
     switch (type) {
       case 'audio': {
-        return `${format.format_note ? format.format_note + ' ' : ''}${format.acodec}`;
+        return `${format.formatNote || format.formatId} ${format.acodec}`;
       }
       case 'video': {
-        return `${format.format_note || format.resolution} ${
-          format.vcodec ? ' ' + format.vcodec : ''
-        }`;
+        return `${format.formatNote || format.formatId} ${format.vcodec}`;
       }
     }
   })();

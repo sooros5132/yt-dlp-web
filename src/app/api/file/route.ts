@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import { YtDlpHelper } from '@/server/YtDlpHelper';
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
+import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { VideoInfo } from '@/types/video';
 import { lookup } from 'mime-types';
+import { ProcessHelper } from '@/server/ProcessHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,17 +125,23 @@ export async function DELETE(request: Request) {
       }
 
       if (videoInfo?.download?.pid) {
-        const ytdlp = new YtDlpHelper({
-          url: videoInfo.url,
+        const helper = new ProcessHelper({
           pid: videoInfo.download.pid
         });
-        ytdlp.kill();
+        helper.kill();
       }
 
       const newVideoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);
       try {
         if (deleteFile && videoInfo.file.path) {
           await fs.unlink(videoInfo.file.path);
+          if (videoInfo.localThumbnail) {
+            if (videoInfo.localThumbnail.startsWith(DOWNLOAD_PATH)) {
+              await fs.unlink(videoInfo.localThumbnail);
+            } else {
+              await fs.unlink(CACHE_PATH + '/thumbnails/' + videoInfo.localThumbnail);
+            }
+          }
         }
       } catch (e) {}
       await CacheHelper.delete(videoInfo.uuid);

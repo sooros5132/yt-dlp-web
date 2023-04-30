@@ -2,11 +2,10 @@ import { VideoInfo } from '@/types/video';
 import { YtDlpHelper } from '@/server/YtDlpHelper';
 import { CacheHelper, DOWNLOAD_PATH } from '@/server/CacheHelper';
 import { NextResponse } from 'next/server';
-import { Stats, promises as fs } from 'fs';
-import { FFmpegHelper } from '@/server/FFmpegHelper';
+
+export const dynamic = 'force-dynamic';
 
 const encoder = new TextEncoder();
-const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm))$`);
 
 // Restart Download
 export async function GET(request: Request) {
@@ -25,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
-  if (!videoInfo || !videoInfo?.download.format) {
+  if (!videoInfo || !videoInfo?.format) {
     return NextResponse.json(
       {
         error: 'Please delete the video file and retry download.'
@@ -47,7 +46,7 @@ export async function GET(request: Request) {
 
   const ytdlp = new YtDlpHelper({
     url,
-    parmas: [...(videoInfo.download.format || [])]
+    format: videoInfo.format
   });
 
   const metadata = await ytdlp.getMetadata();
@@ -57,92 +56,29 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      await ytdlp.start();
-
-      const stdout = ytdlp.getStdout();
-      const stderr = ytdlp.getStderr();
-
-      const handleStdoutData = async (_text: string) => {
-        const text = _text?.trim?.();
-
-        if (ytdlp.getIsDownloadStarted() || !text) {
-          return;
-        }
-
-        const fileDestination = filePathRegex.exec(text)?.[0];
-        if (!text?.startsWith('[download]') && !fileDestination) {
-          return;
-        }
-
-        ytdlp.setIsDownloadStarted(true);
-
-        controller.enqueue(
-          encoder.encode(
-            JSON.stringify({
-              success: true,
-              url,
-              status: fileDestination ? 'already' : 'downloading',
-              timestamp: Date.now()
-            })
-          )
-        );
-        try {
-          let stat: Stats | null = null;
-          try {
-            if (fileDestination) stat = await fs.stat(fileDestination!);
-          } catch (e) {}
-          const newVideoInfo: VideoInfo = {
-            ...videoInfo,
-            file: {
-              ...videoInfo.file,
-              name: fileDestination?.replace?.(DOWNLOAD_PATH + '/', '') || null,
-              path: fileDestination || null
-            },
-            download: {
-              ...videoInfo.download,
-              completed: false,
-              progress: '0',
-              pid: null
-            }
-          };
-
-          if (stat) newVideoInfo.file.size = stat?.size;
-
-          if (stat && fileDestination) {
-            const ffmpegHelper = new FFmpegHelper({
-              filePath: fileDestination
-            });
-            const streams = await ffmpegHelper.getVideoStreams();
-            newVideoInfo.file = {
-              ...newVideoInfo.file,
-              ...streams
-            };
-            newVideoInfo.download.completed = true;
-            newVideoInfo.download.progress = '1';
-            newVideoInfo.status = 'completed';
-            newVideoInfo.updatedAt = Date.now();
-            await CacheHelper.set(uuid, newVideoInfo);
-          } else {
-            ytdlp.writeDownloadStatusToDB(newVideoInfo, true);
-          }
-        } catch (e) {
-        } finally {
+      await ytdlp.start({
+        uuid,
+        isDownloadRestart: true,
+        downloadStartCallback() {
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                success: true,
+                url,
+                status: ytdlp.getIsFormatExist() ? 'already' : 'downloading',
+                timestamp: Date.now()
+              })
+            )
+          );
           try {
             controller?.close?.();
           } catch (e) {}
-          stdout.off('data', handleStdoutData);
+        },
+        processExitCallback() {
+          try {
+            controller?.close?.();
+          } catch (e) {}
         }
-      };
-      stdout.on('data', handleStdoutData);
-      stdout.on('end', () => {
-        try {
-          controller?.close?.();
-        } catch (e) {}
-      });
-      stderr.on('end', () => {
-        try {
-          controller?.close?.();
-        } catch (e) {}
       });
     }
   });

@@ -34,13 +34,13 @@ export class ProcessHelper {
     });
   }
 
-  async isYtDlpProcessRunning(url: string, format: [string, string]) {
+  async isYtDlpProcessRunning(url: string, format: string) {
     try {
       const executedCommand = await this.getCommandLine();
       if (
         executedCommand.includes('/usr/bin/yt-dlp') &&
         executedCommand.includes(url) &&
-        executedCommand.includes(format.join(' '))
+        executedCommand.includes(`-f ${format}`)
       ) {
         return true;
       }

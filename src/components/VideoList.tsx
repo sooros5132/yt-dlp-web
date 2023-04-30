@@ -39,7 +39,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
         MAX_INTERVAL_Time
       );
       for (const video of videos) {
-        if (video.download && !video.download.completed) {
+        if (video.download && video.status !== 'completed') {
           nextIntervalTime = 3 * 1000;
         }
       }
@@ -281,11 +281,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
       const nextProgress = prevVideoRef?.current?.download?.progress;
       const nextUpdatedAt = prevVideoRef.current.updatedAt;
 
-      if (
-        !prevVideoRef?.current?.download?.completed &&
-        initialProgress === nextProgress &&
-        initialUpdatedAt === nextUpdatedAt
-      ) {
+      if (initialProgress === nextProgress && initialUpdatedAt === nextUpdatedAt) {
         setRecommendedDownloadRetry(true);
       }
     }, 8000);
@@ -331,8 +327,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <img
                   className='w-full h-full object-cover'
                   src={
-                    /^https?:\/?\/?/i.test(video.thumbnail)
-                      ? '/api/image?url=' + encodeURIComponent(video?.thumbnail)
+                    video.status === 'completed' && video.localThumbnail
+                      ? '/api/thumbnail?uuid=' + video.uuid
                       : video.thumbnail
                   }
                   alt={'thumbnail'}
@@ -395,7 +391,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         </div>
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
           <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>
-            {video.is_live && video.status === 'recording' && (
+            {video.isLive && video.status === 'recording' && (
               <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
                 <PingSvg />
               </div>
@@ -409,7 +405,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   className='btn btn-sm btn-outline btn-error text-lg'
                   onClick={() =>
                     toast.warn(
-                      video?.is_live
+                      video?.isLive
                         ? 'Please erase it after stop recording'
                         : 'The file cannot be erased while downloading. Please erase it yourself.'
                     )
@@ -433,7 +429,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <MdPlaylistRemove />
               </button>
             </div>
-            {video.is_live && video.status === 'recording' && (
+            {video.isLive && video.status === 'recording' && (
               <button
                 className='btn btn-sm btn-circle btn-outline btn-error text-lg'
                 onClick={handleClickStopRecording}
@@ -468,10 +464,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                     'btn btn-sm btn-primary text-lg dark:btn-secondary',
                     recommendedDownloadRetry && 'animate-pulse'
                   )}
-                  disabled={video?.is_live}
+                  disabled={video?.isLive}
                   onClick={handleClickRestartDownload}
                 >
-                  {video?.is_live ? <AiOutlineCloudDownload /> : <VscRefresh />}
+                  {video?.isLive ? <AiOutlineCloudDownload /> : <VscRefresh />}
                 </button>
               )}
             </div>
