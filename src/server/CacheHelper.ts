@@ -1,8 +1,9 @@
 import path from 'path';
 import { promises as fs } from 'fs';
+import { lruCache } from './lruCache';
 
 export const DOWNLOAD_PATH = path.join('/', 'downloads');
-export const CACHE_PATH = path.join('/', 'downloads', '.cache');
+export const CACHE_PATH = path.join('/', 'cache');
 export const VIDEO_LIST_FILE = 'video-list';
 
 export const CACHE_FILE_PREFIX = 'yt-dlp-cache-';
@@ -12,39 +13,45 @@ function getCacheFilePath(uuid: string) {
 }
 
 export class CacheHelper {
-  static async list() {
-    return [];
-  }
   static async get<T = any>(uuid: string) {
+    const cacheData = lruCache.get(uuid);
+
+    if (cacheData) {
+      return cacheData as T;
+    }
+
     try {
       const filePath = getCacheFilePath(uuid);
       const content = await fs.readFile(filePath, 'utf-8');
       const parsedData = JSON.parse(content);
 
-      if (process.env.NODE_ENV === 'development') {
-        // console.log(`Get cache \`${filePath}\``);
-      }
+      lruCache.set(uuid, parsedData);
 
       return parsedData as T;
     } catch (e) {
+      lruCache.delete(uuid);
       return;
     }
   }
+
   static async set(uuid: string, content: any) {
     try {
       const filePath = getCacheFilePath(uuid);
+
       try {
         await fs.access(filePath, fs.constants.R_OK | fs.constants.W_OK);
       } catch (e) {
         await fs.mkdir(CACHE_PATH, { recursive: true });
       }
 
-      await fs.writeFile(filePath, JSON.stringify(content), 'utf-8');
-      if (process.env.NODE_ENV === 'development') {
-        // console.log(`Saved content to ${filePath}.`);
-      }
+      const parsedData = JSON.stringify(content);
+
+      await fs.writeFile(filePath, parsedData, 'utf-8');
+      lruCache.set(uuid, content);
+
       return true;
     } catch (e) {
+      lruCache.delete(uuid);
       return false;
     }
   }
@@ -53,6 +60,7 @@ export class CacheHelper {
 
     try {
       await fs.access(cachePath, (fs.constants || fs).R_OK);
+
       return true;
     } catch (e) {
       return false;
@@ -64,6 +72,7 @@ export class CacheHelper {
 
     try {
       await fs.access(cachePath, (fs.constants || fs).R_OK);
+
       return true;
     } catch (e) {
       return false;
@@ -75,9 +84,8 @@ export class CacheHelper {
 
     try {
       await fs.unlink(filePath);
-      if (process.env.NODE_ENV === 'development') {
-        // console.log(`Delete cache \`${filePath}\``);
-      }
+      lruCache.delete(uuid);
+
       return true;
     } catch (e) {
       return false;
@@ -91,6 +99,7 @@ export class CacheHelper {
 
     try {
       await fs.rm(CACHE_PATH, { recursive: true, force: true, maxRetries: 1 });
+      lruCache.clear();
       return true;
     } catch (e) {
       return false;
