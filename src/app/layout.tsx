@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
 import { ClientWorks } from '@/components/ClientWorks';
 import { VideoPlayer } from '@/components/VideoPlayer';
+import { ClientBodyScrollResolver } from '@/components/ClientBodyScrollResolver';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
         {children}
         <ToastContainerWrapper />
         <ClientWorks />
+        <ClientBodyScrollResolver />
         <VideoPlayer />
       </body>
     </html>

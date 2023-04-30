@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 interface VideoPlayerState {
+  isVideoPlayerOpen: boolean;
   videoUuid: string;
   video: VideoInfo | null;
   currentTime: number;
@@ -13,10 +14,11 @@ interface VideoPlayerStore extends VideoPlayerState {
   open: (video: VideoInfo | null) => void;
   close: () => void;
   setVolume: (volume: number) => void;
-  setCurrentTime: (volume: number) => void;
+  setCurrentTime: (currentTime: number) => void;
 }
 
 const initialState: VideoPlayerState = {
+  isVideoPlayerOpen: false,
   video: null,
   videoUuid: '',
   currentTime: 0,
@@ -32,6 +34,7 @@ export const useVideoPlayerStore = create(
           const nextCurrentTime = video && prev?.videoUuid === video?.uuid ? prev.currentTime : 0;
 
           return {
+            isVideoPlayerOpen: true,
             video,
             videoUuid: video?.uuid || '',
             currentTime: nextCurrentTime
@@ -40,6 +43,7 @@ export const useVideoPlayerStore = create(
       },
       close() {
         set({
+          isVideoPlayerOpen: false,
           video: null
         });
       },
@@ -53,6 +57,12 @@ export const useVideoPlayerStore = create(
     {
       name: 'videoPlayer',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(
+            ([key]) => !['isVideoPlayerOpen', 'isNotSupportedCodec'].includes(key)
+          )
+        ) as VideoPlayerStore,
       version: 0.1
     }
   )
