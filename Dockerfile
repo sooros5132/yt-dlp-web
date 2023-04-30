@@ -1,8 +1,5 @@
 FROM alpine:edge
 
-WORKDIR /downloads
-VOLUME /downloads
-
 WORKDIR /app
 
 ENV PATH /app/node_modules/.bin:$PATH
