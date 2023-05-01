@@ -5,11 +5,17 @@ import { useEffect } from 'react';
 import { shallow } from 'zustand/shallow';
 
 export function ClientBodyScrollResolver() {
-  const isVideoPlayerOpen = useVideoPlayerStore((state) => state.isVideoPlayerOpen, shallow);
+  const { enableTopSticky, isVideoPlayerOpen } = useVideoPlayerStore(
+    (state) => ({
+      isVideoPlayerOpen: state.isVideoPlayerOpen,
+      enableTopSticky: state.enableTopSticky
+    }),
+    shallow
+  );
 
   useEffect(() => {
-    document.body.style.overflow = isVideoPlayerOpen ? 'hidden' : '';
-  }, [isVideoPlayerOpen]);
+    document.body.style.overflow = !enableTopSticky && isVideoPlayerOpen ? 'hidden' : '';
+  }, [enableTopSticky, isVideoPlayerOpen]);
 
   return <></>;
 }

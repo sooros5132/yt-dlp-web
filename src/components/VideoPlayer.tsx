@@ -1,24 +1,32 @@
 'use client';
 
 import { useVideoPlayerStore } from '@/store/videoPlayer';
-import { AiOutlineClose, AiOutlineFullscreen } from 'react-icons/ai';
+import { AiOutlineFullscreen } from 'react-icons/ai';
 import { useEffect, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
 import { useSiteSettingStore } from '@/store/siteSetting';
-import { TbExternalLink, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
+import {
+  TbExternalLink,
+  TbPin,
+  TbPinnedOff,
+  TbViewportNarrow,
+  TbViewportWide
+} from 'react-icons/tb';
 import classNames from 'classnames';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 
 export const VideoPlayer = () => {
-  const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen } = useVideoPlayerStore(
-    (state) => ({
-      video: state.video,
-      isVideoPlayerOpen: state.isVideoPlayerOpen,
-      isNotSupportedCodec: state.isNotSupportedCodec,
-      enableWideScreen: state.enableWideScreen
-    }),
-    shallow
-  );
+  const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
+    useVideoPlayerStore(
+      (state) => ({
+        video: state.video,
+        isVideoPlayerOpen: state.isVideoPlayerOpen,
+        isNotSupportedCodec: state.isNotSupportedCodec,
+        enableWideScreen: state.enableWideScreen,
+        enableTopSticky: state.enableTopSticky
+      }),
+      shallow
+    );
   const hydrated = useSiteSettingStore((state) => state.hydrated, shallow);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -105,13 +113,23 @@ export const VideoPlayer = () => {
       if (videoEl?.requestFullscreen) return videoEl?.requestFullscreen?.();
     } catch (e) {}
   };
+  const handleTopStickyButton = () => {
+    const { setEnableTopSticky, enableTopSticky } = useVideoPlayerStore.getState();
+    setEnableTopSticky(!enableTopSticky);
+  };
 
   return (
-    <div className='fixed top-0 left-0 w-full h-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden'>
+    <div
+      className={classNames(
+        'group top-0 left-0 w-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden',
+        enableTopSticky ? 'sticky min-h-[200px] h-[35vh] md:h-[30vh]' : 'fixed h-full'
+      )}
+    >
       <div
         className={classNames(
-          'flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/30 text-white',
-          enableWideScreen && 'absolute top-0 left-0 z-10'
+          'flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/30 text-white transition-opacity duration-500',
+          (enableWideScreen || enableTopSticky) && 'absolute top-0 left-0 z-10',
+          enableTopSticky && 'opacity-0 group-hover:opacity-100'
         )}
       >
         <div className='flex items-center gap-x-1.5'>
@@ -121,7 +139,9 @@ export const VideoPlayer = () => {
           >
             <HiOutlineArrowLeft />
           </button>
-          <div className='pl-2 font-bold line-clamp-2'>{video.title}</div>
+          <div className='pl-2 font-bold line-clamp-2' title={video.title || ''}>
+            {video.title}
+          </div>
         </div>
         <div className='flex gap-x-1.5 whitespace-nowrap'>
           <a
@@ -133,6 +153,12 @@ export const VideoPlayer = () => {
           >
             <TbExternalLink />
           </a>
+          <button
+            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+            onClick={handleTopStickyButton}
+          >
+            {enableTopSticky ? <TbPinnedOff /> : <TbPin />}
+          </button>
           <button
             className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
             onClick={handleClickWideButton}
@@ -147,12 +173,6 @@ export const VideoPlayer = () => {
               <AiOutlineFullscreen />
             </button>
           )}
-          <button
-            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
-            onClick={handleClose}
-          >
-            <AiOutlineClose />
-          </button>
         </div>
       </div>
       <div

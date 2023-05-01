@@ -6,6 +6,7 @@ interface VideoPlayerState {
   isVideoPlayerOpen: boolean;
   isNotSupportedCodec: boolean;
   enableWideScreen: boolean;
+  enableTopSticky: boolean;
   videoUuid: string;
   video: VideoInfo | null;
   currentTime: number;
@@ -19,12 +20,14 @@ interface VideoPlayerStore extends VideoPlayerState {
   setCurrentTime: (currentTime: number) => void;
   setNotSupportedCodec: (isNotSupportedCodec: boolean) => void;
   setEnableWideScreen: (enableWideScreen: boolean) => void;
+  setEnableTopSticky: (enableTopSticky: boolean) => void;
 }
 
 const initialState: VideoPlayerState = {
   isVideoPlayerOpen: false,
   isNotSupportedCodec: false,
   enableWideScreen: false,
+  enableTopSticky: false,
   video: null,
   videoUuid: '',
   currentTime: 0,
@@ -66,6 +69,9 @@ export const useVideoPlayerStore = create(
       },
       setEnableWideScreen(enableWideScreen: boolean) {
         set({ enableWideScreen });
+      },
+      setEnableTopSticky(enableTopSticky: boolean) {
+        set({ enableTopSticky });
       }
     }),
     {

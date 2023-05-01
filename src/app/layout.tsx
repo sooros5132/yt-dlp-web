@@ -14,12 +14,12 @@ export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang='en'>
       <body className={classNames(inter.className, 'min-w-[var(--site-min-width)]')}>
+        <VideoPlayer />
         {/* <Header /> */}
         {children}
         <ToastContainerWrapper />
         <ClientWorks />
         <ClientBodyScrollResolver />
-        <VideoPlayer />
       </body>
     </html>
   );
