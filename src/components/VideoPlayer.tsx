@@ -108,8 +108,21 @@ export const VideoPlayer = () => {
 
   return (
     <div className='fixed top-0 left-0 w-full h-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden'>
-      <div className='flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/70 dark:bg-black/30 text-white'>
-        <div className='pl-2 font-bold line-clamp-2'>{video.title}</div>
+      <div
+        className={classNames(
+          'flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/30 text-white',
+          enableWideScreen && 'absolute top-0 left-0 z-10'
+        )}
+      >
+        <div className='flex items-center gap-x-1.5'>
+          <button
+            className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl'
+            onClick={handleClose}
+          >
+            <HiOutlineArrowLeft />
+          </button>
+          <div className='pl-2 font-bold line-clamp-2'>{video.title}</div>
+        </div>
         <div className='flex gap-x-1.5 whitespace-nowrap'>
           <a
             className='btn btn-sm btn-circle btn-ghost text-lg'
