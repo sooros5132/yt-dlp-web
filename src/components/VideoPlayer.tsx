@@ -7,6 +7,7 @@ import { shallow } from 'zustand/shallow';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { TbExternalLink, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
 import classNames from 'classnames';
+import { HiOutlineArrowLeft } from 'react-icons/hi2';
 
 export const VideoPlayer = () => {
   const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen } = useVideoPlayerStore(
@@ -39,6 +40,17 @@ export const VideoPlayer = () => {
         setNotSupportedCodec(true);
       }
     })();
+
+    const handleKeyPress = (event: globalThis.KeyboardEvent) => {
+      if (event.key == 'Escape') {
+        handleClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
   }, [isVideoPlayerOpen, video]);
 
   if (!hydrated || !isVideoPlayerOpen || !video) {
