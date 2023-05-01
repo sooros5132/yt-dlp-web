@@ -118,6 +118,14 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const handleClickDelete =
     (video: VideoInfo, deleteType: 'deleteFile' | 'deleteList') => async () => {
       const deleteFile = deleteType === 'deleteFile';
+      if (deleteFile && video.status !== 'completed') {
+        toast.warn(
+          video?.isLive
+            ? 'Please erase it after stop recording'
+            : 'The file cannot be erased while downloading. Please erase it yourself.'
+        );
+        return;
+      }
 
       const result = await axios
         .delete('/api/file', {
@@ -399,35 +407,47 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
             <span>{video.title}</span>
           </h2>
           <div className='flex items-center justify-between'>
-            <div className='btn-group rounded-xl'>
-              {video.status !== 'completed' ? (
-                <button
-                  className='btn btn-sm btn-outline btn-error text-lg'
-                  onClick={() =>
-                    toast.warn(
-                      video?.isLive
-                        ? 'Please erase it after stop recording'
-                        : 'The file cannot be erased while downloading. Please erase it yourself.'
-                    )
-                  }
-                >
-                  <MdOutlineVideocamOff key={'no-completed'} />
-                </button>
-              ) : (
-                <button
-                  key={'completed'}
-                  className='btn btn-sm btn-outline btn-error text-lg'
-                  onClick={handleClickDelete(video, 'deleteFile')}
+            <div>
+              <div className='dropdown dropdown-top'>
+                <label
+                  tabIndex={0}
+                  className='btn btn-sm btn-outline btn-error text-lg rounded-r-none'
                 >
                   <MdOutlineVideocamOff />
-                </button>
-              )}
-              <button
-                className='btn btn-sm btn-outline btn-warning text-lg'
-                onClick={handleClickDelete(video, 'deleteList')}
-              >
-                <MdPlaylistRemove />
-              </button>
+                </label>
+                <div
+                  tabIndex={0}
+                  className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md w-56 sm:w-44 md:w-56 border-rose-500 rounded-md text-xs'
+                >
+                  <div className='px-1 text-sm'>Delete from List and File??</div>
+                  <button
+                    className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
+                    onClick={handleClickDelete(video, 'deleteFile')}
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+              <div className='dropdown dropdown-top'>
+                <label
+                  tabIndex={0}
+                  className='btn btn-sm btn-outline btn-warning text-lg rounded-l-none'
+                >
+                  <MdPlaylistRemove />
+                </label>
+                <div
+                  tabIndex={0}
+                  className='dropdown-content mb-1 p-1 bg-warning text-warning-content shadow-md w-40 md:52 border-rose-500 rounded-md text-xs'
+                >
+                  <div className='px-1 text-sm'>Delete from List??</div>
+                  <button
+                    className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
+                    onClick={handleClickDelete(video, 'deleteList')}
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
             </div>
             {video.isLive && video.status === 'recording' && (
               <button
