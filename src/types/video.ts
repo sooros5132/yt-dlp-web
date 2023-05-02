@@ -1,13 +1,16 @@
 export interface VideoFormat {
   formatId: string;
   formatNote: string;
-  fps: string;
   resolution: string;
+  fps: string;
+  dynamicRange: string;
   vcodec: string;
   acodec: string;
   filesize: string;
   videoExt: string;
   audioExt: string;
+  width: string;
+  height: string;
 }
 
 export interface VideoMetadata {
@@ -20,11 +23,14 @@ export interface VideoMetadata {
   best: {
     formatId: string;
     formatNote: string;
-    fps: string;
     resolution: string;
+    fps: string;
+    dynamicRange: string;
     vcodec: string;
     acodec: string;
     filesize: string;
+    width: string;
+    height: string;
   };
   formats: Array<VideoFormat>;
 }

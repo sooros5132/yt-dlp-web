@@ -3,7 +3,13 @@ import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { Readable } from 'node:stream';
 import numeral from 'numeral';
 import { Stats, promises as fs } from 'fs';
-import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH, VIDEO_LIST_FILE } from './CacheHelper';
+import {
+  CACHE_FILE_PREFIX,
+  CACHE_PATH,
+  CacheHelper,
+  DOWNLOAD_PATH,
+  VIDEO_LIST_FILE
+} from './CacheHelper';
 import { throttle } from 'lodash';
 import { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
 import { FFmpegHelper } from './FFmpegHelper';
@@ -437,6 +443,9 @@ export class YtDlpHelper {
               formatNote: json.format_note ?? '',
               fps: json.fps ?? '',
               resolution: json.resolution ?? '',
+              width: json.width ?? '',
+              height: json.height ?? '',
+              dynamicRange: json.dynamic_range ?? '',
               vcodec: json.vcodec ?? '',
               acodec: json.acodec ?? '',
               filesize: json.filesize ?? ''
@@ -447,13 +456,16 @@ export class YtDlpHelper {
                   return {
                     formatId: format.format_id ?? '',
                     formatNote: format.format_note ?? '',
-                    fps: format.fps ?? '',
                     resolution: format.resolution ?? '',
+                    fps: format.fps ?? '',
+                    dynamicRange: format.dynamic_range ?? '',
                     vcodec: format.vcodec ?? '',
                     acodec: format.acodec ?? '',
                     filesize: format.filesize ?? '',
                     videoExt: format?.video_ext ?? '',
-                    audioExt: format?.audio_ext ?? ''
+                    audioExt: format?.audio_ext ?? '',
+                    width: format?.width ?? '',
+                    height: format?.height ?? ''
                   } as VideoFormat;
                 })
                 .filter((format: any) => format.format_note !== 'storyboard') || []

@@ -339,13 +339,27 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
     } catch (e) {}
     setValidating(false);
   };
+  let bestVideo = metadata.best?.height ? metadata.best?.height + 'p' : metadata.best?.resolution;
+  if (metadata.best?.fps) bestVideo += ' ' + metadata.best?.fps + 'fps';
+  if (metadata.best?.dynamicRange) bestVideo += ' ' + metadata.best?.dynamicRange;
+  if (metadata.best?.vcodec) bestVideo += ' ' + metadata.best?.vcodec;
+
+  let bestAudio = metadata.best?.acodec;
+
+  let selectVideo = selectedFormats?.video?.height
+    ? selectedFormats?.video?.height + 'p'
+    : selectedFormats?.video?.resolution;
+  if (selectedFormats?.video?.dynamicRange)
+    selectVideo += ' ' + selectedFormats?.video?.dynamicRange;
+  if (selectedFormats?.video?.fps) selectVideo += ' ' + selectedFormats?.video?.fps + 'fps';
+  if (selectedFormats?.video?.vcodec) selectVideo += ' ' + selectedFormats?.video?.vcodec;
 
   return (
     <section className='my-6 mb-2'>
       <div className='text-center'>
         <button
           className={classNames(
-            'btn btn-sm btn-primary normal-case',
+            'btn btn-sm btn-primary normal-case h-auto',
             isValidating && 'loading',
             metadata.isLive && 'text-white gradient-background border-0'
           )}
@@ -356,9 +370,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
               <PingSvg />
             </div>
           )}
-          BEST: {metadata.best.resolution} {metadata.best.vcodec}
-          {metadata.best.acodec && metadata.best.vcodec && '+'}
-          {metadata.best.acodec}
+          BEST: {bestVideo} {bestVideo && bestAudio && '+'} {bestAudio}
         </button>
         {metadata.isLive && (
           <div className='mt-1 text-center text-xs text-base-content/60'>Live Stream!</div>
@@ -397,7 +409,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
               <div className='flex flex-wrap gap-2 sm:flex-nowrap'>
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
                   <div>
-                    <b>Video</b>
+                    <b>{metadata.isLive ? 'Stream' : 'Video'}</b>
                   </div>
                   {videoFormat.map((format) => (
                     <VideoDownloadRadio
@@ -439,16 +451,12 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                       <PingSvg />
                     </div>
                   )}
-                  {selectedFormats?.video?.formatId &&
-                    `${selectedFormats?.video?.formatNote || selectedFormats?.video?.resolution} ${
-                      selectedFormats?.video?.vcodec
-                    }`}
-                  {selectedFormats?.video && selectedFormats?.audio ? '+' : null}
+                  {selectVideo}
+                  {selectVideo && selectedFormats?.audio ? '+' : null}
                   {selectedFormats?.audio?.formatId && selectedFormats?.audio?.acodec}
-                  <span>
-                    {(selectedFormats?.video || selectedFormats?.audio) && <>&nbsp;</>}Optional
-                    Download
-                  </span>
+                  {!selectedFormats?.video && !selectedFormats?.audio ? (
+                    <span> Optional Download</span>
+                  ) : null}
                 </button>
               </div>
             </div>
@@ -463,7 +471,7 @@ VideoDownload.displayName = 'VideoDownload';
 type VideoDownloadRadioProps = {
   isBest: boolean;
   type: 'audio' | 'video';
-  format?: any;
+  format: VideoFormat;
   content?: string;
   onClickRadio: (type: 'audio' | 'video', format: any) => () => void;
 };
@@ -485,7 +493,12 @@ const VideoDownloadRadio = ({
         return `${format.formatNote || format.formatId} ${format.acodec}`;
       }
       case 'video': {
-        return `${format.formatNote || format.formatId} ${format.vcodec}`;
+        let text = format.height ? format.height + 'p' : format.resolution;
+        if (format.fps) text += ' ' + format.fps + 'fps';
+        if (format.dynamicRange) text += ' ' + format.dynamicRange;
+        if (format.vcodec) text += ' ' + format.vcodec;
+
+        return text;
       }
     }
   })();
