@@ -3,6 +3,12 @@ const nextConfig = {
   experimental: {
     appDir: true
   },
+  swcMinify: true,
+  modularizeImports: {
+    lodash: {
+      transform: 'lodash/{{member}}'
+    }
+  },
   reactStrictMode: true
 };
 
