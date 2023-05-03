@@ -417,7 +417,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 </label>
                 <div
                   tabIndex={0}
-                  className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md w-56 sm:w-44 md:w-56 border-rose-500 rounded-md text-xs'
+                  className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
                 >
                   <div className='px-1 text-sm'>Delete from List and File??</div>
                   <button
@@ -437,7 +437,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 </label>
                 <div
                   tabIndex={0}
-                  className='dropdown-content mb-1 p-1 bg-warning text-warning-content shadow-md w-40 md:52 border-rose-500 rounded-md text-xs'
+                  className='dropdown-content mb-1 p-1 bg-warning text-warning-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
                 >
                   <div className='px-1 text-sm'>Delete from List??</div>
                   <button
