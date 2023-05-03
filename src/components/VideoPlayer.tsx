@@ -136,6 +136,7 @@ export const VideoPlayer = () => {
           <button
             className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl'
             onClick={handleClose}
+            title='Close video player'
           >
             <HiOutlineArrowLeft />
           </button>
@@ -150,12 +151,14 @@ export const VideoPlayer = () => {
             rel='noopener noreferrer'
             target='_blank'
             onClick={handleClickExternalLink}
+            title='Open Original Link'
           >
             <TbExternalLink />
           </a>
           <button
             className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
             onClick={handleTopStickyButton}
+            title={enableTopSticky ? 'Not fixing on top' : 'Fixing on top'}
           >
             {enableTopSticky ? <TbPinnedOff /> : <TbPin />}
           </button>
@@ -169,6 +172,7 @@ export const VideoPlayer = () => {
             <button
               className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
               onClick={handleClickFullScreenButton}
+              title='Full screen'
             >
               <AiOutlineFullscreen />
             </button>

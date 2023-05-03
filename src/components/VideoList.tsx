@@ -121,8 +121,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
       if (deleteFile && video.status !== 'completed') {
         toast.warn(
           video?.isLive
-            ? 'Please erase it after stop recording'
-            : 'The file cannot be erased while downloading. Please erase it yourself.'
+            ? 'Please delete it after stop recording'
+            : 'The file cannot be deleted while downloading. Please erase it yourself.'
         );
         return;
       }
@@ -412,6 +412,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <label
                   tabIndex={0}
                   className='btn btn-sm btn-outline btn-error text-lg rounded-r-none'
+                  title='Delete from List and File'
                 >
                   <MdOutlineVideocamOff />
                 </label>
@@ -419,7 +420,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   tabIndex={0}
                   className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
                 >
-                  <div className='px-1 text-sm'>Delete from List and File??</div>
+                  <div className='px-1 text-sm'>Delete from List and File?</div>
                   <button
                     className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
                     onClick={handleClickDelete(video, 'deleteFile')}
@@ -432,6 +433,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <label
                   tabIndex={0}
                   className='btn btn-sm btn-outline btn-warning text-lg rounded-l-none'
+                  title='Delete from List'
                 >
                   <MdPlaylistRemove />
                 </label>
@@ -439,7 +441,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   tabIndex={0}
                   className='dropdown-content mb-1 p-1 bg-warning text-warning-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
                 >
-                  <div className='px-1 text-sm'>Delete from List??</div>
+                  <div className='px-1 text-sm'>Delete from List?</div>
                   <button
                     className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
                     onClick={handleClickDelete(video, 'deleteList')}
@@ -453,6 +455,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               <button
                 className='btn btn-sm btn-circle btn-outline btn-error text-lg'
                 onClick={handleClickStopRecording}
+                title='Stop Recording'
               >
                 <MdStop />
               </button>
@@ -463,6 +466,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 href={video.url || ''}
                 rel='noopener noreferrer'
                 target='_blank'
+                title='Open Original Link'
               >
                 <TbExternalLink />
               </a>
@@ -475,6 +479,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   rel='noopener noreferrer'
                   target='_blank'
                   download={video?.status === 'completed' ? video.file.name : false}
+                  title='Download Video'
                 >
                   <AiOutlineCloudDownload />
                 </a>
@@ -486,6 +491,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   )}
                   disabled={video?.isLive}
                   onClick={handleClickRestartDownload}
+                  title={video?.isLive ? '' : 'Retry Download'}
                 >
                   {video?.isLive ? <AiOutlineCloudDownload /> : <VscRefresh />}
                 </button>

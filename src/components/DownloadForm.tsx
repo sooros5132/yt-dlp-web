@@ -178,6 +178,7 @@ export function DownloadForm() {
             )}
             disabled={!hydrated}
             type='submit'
+            title={!hydrated || enabledBestFormat ? 'Download' : 'Search'}
           >
             {!hydrated || enabledBestFormat ? (
               <>
@@ -364,6 +365,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
             metadata.isLive && 'text-white gradient-background border-0'
           )}
           onClick={handleClickBestButton}
+          title='Download at the best quality'
         >
           {metadata.isLive && (
             <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
@@ -396,6 +398,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 type='button'
                 className='btn btn-sm btn-primary btn-outline opacity-80 gap-x-2 text-md normal-case'
                 onClick={() => setOpen((prev) => !prev)}
+                title={isOpen ? 'Close format list' : 'Open format list'}
               >
                 Optional
                 {isOpen ? (
@@ -445,6 +448,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                     metadata.isLive && 'text-white gradient-background border-0'
                   )}
                   type='submit'
+                  title='Download with selected option'
                 >
                   {metadata.isLive && (
                     <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
