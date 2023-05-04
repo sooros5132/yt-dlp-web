@@ -82,6 +82,21 @@ export async function GET(request: Request) {
               controller?.close?.();
             } catch (e) {}
           },
+          downloadErrorCallback(error) {
+            try {
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    success: false,
+                    url,
+                    error: error,
+                    timestamp: Date.now()
+                  })
+                )
+              );
+              controller?.close?.();
+            } catch (e) {}
+          },
           processExitCallback() {
             try {
               controller?.close?.();

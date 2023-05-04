@@ -77,11 +77,13 @@ export class YtDlpHelper {
     uuid,
     isDownloadRestart,
     downloadStartCallback,
+    downloadErrorCallback,
     processExitCallback
   }: {
     uuid: string;
     isDownloadRestart: boolean;
     downloadStartCallback?: () => void;
+    downloadErrorCallback?: (error: string) => void;
     processExitCallback?: () => void;
   }): Promise<this> {
     return new Promise(async (resolve, reject) => {
@@ -175,6 +177,11 @@ export class YtDlpHelper {
             downloadStartCallback?.();
             ytdlp.kill(2);
             return;
+          }
+
+          if (text.startsWith('ERROR: ')) {
+            const error = text?.split('\n')?.[0] || text;
+            downloadErrorCallback?.(error);
           }
 
           let fileDestination = '';
@@ -414,10 +421,19 @@ export class YtDlpHelper {
       });
     }
     let stdoutChunks = [] as Array<any>;
+    let stderrMessage = '';
     const ytdlp = spawn('yt-dlp', ['--dump-json', '--no-playlist', this.url]);
 
     ytdlp.stdout.on('data', (data) => {
       stdoutChunks.push(data);
+    });
+
+    ytdlp.stderr.setEncoding('utf-8');
+    ytdlp.stderr.on('data', (data) => {
+      const text = data?.trim?.();
+      if (text.startsWith('ERROR: ')) {
+        stderrMessage = text?.split('\n')?.[0] || text;
+      }
     });
 
     return new Promise((resolve, reject) => {
@@ -425,7 +441,7 @@ export class YtDlpHelper {
         try {
           const buffer = Buffer.concat(stdoutChunks);
           if (!buffer.length) {
-            reject('Not found. Please check the url again.');
+            reject(stderrMessage || 'Not found. Please check the url again.');
             return;
           }
 
