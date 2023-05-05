@@ -16,6 +16,8 @@ import { useSiteSettingStore } from '@/store/siteSetting';
 import { mutate } from 'swr';
 import { VideoFormat, VideoMetadata } from '@/types/video';
 import { PingSvg } from './PingSvg';
+import { IoClose } from 'react-icons/io5';
+import { MdContentPaste } from 'react-icons/md';
 
 interface State {
   url: string;
@@ -23,7 +25,7 @@ interface State {
 }
 
 interface Store extends State {
-  changeUrl: (url: string) => void;
+  setUrl: (url: string) => void;
   enableBestFormat: () => void;
   disableBestFormat: () => void;
 }
@@ -37,7 +39,7 @@ const useStore = create(
   persist<Store>(
     (set, get) => ({
       ...initialState,
-      changeUrl(url) {
+      setUrl(url) {
         set({
           url
         });
@@ -66,13 +68,13 @@ const useStore = create(
 );
 
 export function DownloadForm() {
-  const { changeUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
+  const { setUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
-    changeUrl(evt.target.value || '');
+    setUrl(evt.target.value || '');
   };
 
   const handleChangeCheckBox = (evt: ChangeEvent<HTMLInputElement>) => {
@@ -142,19 +144,53 @@ export function DownloadForm() {
     }
   };
 
+  const handleClickDeleteUrlButton = () => {
+    setUrl('');
+  };
+
+  const handleClickPasteClipboardButton = async () => {
+    if (!navigator?.clipboard) {
+      return;
+    }
+    const clipText = await navigator.clipboard.readText();
+    setUrl(clipText);
+  };
+
   return (
     <div className='px-4 py-2 rounded-lg bg-base-content/5'>
       <form className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
-        <div>
+        <div className='input input-sm flex justify-between h-auto pr-1 focus:outline-none'>
           <input
             name='url'
             type='text'
-            className={classNames('w-full input input-sm', !hydrated && 'input-disabled')}
+            className={classNames(
+              'bg-base-100 flex-auto outline-none',
+              !hydrated && 'input-disabled'
+            )}
             readOnly={!hydrated}
             value={url}
             placeholder='https://...'
             onChange={handleChangeUrl}
           />
+          {!hydrated || url || !navigator?.clipboard ? (
+            <button
+              key={'delete-url'}
+              type='button'
+              className='btn btn-sm btn-circle btn-ghost text-xl text-zinc-400'
+              onClick={handleClickDeleteUrlButton}
+            >
+              <IoClose />
+            </button>
+          ) : (
+            <button
+              key={'paste-url'}
+              type='button'
+              className='btn btn-sm btn-circle btn-ghost text-lg text-zinc-400'
+              onClick={handleClickPasteClipboardButton}
+            >
+              <MdContentPaste />
+            </button>
+          )}
         </div>
         <div>
           <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
