@@ -1,6 +1,6 @@
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
-import { VideoInfo } from '@/types/video';
 import { NextResponse } from 'next/server';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
+import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 

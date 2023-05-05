@@ -1,6 +1,7 @@
 'use client';
 
-import React, { PropsWithChildren, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { PropsWithChildren } from 'react';
 
 export interface NoSSRProps {
   defaultComponent?: JSX.Element | React.ReactNode | string;

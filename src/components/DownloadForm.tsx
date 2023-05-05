@@ -3,21 +3,21 @@
 import axios from 'axios';
 import classNames from 'classnames';
 import React, { FormEvent, memo, useState } from 'react';
-import { ChangeEvent } from 'react';
+import { mutate } from 'swr';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
 import { toast } from 'react-toastify';
-import { FcRemoveImage } from 'react-icons/fc';
-import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import numeral from 'numeral';
 import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
-import { mutate } from 'swr';
-import { VideoFormat, VideoMetadata } from '@/types/video';
-import { PingSvg } from './PingSvg';
+import { PingSvg } from '@/components/PingSvg';
 import { IoClose } from 'react-icons/io5';
+import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
+import { FcRemoveImage } from 'react-icons/fc';
+import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
+import type { ChangeEvent } from 'react';
+import type { VideoFormat, VideoMetadata } from '@/types/video';
 
 interface State {
   url: string;
@@ -111,17 +111,20 @@ export function DownloadForm() {
           .then((res) => res.data)
           .catch((res) => res.response.data);
         if (result?.error) {
-          toast.error(result?.error || 'download failed');
+          toast.error(result?.error || 'Download Failed');
         } else if (result?.success) {
           if (result?.status === 'already') {
-            toast.info('already been downloaded');
-          } else if (result?.status === 'downloading') {
-            mutate('/api/list');
-            toast.success('download requested!');
-          } else if (result?.status === 'restart') {
-            mutate('/api/list');
-            toast.success('download restart');
+            toast.info('Already been downloaded');
+            return;
           }
+          if (result?.status === 'standby') {
+            toast.success('Download Requested!');
+          } else if (result?.status === 'downloading') {
+            toast.success('Download Requested!');
+          } else if (result?.status === 'restart') {
+            toast.success('Download Restart');
+          }
+          mutate('/api/list');
         }
         return;
       } else {
@@ -202,7 +205,7 @@ export function DownloadForm() {
               readOnly={!hydrated}
               onChange={handleChangeCheckBox}
             />
-            <span className='text-sm'>Download at the best quality</span>
+            <span className='text-sm'>Instant download in the best quality</span>
           </label>
         </div>
         <div className='text-right'>
@@ -360,18 +363,20 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
         .catch((res) => res.response.data);
 
       if (result?.error) {
-        toast.error(result?.error || 'download failed');
+        toast.error(result?.error || 'Download Failed');
       } else if (result?.success) {
         if (result?.status === 'already') {
-          mutate('/api/list');
-          toast.info('already been downloaded');
-        } else if (result?.status === 'downloading') {
-          mutate('/api/list');
-          toast.success('download requested');
-        } else if (result?.status === 'restart') {
-          mutate('/api/list');
-          toast.success('download restart');
+          toast.info('Already been downloaded');
+          return;
         }
+        if (result?.status === 'standby') {
+          toast.success('Download requested!');
+        } else if (result?.status === 'downloading') {
+          toast.success('Download requested!');
+        } else if (result?.status === 'restart') {
+          toast.success('Download restart');
+        }
+        mutate('/api/list');
       }
     } catch (e) {}
     setValidating(false);
@@ -401,7 +406,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
             metadata.isLive && 'text-white gradient-background border-0'
           )}
           onClick={handleClickBestButton}
-          title='Download at the best quality'
+          title='Instant download in the best quality'
         >
           {metadata.isLive && (
             <div className='inline-flex items-center align-text-top text-xl text-rose-600'>

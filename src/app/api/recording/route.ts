@@ -1,9 +1,9 @@
+import { NextResponse } from 'next/server';
 import { CacheHelper } from '@/server/CacheHelper';
 import { ProcessHelper } from '@/server/ProcessHelper';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
-import { VideoInfo } from '@/types/video';
-import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
+import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 

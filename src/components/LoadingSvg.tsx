@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { SVGProps } from 'react';
+import type { SVGProps } from 'react';
 
 export const LoadingSvg = ({
   className: _className,

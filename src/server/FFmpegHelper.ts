@@ -1,5 +1,5 @@
-import { FFmpegStreamsJson, Streams } from '@/types/video';
 import { spawn } from 'node:child_process';
+import type { FFmpegStreamsJson, Streams } from '@/types/video';
 
 export class FFmpegHelper {
   public readonly filePath;

@@ -43,7 +43,8 @@ export interface VideoInfo {
   description: string | null;
   thumbnail: string | null;
   localThumbnail: string | null;
-  status: 'stanby' | 'downloading' | 'recording' | 'merging' | 'completed';
+  status: 'standby' | 'failed' | 'downloading' | 'recording' | 'merging' | 'completed';
+  error?: string;
   isLive: boolean;
   format: string;
   file: Streams & {

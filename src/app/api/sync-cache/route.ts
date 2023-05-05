@@ -1,9 +1,10 @@
-import { CACHE_FILE_PREFIX, CACHE_PATH, CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { NextResponse } from 'next/server';
-import { Stats, promises as fs } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
-import { VideoInfo } from '@/types/video';
+import { CACHE_FILE_PREFIX, CACHE_PATH, CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
+import type { Stats } from 'fs';
+import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 

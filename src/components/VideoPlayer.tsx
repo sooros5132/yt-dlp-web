@@ -1,10 +1,10 @@
 'use client';
 
-import { useVideoPlayerStore } from '@/store/videoPlayer';
-import { AiOutlineFullscreen } from 'react-icons/ai';
 import { useEffect, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
+import classNames from 'classnames';
 import { useSiteSettingStore } from '@/store/siteSetting';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
 import {
   TbExternalLink,
   TbPin,
@@ -12,8 +12,8 @@ import {
   TbViewportNarrow,
   TbViewportWide
 } from 'react-icons/tb';
-import classNames from 'classnames';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
+import { AiOutlineFullscreen } from 'react-icons/ai';
 
 export const VideoPlayer = () => {
   const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =

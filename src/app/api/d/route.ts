@@ -1,8 +1,8 @@
-import { CacheHelper, DOWNLOAD_PATH, VIDEO_LIST_FILE } from '@/server/CacheHelper';
-import { YtDlpHelper } from '@/server/YtDlpHelper';
-import { VideoInfo } from '@/types/video';
-import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
+import { YtDlpHelper } from '@/server/YtDlpHelper';
+import { randomUUID } from 'crypto';
+import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,78 +44,71 @@ export async function GET(request: Request) {
       }
     }
 
-    const ytdlp = new YtDlpHelper({
-      url,
-      format
-    });
-
-    const metadata = await ytdlp.getMetadata();
-
-    if (!metadata.id) {
-      throw 'Not found. Please check the url again.';
-    }
-
     //? 중복 확인
     if (isAlreadyFormat) {
       throw 'You are already downloading in the same format.';
     }
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        const uuid = randomUUID();
-
-        await ytdlp.start({
-          uuid,
-          isDownloadRestart: false,
-          downloadStartCallback() {
-            try {
-              controller.enqueue(
-                encoder.encode(
-                  JSON.stringify({
-                    success: true,
-                    url,
-                    status: ytdlp.getIsFormatExist() ? 'already' : 'downloading',
-                    timestamp: Date.now()
-                  })
-                )
-              );
-              controller?.close?.();
-            } catch (e) {}
-          },
-          downloadErrorCallback(error) {
-            try {
-              controller.enqueue(
-                encoder.encode(
-                  JSON.stringify({
-                    success: false,
-                    url,
-                    error: error,
-                    timestamp: Date.now()
-                  })
-                )
-              );
-              controller?.close?.();
-            } catch (e) {}
-          },
-          processExitCallback() {
-            try {
-              controller?.close?.();
-            } catch (e) {}
-          }
-        });
-      }
+    const uuid = randomUUID();
+    const ytdlp = new YtDlpHelper({
+      url,
+      format,
+      uuid
     });
+    const videoInfo = ytdlp.getVideoInfo();
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8'
-      }
-    });
-    // return NextResponse.json({
-    //   success: true,
-    //   url,
-    //   status: 'stanby',
-    //   timestamp: Date.now()
+    const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
+    uuidList.unshift(uuid);
+    await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
+    await CacheHelper.set(uuid, videoInfo);
+
+    // const stream = new ReadableStream({
+    //   async start(controller) {
+
+    // 비동기로 작업, Don't add await
+    ytdlp
+      .start({
+        uuid,
+        isDownloadRestart: false
+        // downloadStartCallback() {
+        //   try {
+        //     controller.enqueue(
+        //       encoder.encode(
+        //         JSON.stringify({
+        //           success: true,
+        //           url,
+        //           status: ytdlp.getIsFormatExist() ? 'already' : 'downloading',
+        //           timestamp: Date.now()
+        //         })
+        //       )
+        //     );
+        //     controller?.close?.();
+        //   } catch (e) {}
+        // },
+        // downloadErrorCallback(error) {
+        //   try {
+        //     controller.enqueue(
+        //       encoder.encode(
+        //         JSON.stringify({
+        //           success: false,
+        //           url,
+        //           error: error,
+        //           timestamp: Date.now()
+        //         })
+        //       )
+        //     );
+        //     controller?.close?.();
+        //   } catch (e) {}
+        // },
+        // processExitCallback() {
+        //   try {
+        //     controller?.close?.();
+        //   } catch (e) {}
+        // }
+      })
+      .catch(() => {});
+
+    //   }
     // });
 
     // return new Response(stream, {
@@ -123,6 +116,12 @@ export async function GET(request: Request) {
     //     'Content-Type': 'text/plain; charset=utf-8'
     //   }
     // });
+    return NextResponse.json({
+      success: true,
+      url,
+      status: 'standby',
+      timestamp: Date.now()
+    });
   } catch (error) {
     return NextResponse.json(
       { error },

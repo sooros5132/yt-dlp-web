@@ -3,21 +3,21 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR, { mutate } from 'swr';
+import numeral from 'numeral';
+import classNames from 'classnames';
+import isEqual from 'react-fast-compare';
+import { toast } from 'react-toastify';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
+import { LoadingSvg } from '@/components/LoadingSvg';
+import { PingSvg } from '@/components/PingSvg';
+import { isMobile } from '@/client/utils';
 import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { VscRefresh } from 'react-icons/vsc';
-import { TbExternalLink } from 'react-icons/tb';
-import numeral from 'numeral';
-import { toast } from 'react-toastify';
-import classNames from 'classnames';
-import { VideoInfo } from '@/types/video';
 import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
-import isEqual from 'react-fast-compare';
-import { LoadingSvg } from './LoadingSvg';
-import { PingSvg } from './PingSvg';
-import { useVideoPlayerStore } from '@/store/videoPlayer';
-import { isMobile } from '@/client/utils';
+import { TbExternalLink } from 'react-icons/tb';
+import type { VideoInfo } from '@/types/video';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -39,8 +39,9 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
         MAX_INTERVAL_Time
       );
       for (const video of videos) {
-        if (video.download && video.status !== 'completed') {
+        if (video.download && video.status !== 'failed' && video.status !== 'completed') {
           nextIntervalTime = 3 * 1000;
+          break;
         }
       }
       refreshIntervalTimeRef.current = nextIntervalTime;
@@ -72,6 +73,10 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
     setSynchronizing(false);
   };
 
+  const handleClickRefreshButton = async () => {
+    await mutate();
+  };
+
   return (
     <div className='my-8 bg-base-content/5 rounded-md p-4 overflow-hidden'>
       <div className='grid grid-cols-[30px_auto_30px] place-items-center mb-4'>
@@ -93,7 +98,7 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
               isValidating && 'btn-disabled'
             )}
             data-tip='Refresh video list'
-            onClick={() => mutate()}
+            onClick={handleClickRefreshButton}
           >
             <VscRefresh className={classNames('w-full', isValidating && 'animate-spin')} />
           </button>
@@ -114,11 +119,15 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
+  const isCompleted = video.status === 'completed';
+  const isStandby = video.status === 'standby';
+  const isFailed = video.status === 'failed';
+  const isRecording = video.status === 'recording';
 
   const handleClickDelete =
     (video: VideoInfo, deleteType: 'deleteFile' | 'deleteList') => async () => {
       const deleteFile = deleteType === 'deleteFile';
-      if (deleteFile && video.status !== 'completed') {
+      if (deleteFile && !isCompleted) {
         toast.warn(
           video?.isLive
             ? 'Please delete it after stop recording'
@@ -147,13 +156,11 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         toast.error(result.error || 'Failed to delete.');
       }
 
-      setTimeout(() => {
-        mutate('/api/list');
-      }, 100);
+      mutate('/api/list');
     };
 
   const handleMouseLeave = () => {
-    if (video.status !== 'completed') {
+    if (!isCompleted) {
       return;
     }
     if (!document.fullscreenElement) {
@@ -166,7 +173,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   };
 
   const handleMouseEnter = async () => {
-    if (video.status !== 'completed') {
+    if (!isCompleted) {
       return;
     }
     const videoEl = videoRef.current;
@@ -198,20 +205,14 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
 
     setValidating(false);
 
-    if (result?.error) {
-      toast.error(result?.error || 'download failed');
+    if (!result?.success || result?.error) {
+      toast.error(result?.error || 'Retry Failed');
     } else if (result?.success) {
       if (result?.status === 'already') {
-        if (video.status === 'merging') {
-          toast.success('already been downloaded');
-        } else {
-          toast.success('Download Retryed');
-        }
+        toast.info('Already been downloaded');
       } else if (result?.status === 'downloading') {
-        setTimeout(() => {
-          mutate('/api/list');
-        }, 100);
         toast.success('Download Retryed');
+        mutate('/api/list');
       }
     }
   };
@@ -304,7 +305,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     <div>
       <div className='group card card-side bg-base-100 shadow-xl rounded-xl flex-col overflow-hidden'>
         <div
-          className='relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video cursor-pointer'
+          className={classNames(
+            'relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video',
+            isCompleted && 'cursor-pointer'
+          )}
           onClick={handleClickVideo}
           onMouseLeave={handleMouseLeave}
           onMouseEnter={handleMouseEnter}
@@ -315,7 +319,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               isMouseEntered ? 'flex' : 'hidden'
             )}
           >
-            {video.status === 'completed' && (
+            {isCompleted && (
               <video
                 key={video.status || 'completed'}
                 ref={videoRef}
@@ -335,7 +339,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <img
                   className='w-full h-full object-cover'
                   src={
-                    video.status === 'completed' && video.localThumbnail
+                    isCompleted && video.localThumbnail
                       ? '/api/thumbnail?uuid=' + video.uuid
                       : video.thumbnail
                   }
@@ -359,18 +363,31 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 </div>
               )}
             </figure>
-            {video.status !== 'completed' && (
-              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/60 text-2xl text-white dark:text-base-content pointer-events-none'>
-                <LoadingSvg className='text-xl' />
+            {!isCompleted && (
+              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/80 text-2xl text-white dark:text-base-content'>
+                {isStandby ? (
+                  <span className='font-bold'>Standby</span>
+                ) : isFailed ? (
+                  <span className='text-rose-400 font-bold'>Failed</span>
+                ) : (
+                  <LoadingSvg className='text-xl' />
+                )}
                 {video.createdAt !== video.updatedAt && (
                   <div className='text-xs text-center'>
                     {'Running time ≈'}
                     {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
                   </div>
                 )}
-                <div className={classNames('text-sm text-center animate-pulse')}>
-                  {recommendedDownloadRetry
-                    ? "Video and audio may be merging, but can't you download it? try again with the button below."
+                <div
+                  className={classNames(
+                    'text-sm text-center animate-pulse',
+                    isFailed && 'overflow-y-auto'
+                  )}
+                >
+                  {isFailed && video.error
+                    ? video.error
+                    : recommendedDownloadRetry
+                    ? "The download doesn't seem to work. Try again with the refresh button below."
                     : `${video.status}...`}
                 </div>
               </div>
@@ -399,40 +416,21 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         </div>
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
           <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>
-            {video.isLive && video.status === 'recording' && (
+            {video.isLive && isRecording && (
               <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
                 <PingSvg />
               </div>
             )}
-            <span>{video.title}</span>
+            <span className={(isStandby || isFailed) && !video.title ? 'text-xs font-normal' : ''}>
+              {video.title || video.url}
+            </span>
           </h2>
           <div className='flex items-center justify-between'>
-            <div>
+            {isStandby || isFailed || !isCompleted ? (
               <div className='dropdown dropdown-top'>
                 <label
                   tabIndex={0}
-                  className='btn btn-sm btn-outline btn-error text-lg rounded-r-none'
-                  title='Delete from List and File'
-                >
-                  <MdOutlineVideocamOff />
-                </label>
-                <div
-                  tabIndex={0}
-                  className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
-                >
-                  <div className='px-1 text-sm'>Delete from List and File?</div>
-                  <button
-                    className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
-                    onClick={handleClickDelete(video, 'deleteFile')}
-                  >
-                    Yes
-                  </button>
-                </div>
-              </div>
-              <div className='dropdown dropdown-top'>
-                <label
-                  tabIndex={0}
-                  className='btn btn-sm btn-outline btn-warning text-lg rounded-l-none'
+                  className='btn btn-sm btn-outline btn-warning text-lg'
                   title='Delete from List'
                 >
                   <MdPlaylistRemove />
@@ -450,8 +448,53 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   </button>
                 </div>
               </div>
-            </div>
-            {video.isLive && video.status === 'recording' && (
+            ) : (
+              <div>
+                <div className='dropdown dropdown-top'>
+                  <label
+                    tabIndex={0}
+                    className='btn btn-sm btn-outline btn-error text-lg rounded-r-none'
+                    title='Delete from List and File'
+                  >
+                    <MdOutlineVideocamOff />
+                  </label>
+                  <div
+                    tabIndex={0}
+                    className='dropdown-content mb-1 p-1 bg-error text-error-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
+                  >
+                    <div className='px-1 text-sm'>Delete from List and File?</div>
+                    <button
+                      className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
+                      onClick={handleClickDelete(video, 'deleteFile')}
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+                <div className='dropdown dropdown-top'>
+                  <label
+                    tabIndex={0}
+                    className='btn btn-sm btn-outline btn-warning text-lg rounded-l-none'
+                    title='Delete from List'
+                  >
+                    <MdPlaylistRemove />
+                  </label>
+                  <div
+                    tabIndex={0}
+                    className='dropdown-content mb-1 p-1 bg-warning text-warning-content shadow-md border-rose-500 rounded-md text-xs whitespace-nowrap'
+                  >
+                    <div className='px-1 text-sm'>Delete from List?</div>
+                    <button
+                      className='btn btn-xs bg-black border-0 !rounded-md dark:!rounded-full normal-case'
+                      onClick={handleClickDelete(video, 'deleteList')}
+                    >
+                      Yes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {video.isLive && isRecording && (
               <button
                 className='btn btn-sm btn-circle btn-outline btn-error text-lg'
                 onClick={handleClickStopRecording}
@@ -470,12 +513,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               >
                 <TbExternalLink />
               </a>
-              {video.status === 'completed' ? (
+              {isCompleted ? (
                 <a
                   className={'btn btn-sm btn-primary text-xl dark:btn-secondary'}
-                  href={
-                    video.status === 'completed' ? `/api/file?uuid=${video.uuid}&download=true` : ''
-                  }
+                  href={isCompleted ? `/api/file?uuid=${video.uuid}&download=true` : ''}
                   rel='noopener noreferrer'
                   target='_blank'
                   download={video?.status === 'completed' ? video.file.name : false}
@@ -489,19 +530,25 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                     'btn btn-sm btn-primary text-lg dark:btn-secondary',
                     recommendedDownloadRetry && 'animate-pulse'
                   )}
-                  disabled={video?.isLive}
+                  disabled={isValidating || video?.isLive}
                   onClick={handleClickRestartDownload}
                   title={video?.isLive ? '' : 'Retry Download'}
                 >
-                  {video?.isLive ? <AiOutlineCloudDownload /> : <VscRefresh />}
+                  {video?.isLive ? (
+                    <AiOutlineCloudDownload />
+                  ) : (
+                    <VscRefresh className={classNames(isValidating && 'animate-spin')} />
+                  )}
                 </button>
               )}
             </div>
           </div>
         </div>
-        {video.status === 'completed' ? (
+        {isCompleted ? (
           <div className='h-1'></div>
-        ) : video.status === 'recording' ? (
+        ) : isStandby ? (
+          <div className='h-1 bg-zinc-500/50' />
+        ) : isRecording ? (
           <div className='h-1 gradient-background' />
         ) : (
           <progress

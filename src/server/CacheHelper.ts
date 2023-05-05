@@ -1,6 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
-import { lruCache } from './lruCache';
+import { lruCache } from '@/server/lruCache';
 
 export const DOWNLOAD_PATH = path.join('/', 'downloads');
 export const CACHE_PATH = path.join('/', 'cache');

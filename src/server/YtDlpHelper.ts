@@ -1,28 +1,20 @@
 import { spawn } from 'node:child_process';
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import type { Readable } from 'node:stream';
-import numeral from 'numeral';
 import { Stats, promises as fs } from 'fs';
-import {
-  CACHE_FILE_PREFIX,
-  CACHE_PATH,
-  CacheHelper,
-  DOWNLOAD_PATH,
-  VIDEO_LIST_FILE
-} from './CacheHelper';
+import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
-import { FFmpegHelper } from './FFmpegHelper';
+import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH } from '@/server/CacheHelper';
+import { FFmpegHelper } from '@/server/FFmpegHelper';
+import type { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
 
 const downloadRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/gim;
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/gm;
 const filePathRegex = new RegExp(
-  `^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|part))$`,
+  `^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))$`,
   'gm'
 );
 const streamFilePathRegex = new RegExp(
-  `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|part))'$`,
+  `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))'$`,
   'gm'
 );
 const thumbnailRegex = new RegExp(
@@ -36,7 +28,7 @@ const moveThumbnailMessageRegex = new RegExp(
 export class YtDlpHelper {
   public readonly url: string;
   private readonly videoInfo: VideoInfo = {
-    status: 'stanby',
+    status: 'standby',
     uuid: '',
     id: '',
     url: '',
@@ -60,17 +52,16 @@ export class YtDlpHelper {
   };
   private isDownloadStarted = false;
   private isFormatExist = false;
-  private ytdlp?: ChildProcessWithoutNullStreams;
   private pid?: number;
   private metadata?: VideoMetadata;
-  private stdout?: Readable;
-  private stderr?: Readable;
 
-  constructor(querys: { url: string; format?: string; pid?: number }) {
+  constructor(querys: { url: string; uuid?: string; format?: string; pid?: number }) {
     this.url = querys.url;
     this.pid = querys.pid;
     this.metadata = undefined;
+    this.videoInfo.url = querys.url;
     this.videoInfo.format = querys.format || 'bv+ba/b';
+    if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
   public async start({
@@ -85,14 +76,23 @@ export class YtDlpHelper {
     downloadStartCallback?: () => void;
     downloadErrorCallback?: (error: string) => void;
     processExitCallback?: () => void;
-  }): Promise<this> {
-    return new Promise(async (resolve, reject) => {
-      const metadata = await this.getMetadata();
+  }): Promise<void> {
+    return new Promise(async (resolve) => {
+      const metadata = await this.getMetadata().catch(async (error) => {
+        const errorMessage = error || 'Not found. Please check the url again.';
+        this.videoInfo.status = 'failed';
+        this.videoInfo.error = errorMessage;
+        await CacheHelper.set(uuid, this.videoInfo);
+        return downloadErrorCallback?.(errorMessage);
+      });
 
-      if (!metadata.id) {
-        reject('Not found. Please check the url again.');
+      if (!metadata?.id) {
+        const errorMessage = 'Not found. Please check the url again.';
+        this.videoInfo.status = 'failed';
+        this.videoInfo.error = errorMessage;
+        await CacheHelper.set(uuid, this.videoInfo);
+        return downloadErrorCallback?.(errorMessage);
       }
-      this.videoInfo.format = this.videoInfo?.format || 'bv+ba/b';
 
       const options = [
         '-f',
@@ -121,35 +121,34 @@ export class YtDlpHelper {
         killSignal: 'SIGINT',
         cwd: DOWNLOAD_PATH
       });
+      const videoInfo = this.videoInfo;
+      const throttleCacheSet = throttle(CacheHelper.set, 500);
 
       console.log(`new process, \`${ytdlp.pid}\``);
+      console.log(`download requested, \`${videoInfo.url}\``);
 
-      const videoInfo = this.videoInfo;
+      let _fileDestination: string | null = null;
       let cachingInterval: NodeJS.Timer | null = null;
-      this.videoInfo.uuid = uuid;
-      this.videoInfo.id = metadata?.id || '';
-      this.videoInfo.url = this.url;
-      this.videoInfo.title = metadata?.title || '';
-      this.videoInfo.description = metadata?.description || '';
-      this.videoInfo.thumbnail = metadata?.thumbnail || '';
-      this.videoInfo.isLive = metadata?.isLive || false;
-      this.videoInfo.updatedAt = Date.now();
-      this.videoInfo.createdAt = Date.now();
 
-      this.pid = ytdlp.pid;
-      this.stdout = ytdlp.stdout;
-      this.stderr = ytdlp.stderr;
-      this.ytdlp = ytdlp;
+      videoInfo.uuid = uuid;
+      videoInfo.id = metadata?.id || '';
+      videoInfo.url = this.url;
+      videoInfo.title = metadata?.title || '';
+      videoInfo.description = metadata?.description || '';
+      videoInfo.thumbnail = metadata?.thumbnail || '';
+      videoInfo.isLive = metadata?.isLive || false;
+      videoInfo.updatedAt = Date.now();
+      videoInfo.createdAt = Date.now();
+      videoInfo.download.pid = ytdlp.pid!;
 
-      this.stdout.setEncoding('utf-8');
-      this.stderr.setEncoding('utf-8');
-
+      ytdlp.stdout.setEncoding('utf-8');
+      ytdlp.stderr.setEncoding('utf-8');
       if (process.env.NODE_ENV === 'development') {
-        ytdlp.stderr.on('data', (data) => {
-          console.log('[stderr]', data?.trim?.());
-        });
         ytdlp.stdout.on('data', (data) => {
           console.log('[stdout]', data?.trim?.());
+        });
+        ytdlp.stderr.on('data', (data) => {
+          console.log('[stderr]', data?.trim?.());
         });
       }
 
@@ -174,14 +173,19 @@ export class YtDlpHelper {
 
           if (text.endsWith('has already been downloaded')) {
             this.isFormatExist = true;
-            downloadStartCallback?.();
-            ytdlp.kill(2);
-            return;
+            const error = 'Has already been downloaded';
+            this.videoInfo.status = 'failed';
+            this.videoInfo.error = error;
+            await CacheHelper.set(uuid, this.videoInfo);
+            return downloadErrorCallback?.(error);
           }
 
           if (text.startsWith('ERROR: ')) {
             const error = text?.split('\n')?.[0] || text;
-            downloadErrorCallback?.(error);
+            this.videoInfo.status = 'failed';
+            this.videoInfo.error = error;
+            await CacheHelper.set(uuid, this.videoInfo);
+            return downloadErrorCallback?.(error);
           }
 
           let fileDestination = '';
@@ -205,18 +209,18 @@ export class YtDlpHelper {
           if (metadata.isLive) {
             cachingInterval = setInterval(async () => {
               videoInfo.updatedAt = Date.now();
-              videoInfo.download.pid = this.ytdlp?.pid || null;
-              await CacheHelper.set(uuid, videoInfo);
+              videoInfo.download.pid = ytdlp?.pid || null;
+              await throttleCacheSet(uuid, videoInfo);
             }, 3000);
           }
 
           try {
-            if (!isDownloadRestart) {
-              const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
-              uuidList.unshift(uuid);
-              await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
-              await CacheHelper.set(uuid, videoInfo);
-            }
+            // if (!isDownloadRestart) {
+            // const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
+            // uuidList.unshift(uuid);
+            // await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
+            await CacheHelper.set(uuid, videoInfo);
+            // }
           } catch (e) {}
 
           ytdlp.stdout.off('data', initialListener);
@@ -228,9 +232,6 @@ export class YtDlpHelper {
           downloadStartCallback?.();
         } catch (e) {}
       };
-
-      let _fileDestination: string | null = null;
-      const cacheSetThrottle = throttle(CacheHelper.set, 500);
 
       const streamDownloadListener = async (message: string) => {
         // const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
@@ -252,7 +253,7 @@ export class YtDlpHelper {
         const fileDestination = filePathRegex.exec(message)?.[1];
 
         if (fileDestination) {
-          videoInfo.download.pid = this.ytdlp?.pid || null;
+          videoInfo.download.pid = ytdlp?.pid || null;
           videoInfo.file.path = fileDestination;
           videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
           _fileDestination = fileDestination;
@@ -284,11 +285,11 @@ export class YtDlpHelper {
                 // const filesize = execResult[2];
                 const speed = execResult[3];
                 videoInfo.status = 'downloading';
-                videoInfo.download.pid = this.pid!;
+                videoInfo.download.pid = ytdlp.pid!;
                 videoInfo.download.progress = numeral(progress).format('0.00');
                 videoInfo.download.speed = numeral(speed).format('0.0b') + '/s';
                 videoInfo.updatedAt = Date.now();
-                await cacheSetThrottle(uuid, videoInfo);
+                await throttleCacheSet(uuid, videoInfo);
               }
               break;
             }
@@ -300,7 +301,7 @@ export class YtDlpHelper {
 
               videoInfo.file.path = filePath;
               videoInfo.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
-              videoInfo.download.pid = this.pid!;
+              videoInfo.download.pid = ytdlp.pid!;
               videoInfo.download.progress = '1';
               videoInfo.status = 'merging';
               videoInfo.updatedAt = Date.now();
@@ -405,12 +406,12 @@ export class YtDlpHelper {
         metadata.isLive ? streamDownloadEndListener : videoDownloadEndListener
       );
 
-      this.ytdlp?.on('exit', async () => {
+      ytdlp?.on('exit', async () => {
         if (cachingInterval) clearInterval(cachingInterval);
         processExitCallback?.();
       });
 
-      resolve(this);
+      return resolve();
     });
   }
 
@@ -489,7 +490,7 @@ export class YtDlpHelper {
           this.metadata = metadata;
           resolve(metadata);
         } catch (e) {
-          reject('failed fetching formats, downloading best available');
+          reject(e || 'failed fetching formats, downloading best available');
         }
       });
     });
@@ -502,12 +503,8 @@ export class YtDlpHelper {
     return this.pid;
   }
 
-  getStdout(): Readable {
-    return this.stdout!;
-  }
-
-  getStderr(): Readable {
-    return this.stderr!;
+  getVideoInfo() {
+    return this.videoInfo;
   }
 
   getIsDownloadStarted() {
