@@ -78,20 +78,24 @@ export class YtDlpHelper {
     processExitCallback?: () => void;
   }): Promise<void> {
     return new Promise(async (resolve) => {
-      const metadata = await this.getMetadata().catch(async (error) => {
-        const errorMessage = error || 'Not found. Please check the url again.';
+      const metadata = await this.getMetadata().catch((error: string) => error);
+
+      if (typeof metadata === 'string') {
+        const errorMessage = metadata || 'Not found. Please check the url again.';
         this.videoInfo.status = 'failed';
         this.videoInfo.error = errorMessage;
         await CacheHelper.set(uuid, this.videoInfo);
-        return downloadErrorCallback?.(errorMessage);
-      });
+        downloadErrorCallback?.(errorMessage);
+        return resolve();
+      }
 
       if (!metadata?.id) {
         const errorMessage = 'Not found. Please check the url again.';
         this.videoInfo.status = 'failed';
         this.videoInfo.error = errorMessage;
         await CacheHelper.set(uuid, this.videoInfo);
-        return downloadErrorCallback?.(errorMessage);
+        downloadErrorCallback?.(errorMessage);
+        return resolve();
       }
 
       const options = [
