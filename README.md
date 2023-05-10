@@ -28,7 +28,6 @@ services:
       - 3000:3000 # Port mapping
     restart: unless-stopped
 ```
-
 # 시작
 ```BASH
 # docker-compose v1 일 경우
@@ -37,6 +36,12 @@ docker-compose up -d
 # docker-compose v2 일 경우
 docker compose up -d
 ```
+
+<br />
+
+# iOS Shortcut
+단축어로 앱의 공유에서 yt-dlp-web을 열 수 있습니다.<br />사용하기 전에 아래 단축어의 설정에서 텍스트 박스에 yt-dlp-web이 배포되어 있는 도메인을 입력해주세요.
+[https://www.icloud.com/shortcuts/07b0f21179704de59da8b6b1832665a6](https://www.icloud.com/shortcuts/07b0f21179704de59da8b6b1832665a6)
 
 <br />
 
