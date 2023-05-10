@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
     const uuid = searchParams.get('uuid');
-    const download = searchParams.get('download') === 'true';
+    const isDownload = searchParams.get('download') === 'true';
 
     try {
       if (typeof uuid !== 'string') {
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const file = await fs.open(videoPath, 'r');
     const videoSize = stat?.size;
 
-    // File Stream
+    // Video Stream
     if (range && stat) {
       // 1024 * 1024 * 2 = 2MB (4K 이상은 1MB로 부족해서 2MB로 늘렸다.)
       const CHUNK_SIZE = 1024 * 1024 * 2;
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
         'Content-Length': `${videoSize}`,
         'Content-Type': lookup(videoPath) || 'video/mp4',
         //! WARNING: encodeURIComponent 사용하면 파일이름이 깨짐.
-        'Content-Disposition': `${download ? 'attachment; ' : ''} filename="${Buffer.from(
+        'Content-Disposition': `${isDownload ? 'attachment; ' : ''} filename="${Buffer.from(
           videoInfo.file.name || 'Untitled.mp4'
         ).toString('binary')}"; filename*=utf-8''${encodeURIComponent(
           videoInfo.file.name || 'Untitled.mp4'
