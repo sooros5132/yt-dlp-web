@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import classNames from 'classnames';
-import React, { FormEvent, memo, useState } from 'react';
+import React, { FormEvent, memo, useLayoutEffect, useRef, useState } from 'react';
 import { mutate } from 'swr';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -18,6 +18,9 @@ import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
 import type { ChangeEvent } from 'react';
 import type { VideoFormat, VideoMetadata } from '@/types/video';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { AxiosResponse, DownloadResponse } from '@/types/types';
+import queryString from 'query-string';
 
 interface State {
   url: string;
@@ -28,6 +31,12 @@ interface Store extends State {
   setUrl: (url: string) => void;
   enableBestFormat: () => void;
   disableBestFormat: () => void;
+  requestDownload: (params?: {
+    url: string;
+    videoId?: string;
+    audioId?: string;
+  }) => Promise<AxiosResponse<DownloadResponse>>;
+  getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
 }
 
 const initialState: State = {
@@ -53,6 +62,33 @@ const useStore = create(
         set({
           enabledBestFormat: false
         });
+      },
+      async requestDownload(params) {
+        const url = get().url;
+        const result = await axios
+          .get('/api/d', {
+            params: {
+              ...params,
+              url: params?.url || url
+            }
+          })
+          .then((res) => res.data)
+          .catch((res) => res.response.data);
+
+        return result as AxiosResponse<DownloadResponse>;
+      },
+      async getMetadata() {
+        const url = get().url;
+        const metadata = await axios
+          .get('/api/info', {
+            params: {
+              url
+            }
+          })
+          .then((res) => res.data)
+          .catch((res) => res.response.data);
+
+        return metadata as AxiosResponse<VideoMetadata>;
       }
     }),
     {
@@ -68,10 +104,14 @@ const useStore = create(
 );
 
 export function DownloadForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { setUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
     setUrl(evt.target.value || '');
@@ -100,16 +140,11 @@ export function DownloadForm() {
     }
     setValidating(true);
     setVideoMetadata(null);
+    const { getMetadata, requestDownload } = useStore.getState();
     try {
       if (enabledBestFormat) {
-        const result = await axios
-          .get('/api/d', {
-            params: {
-              url
-            }
-          })
-          .then((res) => res.data)
-          .catch((res) => res.response.data);
+        const result = await requestDownload();
+
         if (result?.error) {
           toast.error(result?.error || 'Download Failed');
         } else if (result?.success) {
@@ -126,21 +161,16 @@ export function DownloadForm() {
           }
           mutate('/api/list');
         }
+
         return;
       } else {
-        const metadata = await axios
-          .get('/api/info', {
-            params: {
-              url
-            }
-          })
-          .then((res) => res.data)
-          .catch((res) => res.response.data);
+        const metadata = await getMetadata();
         if (metadata?.error) {
           toast.error(metadata?.error || 'search failed');
         } else if (metadata?.id) {
           setVideoMetadata(metadata);
         }
+        return;
       }
     } finally {
       setValidating(false);
@@ -159,9 +189,58 @@ export function DownloadForm() {
     setUrl(clipText);
   };
 
+  useLayoutEffect(() => {
+    const initUrl = searchParams.get('url');
+    if (initUrl) {
+      setUrl(initUrl);
+    }
+
+    setTimeout(async () => {
+      if (isValidating) {
+        return;
+      }
+      const isDownload = searchParams.get('download') === 'true';
+      if (isDownload) {
+        if (!initUrl || !/^https?:\/?\/?/i.test(initUrl)) {
+          return;
+        }
+
+        try {
+          const { url, download, ..._newQueryString } = queryString.parse(searchParams.toString());
+          const newQueryString = queryString.stringify(_newQueryString);
+
+          setValidating(true);
+          router.replace(`${pathname}?${newQueryString}`);
+          const result = await useStore.getState().requestDownload();
+
+          if (result?.error) {
+            toast.error(result?.error || 'Download Failed');
+          } else if (result?.success) {
+            if (result?.status === 'already') {
+              toast.info('Already been downloaded');
+              return;
+            }
+            if (result?.status === 'standby') {
+              toast.success('Download Requested!');
+            } else if (result?.status === 'downloading') {
+              toast.success('Download Requested!');
+            } else if (result?.status === 'restart') {
+              toast.success('Download Restart');
+            }
+
+            mutate('/api/list');
+          }
+        } finally {
+          setValidating(false);
+        }
+      }
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className='px-4 py-2 rounded-lg bg-base-content/5'>
-      <form className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
+      <form ref={formRef} className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
         <div className='input input-sm flex justify-between h-auto pr-1 focus:outline-none'>
           <input
             name='url'
@@ -205,7 +284,7 @@ export function DownloadForm() {
               readOnly={!hydrated}
               onChange={handleChangeCheckBox}
             />
-            <span className='text-sm'>Instant download in the best quality</span>
+            <span className='text-sm'>Download immediately in the best quality</span>
           </label>
         </div>
         <div className='text-right'>
@@ -354,13 +433,9 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
       return;
     }
     setValidating(true);
+    const { requestDownload } = useStore.getState();
     try {
-      const result = await axios
-        .get('/api/d', {
-          params
-        })
-        .then((res) => res.data)
-        .catch((res) => res.response.data);
+      const result = await requestDownload(params);
 
       if (result?.error) {
         toast.error(result?.error || 'Download Failed');
@@ -406,7 +481,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
             metadata.isLive && 'text-white gradient-background border-0'
           )}
           onClick={handleClickBestButton}
-          title='Instant download in the best quality'
+          title='Download immediately in the best quality'
         >
           {metadata.isLive && (
             <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
