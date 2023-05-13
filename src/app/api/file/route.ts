@@ -133,13 +133,28 @@ export async function DELETE(request: Request) {
 
       const newVideoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);
       try {
-        if (deleteFile && videoInfo.file.path) {
-          await fs.unlink(videoInfo.file.path);
-          if (videoInfo.localThumbnail) {
-            if (videoInfo.localThumbnail.startsWith(DOWNLOAD_PATH)) {
-              await fs.unlink(videoInfo.localThumbnail);
-            } else {
-              await fs.unlink(CACHE_PATH + '/thumbnails/' + videoInfo.localThumbnail);
+        if (deleteFile) {
+          if (videoInfo.file.path) {
+            await fs.unlink(videoInfo.file.path);
+            if (videoInfo.localThumbnail) {
+              if (videoInfo.localThumbnail.startsWith(DOWNLOAD_PATH)) {
+                await fs.unlink(videoInfo.localThumbnail);
+              } else {
+                await fs.unlink(CACHE_PATH + '/thumbnails/' + videoInfo.localThumbnail);
+              }
+            }
+          }
+          if (Array.isArray(videoInfo.playlist)) {
+            for await (const item of videoInfo.playlist) {
+              if (item?.path) {
+                await fs.unlink(item.path);
+              }
+            }
+          }
+          if (videoInfo.playlistDirPath) {
+            const dir = await fs.readdir(videoInfo.playlistDirPath, 'utf-8');
+            if (dir.length === 0) {
+              await fs.rmdir(videoInfo.playlistDirPath);
             }
           }
         }
