@@ -298,8 +298,6 @@ export class YtDlpHelper {
             }
           }
         } catch (e) {
-          console.log(e);
-
           reject(e || 'failed fetching formats, downloading best available');
         }
       });
@@ -755,7 +753,6 @@ export class YtDlpHelper {
 
       const downloadingItem = downloadingItemRegex.exec(message);
       if (downloadingItem) {
-        console.log(downloadingItem);
         const current = Number(downloadingItem[1]) - 1;
         currentIndex = current;
         currentDownloadingIndex = current;
