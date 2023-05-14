@@ -611,7 +611,7 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
 
   return (
     <div
-      className='fixed top-0 left-0 w-full h-full bg-black/90 dark:bg-black/80 backdrop-blur-xl z-10 cursor-pointer'
+      className='fixed top-0 left-0 w-full h-full bg-base-100/80 backdrop-blur-xl z-10 cursor-pointer'
       onClick={onClose}
     >
       <div className='flex items-center justify-center max-w-3xl h-full mx-auto'>
@@ -620,19 +620,27 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
           onClick={handleEventStopPropagation}
         >
           <div className='p-2 rounded-md bg-base-content/10'>
-            <div className='grid grid-cols-[34px_auto_34px] items-center text-center text-xl'>
-              <div></div>
-              <div>
+            <div className='flex items-center gap-x-1 text-xl'>
+              <div className='flex-auto pl-2'>
                 <span className='font-bold'>{video.title} </span>
                 <span className='text-sm'>
                   {video.download.playlist?.count && `(${video.download.playlist?.count})`}
                 </span>
               </div>
-              <div className='btn btn-sm btn-circle btn-ghost text-lg' onClick={onClose}>
+              <a
+                className={classNames('btn btn-xs btn-info text-lg', !video.url && 'btn-disabled')}
+                href={video.url || ''}
+                rel='noopener noreferrer'
+                target='_blank'
+                title='Open Original Link'
+              >
+                <TbExternalLink />
+              </a>
+              <div className='btn shrink-0 btn-xs btn-ghost text-lg' onClick={onClose}>
                 <CgClose />
               </div>
             </div>
-            <div className='divider my-2'></div>
+            <div className='divider mt-0 mb-2'></div>
             <div className='flex flex-col gap-y-1'>
               {video.playlist.map((item, i) => {
                 if (!item) {
@@ -683,7 +691,7 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
                         href={item.url || ''}
                         rel='noopener noreferrer'
                         target='_blank'
-                        title='Open Original Link'
+                        title='Open Item Link'
                       >
                         <TbExternalLink />
                       </a>
