@@ -138,8 +138,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         return;
       }
 
+      const deleteApiPath = video.type === 'playlist' ? '/api/playlist/file' : '/api/file';
+
       const result = await axios
-        .delete('/api/file', {
+        .delete(deleteApiPath, {
           params: {
             uuid: video.uuid,
             deleteFile
@@ -632,66 +634,80 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
             </div>
             <div className='divider my-2'></div>
             <div className='flex flex-col gap-y-1'>
-              {video.playlist.map((item, i) => (
-                <div
-                  key={item.uuid ?? i}
-                  className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md'
-                >
+              {video.playlist.map((item, i) => {
+                if (!item) {
+                  return (
+                    <div
+                      key={i}
+                      className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md text-zinc-500'
+                    >
+                      <div className='min-w-[2em] shrink-0 text-center font-bold'>{i + 1}</div>
+                      <div>No Data</div>
+                    </div>
+                  );
+                }
+
+                return (
                   <div
-                    className={classNames(
-                      'min-w-[2em] shrink-0 text-center font-bold',
-                      item.error && 'text-error',
-                      !item.error && item.isLive && 'text-zinc-500 line-through'
-                    )}
+                    key={item?.uuid ?? i}
+                    className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md'
                   >
-                    {i + 1}
-                  </div>
-                  <div className='flex-auto'>
-                    <div className='line-clamp-3'>
-                      {item.error ? (
-                        <span className='text-error' title={item.error}>
-                          {item.error}
-                        </span>
-                      ) : item.isLive ? (
-                        <span className='text-zinc-500'>Live has been excluded.</span>
-                      ) : (
-                        <span title={item.name || ''}>{item.name}</span>
+                    <div
+                      className={classNames(
+                        'min-w-[2em] shrink-0 text-center font-bold',
+                        item.error && 'text-error',
+                        !item.error && item.isLive && 'text-zinc-500 line-through'
                       )}
+                    >
+                      {i + 1}
+                    </div>
+                    <div className='flex-auto'>
+                      <div className='line-clamp-3'>
+                        {item.error ? (
+                          <span className='text-error' title={item.error}>
+                            {item.error}
+                          </span>
+                        ) : item.isLive ? (
+                          <span className='text-zinc-500'>Live has been excluded.</span>
+                        ) : (
+                          <span title={item.name || ''}>{item.name}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className='shrink-0 leading-4'>
+                      <a
+                        className={classNames(
+                          'btn btn-xs btn-info text-lg',
+                          !item.url && 'btn-disabled'
+                        )}
+                        href={item.url || ''}
+                        rel='noopener noreferrer'
+                        target='_blank'
+                        title='Open Original Link'
+                      >
+                        <TbExternalLink />
+                      </a>
+                    </div>
+                    <div className='shrink-0 leading-4'>
+                      <a
+                        className={classNames(
+                          'btn btn-xs text-xl',
+                          item?.error || !item.uuid || !item.path || !item.size || item.isLive
+                            ? 'btn-disabled'
+                            : 'btn-primary dark:btn-secondary'
+                        )}
+                        href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
+                        rel='noopener noreferrer'
+                        target='_blank'
+                        download={item.name}
+                        title='Download Video'
+                      >
+                        <AiOutlineCloudDownload />
+                      </a>
                     </div>
                   </div>
-                  <div className='shrink-0 leading-4'>
-                    <a
-                      className={classNames(
-                        'btn btn-xs btn-info text-lg',
-                        !item.url && 'btn-disabled'
-                      )}
-                      href={item.url || ''}
-                      rel='noopener noreferrer'
-                      target='_blank'
-                      title='Open Original Link'
-                    >
-                      <TbExternalLink />
-                    </a>
-                  </div>
-                  <div className='shrink-0 leading-4'>
-                    <a
-                      className={classNames(
-                        'btn btn-xs text-xl',
-                        item?.error || !item.uuid || !item.path || !item.size || item.isLive
-                          ? 'btn-disabled'
-                          : 'btn-primary dark:btn-secondary'
-                      )}
-                      href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
-                      rel='noopener noreferrer'
-                      target='_blank'
-                      download={item.name}
-                      title='Download Video'
-                    >
-                      <AiOutlineCloudDownload />
-                    </a>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

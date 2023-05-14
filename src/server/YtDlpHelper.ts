@@ -10,14 +10,8 @@ import { randomUUID } from 'node:crypto';
 const downloadProgressRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/im;
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/m;
-const filePathRegex = new RegExp(
-  `^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))$`,
-  'm'
-);
-const streamFilePathRegex = new RegExp(
-  `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))'$`,
-  'm'
-);
+const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(.+))$`, 'm');
+const streamFilePathRegex = new RegExp(`file:(${DOWNLOAD_PATH}/(.+)\\.(.+))'$`, 'm');
 const thumbnailRegex = new RegExp(
   `^\\[info\\]\\sWriting\\svideo\\sthumbnail\\s.+\\s(${DOWNLOAD_PATH}/.+)$`,
   'm'
@@ -29,11 +23,9 @@ const moveThumbnailMessageRegex = new RegExp(
 const downloadingItemRegex = /^\[download\]\sDownloading\sitem\s([0-9]+)\sof\s([0-9]+)$/m;
 const finishedDownloadingPlaylistRegex = /^\[download\]\sFinished\sdownloading\splaylist\:(.+)$/m;
 const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/m;
-// [download] Downloading item 1 of 3
-// [download] Finished downloading playlist:
-// [youtube] Extracting URL
-const playlistFolderPrefix = '[Playlist]';
 const playlistFolderPrefixRegexString = '\\[Playlist\\]';
+const downloadDestinationRegex = /^\[download\]\sDestination\:\s(.+)$/m;
+const playlistFolderPrefix = '[Playlist]';
 
 export class YtDlpHelper {
   public readonly url: string;
@@ -402,7 +394,7 @@ export class YtDlpHelper {
         if (metadata.isLive) {
           fileDestination = streamFilePathRegex.exec(text)?.[1] || '';
         } else {
-          fileDestination = /^\[download\]\sDestination\:\s(.+)$/m.exec(text)?.[1] || '';
+          fileDestination = downloadDestinationRegex.exec(text)?.[1] || '';
         }
 
         if (!fileDestination) {
@@ -686,7 +678,7 @@ export class YtDlpHelper {
             const dirPath = new RegExp(
               `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
               'm'
-            ).exec(message);
+            ).exec(filePath);
             if (dirPath) {
               videoInfo.playlistDirPath = dirPath[1];
             }
@@ -723,7 +715,7 @@ export class YtDlpHelper {
             const dirPath = new RegExp(
               `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
               'm'
-            ).exec(message);
+            ).exec(filePath);
             if (dirPath) {
               videoInfo.playlistDirPath = dirPath[1];
             }
@@ -731,10 +723,6 @@ export class YtDlpHelper {
             await throttleCacheSet(uuid, videoInfo);
           }
         } catch (e) {}
-        const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
-
-        videoInfo.updatedAt = Date.now();
-        await throttleCacheSet(uuid, videoInfo);
       }
 
       const downloadProgress = downloadProgressRegex.exec(message);
@@ -763,12 +751,32 @@ export class YtDlpHelper {
           current: current + 1,
           count: metadata.playlistCount
         };
+        videoInfo.download.progress = '0';
         videoInfo.updatedAt = Date.now();
         await throttleCacheSet(uuid, videoInfo);
       }
 
+      const downloadDestination = downloadDestinationRegex.exec(message);
+      if (downloadDestination) {
+        const filePath = downloadDestination[1];
+        if (videoInfo.playlist[currentIndex]) {
+          videoInfo.playlist[currentIndex].path = filePath;
+          videoInfo.playlist[currentIndex].name = filePath.replace(
+            new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+            ''
+          );
+          const dirPath = new RegExp(
+            `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+            'm'
+          ).exec(filePath);
+          if (dirPath) {
+            videoInfo.playlistDirPath = dirPath[1];
+          }
+        }
+      }
+
       const extractingUrl = extractingURLRegex.exec(message);
-      if (extractingUrl) {
+      if (extractingUrl && videoInfo.playlist[currentIndex]) {
         videoInfo.playlist[currentIndex].url = extractingUrl[1];
       }
 
@@ -784,6 +792,25 @@ export class YtDlpHelper {
         videoInfo.download.progress = '1';
         videoInfo.status = 'completed';
         videoInfo.updatedAt = Date.now();
+
+        await Promise.all(
+          videoInfo.playlist.map(async (item, i) => {
+            try {
+              videoInfo.playlist[i].uuid = item.uuid || randomUUID();
+
+              const filePath = item.path;
+              if (!filePath) {
+                return;
+              }
+
+              const stat = await fs.stat(filePath);
+              if (stat) {
+                videoInfo.playlist[i].size = stat.size;
+              }
+            } catch (e) {}
+          })
+        );
+
         await throttleCacheSet(uuid, videoInfo);
       }
 
