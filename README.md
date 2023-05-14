@@ -37,11 +37,20 @@ docker-compose up -d
 docker compose up -d
 ```
 
-<br />
-
 # iOS Shortcut
 단축어로 앱의 공유에서 yt-dlp-web을 열 수 있습니다.<br />사용하기 전에 아래 단축어의 설정에서 텍스트 박스에 yt-dlp-web이 배포되어 있는 도메인을 입력해주세요.
 [https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155](https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155)
+
+# Change Logs
+```
+May 15, 2023 - v0.2.0 - Support playlist download
+
+May 11, 2023 - v0.1.5 - Request download in iOS Shortcut
+
+Apr 28, 2023 - Support recording live stream
+
+Apr 24, 2023 - Create Repository
+```
 
 <br />
 
