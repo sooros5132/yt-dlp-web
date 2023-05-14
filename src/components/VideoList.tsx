@@ -17,6 +17,7 @@ import { VscRefresh } from 'react-icons/vsc';
 import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
 import { TbExternalLink } from 'react-icons/tb';
+import { CgClose, CgPlayListSearch } from 'react-icons/cg';
 import type { VideoInfo } from '@/types/video';
 
 const MAX_INTERVAL_Time = 120 * 1000;
@@ -117,6 +118,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
   const [isNotSupportedCodec, setNotSupportedCodec] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
+  const [openPlaylistView, setOpenPlaylistView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
   const isCompleted = video.status === 'completed';
@@ -173,7 +175,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
   };
 
   const handleMouseEnter = async () => {
-    if (!isCompleted) {
+    if (!isCompleted || video?.type === 'playlist') {
       return;
     }
     const videoEl = videoRef.current;
@@ -246,6 +248,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
     if (video.status !== 'completed') {
       return;
     }
+    if (video?.type === 'playlist') {
+      setOpenPlaylistView(true);
+      return;
+    }
     const NOT_SUPPORTED = 'not supported';
     const videoEl = videoRef.current;
     if (videoEl) {
@@ -270,6 +276,14 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
         }
       }
     }
+  };
+
+  const handleClickOpenPlaylistButton = () => {
+    setOpenPlaylistView(true);
+  };
+
+  const handleClosePlaylistView = () => {
+    setOpenPlaylistView(false);
   };
 
   useEffect(() => {
@@ -378,6 +392,11 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                     {numeral((video.updatedAt - video.createdAt) / 1000).format('00:00:00')}
                   </div>
                 )}
+                {video.download.playlist && (
+                  <div className='text-xs text-center'>
+                    {video.download.playlist?.current}/{video.download.playlist?.count}
+                  </div>
+                )}
                 <div
                   className={classNames(
                     'text-sm text-center animate-pulse',
@@ -393,6 +412,11 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
               </div>
             )}
           </div>
+          {isCompleted && video?.type === 'playlist' && (
+            <div className='absolute top-1.5 left-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+              Playlist {video.download.playlist?.count && `(${video.download.playlist?.count})`}
+            </div>
+          )}
           {!isMouseEntered && typeof video.file.height === 'number' && video.file.height > 0 && (
             <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
               {video.file.height}p
@@ -514,16 +538,26 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <TbExternalLink />
               </a>
               {isCompleted ? (
-                <a
-                  className={'btn btn-sm btn-primary text-xl dark:btn-secondary'}
-                  href={isCompleted ? `/api/file?uuid=${video.uuid}&download=true` : ''}
-                  rel='noopener noreferrer'
-                  target='_blank'
-                  download={video?.status === 'completed' ? video.file.name : false}
-                  title='Download Video'
-                >
-                  <AiOutlineCloudDownload />
-                </a>
+                video.type === 'playlist' ? (
+                  <button
+                    className='btn btn-sm btn-primary text-xl dark:btn-secondary'
+                    disabled={isValidating}
+                    onClick={handleClickOpenPlaylistButton}
+                  >
+                    <CgPlayListSearch />
+                  </button>
+                ) : (
+                  <a
+                    className='btn btn-sm btn-primary text-xl dark:btn-secondary'
+                    href={isCompleted ? `/api/file?uuid=${video.uuid}&download=true` : ''}
+                    rel='noopener noreferrer'
+                    target='_blank'
+                    download={video?.status === 'completed' ? video.file.name : false}
+                    title='Download Video'
+                  >
+                    <AiOutlineCloudDownload />
+                  </a>
+                )
               ) : (
                 <button
                   className={classNames(
@@ -557,8 +591,113 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           />
         )}
       </div>
+      {openPlaylistView && video.type === 'playlist' && video.playlist && video.playlist.length && (
+        <PlaylistView video={video} onClose={handleClosePlaylistView} />
+      )}
     </div>
   );
 }, isEqual);
 
 VideoDetailCard.displayName = 'VideoDetailCard';
+
+type PlaylistViewProps = { video: VideoInfo; onClose: () => void };
+
+const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
+  const handleEventStopPropagation = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <div
+      className='fixed top-0 left-0 w-full h-full bg-black/90 dark:bg-black/80 backdrop-blur-xl z-10 cursor-pointer'
+      onClick={onClose}
+    >
+      <div className='flex items-center justify-center max-w-3xl h-full mx-auto'>
+        <div
+          className='max-w-[95%] max-h-[80%] mx-auto overflow-y-auto cursor-auto'
+          onClick={handleEventStopPropagation}
+        >
+          <div className='p-2 rounded-md bg-base-content/10'>
+            <div className='grid grid-cols-[34px_auto_34px] items-center text-center text-xl'>
+              <div></div>
+              <div>
+                <span className='font-bold'>{video.title} </span>
+                <span className='text-sm'>
+                  {video.download.playlist?.count && `(${video.download.playlist?.count})`}
+                </span>
+              </div>
+              <div className='btn btn-sm btn-circle btn-ghost text-lg' onClick={onClose}>
+                <CgClose />
+              </div>
+            </div>
+            <div className='divider my-2'></div>
+            <div className='flex flex-col gap-y-1'>
+              {video.playlist.map((item, i) => (
+                <div
+                  key={item.uuid ?? i}
+                  className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md'
+                >
+                  <div
+                    className={classNames(
+                      'min-w-[2em] shrink-0 text-center font-bold',
+                      item.error && 'text-error',
+                      !item.error && item.isLive && 'text-zinc-500 line-through'
+                    )}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className='flex-auto'>
+                    <div className='line-clamp-3'>
+                      {item.error ? (
+                        <span className='text-error' title={item.error}>
+                          {item.error}
+                        </span>
+                      ) : item.isLive ? (
+                        <span className='text-zinc-500'>Live has been excluded.</span>
+                      ) : (
+                        <span title={item.name || ''}>{item.name}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className='shrink-0 leading-4'>
+                    <a
+                      className={classNames(
+                        'btn btn-xs btn-info text-lg',
+                        !item.url && 'btn-disabled'
+                      )}
+                      href={item.url || ''}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                      title='Open Original Link'
+                    >
+                      <TbExternalLink />
+                    </a>
+                  </div>
+                  <div className='shrink-0 leading-4'>
+                    <a
+                      className={classNames(
+                        'btn btn-xs text-xl',
+                        item?.error || !item.uuid || !item.path || !item.size || item.isLive
+                          ? 'btn-disabled'
+                          : 'btn-primary dark:btn-secondary'
+                      )}
+                      href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                      download={item.name}
+                      title='Download Video'
+                    >
+                      <AiOutlineCloudDownload />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}, isEqual);
+
+PlaylistView.displayName = 'PlaylistView';
