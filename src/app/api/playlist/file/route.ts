@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH, VIDEO_LIST_FILE } from '@/server/CacheHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { lookup } from 'mime-types';
 import { ProcessHelper } from '@/server/ProcessHelper';
 import type { VideoInfo } from '@/types/video';
@@ -12,11 +12,19 @@ export async function GET(request: Request) {
     const urlObject = new URL(request.url);
     const searchParams = urlObject.searchParams;
     const uuid = searchParams.get('uuid');
+    const itemIndex = searchParams.get('itemIndex') ? Number(searchParams.get('itemIndex')) : NaN;
+    const itemUuid = searchParams.get('itemUuid');
     const isDownload = searchParams.get('download') === 'true';
 
     try {
-      if (typeof uuid !== 'string') {
-        throw 'Param `uuid` is only string type';
+      if (typeof uuid !== 'string' || !uuid.length) {
+        throw '`uuid` is required and can only be of string type.';
+      }
+      if (typeof itemUuid !== 'string' || !itemUuid.length) {
+        throw '`itemUuid` is required and can only be of string type.';
+      }
+      if (searchParams.get('itemIndex') && Number.isNaN(itemIndex)) {
+        throw '`itemIndex` only accepts numeric types';
       }
     } catch (e) {
       return new Response(e as string, {
@@ -28,14 +36,22 @@ export async function GET(request: Request) {
 
     const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
 
-    const videoPath = videoInfo?.file?.path;
+    const video =
+      itemIndex &&
+      videoInfo?.playlist?.[itemIndex] &&
+      videoInfo.playlist[itemIndex]?.uuid === itemUuid
+        ? videoInfo?.playlist?.[itemIndex]
+        : videoInfo?.playlist?.find((item) => item.uuid === itemUuid);
+
+    const videoPath = video?.path;
     if (!videoPath) {
-      throw 'videoPath is not found';
+      throw 'not found';
     }
 
     const stat = await fs.stat(videoPath);
 
     const file = await fs.open(videoPath, 'r');
+
     const videoSize = stat?.size;
 
     // Video Stream
@@ -79,8 +95,8 @@ export async function GET(request: Request) {
         'Content-Disposition': `${
           isDownload ? 'attachment; ' : ''
         }filename*=utf-8''${encodeURIComponent(
-          videoInfo.file.name || 'Untitled.mp4'
-        )}; filename="${Buffer.from(videoInfo.file.name || 'Untitled.mp4').toString('binary')}";`
+          video.name || 'Untitled.mp4'
+        )}; filename="${Buffer.from(video.name || 'Untitled.mp4').toString('binary')}";`
       },
       status: 200
     });
@@ -102,18 +118,12 @@ export async function DELETE(request: Request) {
     const searchParams = urlObject.searchParams;
     const uuid = searchParams.get('uuid');
     const deleteFile = searchParams.get('deleteFile') === 'true';
+
     if (typeof uuid !== 'string') {
       throw 'Param `uuid` is only string type';
     }
-    // const video = await prisma.video.findUnique({ where: { uuid } });
 
-    // const videoPath = video?.filePath!;
-    // if (!videoPath) {
-    //   throw 'videoPath is not found';
-    // }
     try {
-      // await fs.unlink(videoPath);
-
       const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
       const videoList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
 
@@ -133,13 +143,18 @@ export async function DELETE(request: Request) {
 
       const newVideoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);
       try {
-        if (deleteFile && videoInfo.file.path) {
-          await fs.unlink(videoInfo.file.path);
-          if (videoInfo.localThumbnail) {
-            if (videoInfo.localThumbnail.startsWith(DOWNLOAD_PATH)) {
-              await fs.unlink(videoInfo.localThumbnail);
-            } else {
-              await fs.unlink(CACHE_PATH + '/thumbnails/' + videoInfo.localThumbnail);
+        if (deleteFile) {
+          if (Array.isArray(videoInfo.playlist)) {
+            for await (const item of videoInfo.playlist) {
+              if (item?.path) {
+                await fs.unlink(item.path);
+              }
+            }
+          }
+          if (videoInfo.playlistDirPath) {
+            const dir = await fs.readdir(videoInfo.playlistDirPath, 'utf-8');
+            if (dir.length === 0) {
+              await fs.rmdir(videoInfo.playlistDirPath);
             }
           }
         }

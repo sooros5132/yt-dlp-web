@@ -1,30 +1,32 @@
-import { spawn } from 'node:child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
 import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH } from '@/server/CacheHelper';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
-import type { VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
+import type { PlaylistMetadata, VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
+import { randomUUID } from 'node:crypto';
 
-const downloadRegex =
-  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/gim;
-const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/gm;
-const filePathRegex = new RegExp(
-  `^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))$`,
-  'gm'
-);
-const streamFilePathRegex = new RegExp(
-  `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))'$`,
-  'gm'
-);
+const downloadProgressRegex =
+  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/im;
+const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/m;
+const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(.+))$`, 'm');
+const streamFilePathRegex = new RegExp(`file:(${DOWNLOAD_PATH}/(.+)\\.(.+))'$`, 'm');
 const thumbnailRegex = new RegExp(
   `^\\[info\\]\\sWriting\\svideo\\sthumbnail\\s.+\\s(${DOWNLOAD_PATH}/.+)$`,
-  'gm'
+  'm'
 );
 const moveThumbnailMessageRegex = new RegExp(
   `^\\[MoveFiles\\] Moving file .+${CACHE_PATH}/thumbnails/(.+)\\"$`,
-  'gm'
+  'm'
 );
+const downloadingItemRegex = /^\[download\]\sDownloading\sitem\s([0-9]+)\sof\s([0-9]+)$/m;
+const finishedDownloadingPlaylistRegex = /^\[download\]\sFinished\sdownloading\splaylist\:(.+)$/m;
+const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/m;
+const playlistFolderPrefixRegexString = '\\[Playlist\\]';
+const downloadDestinationRegex = /^\[download\]\sDestination\:\s(.+)$/m;
+const playlistFolderPrefix = '[Playlist]';
+
 export class YtDlpHelper {
   public readonly url: string;
   private readonly videoInfo: VideoInfo = {
@@ -44,16 +46,18 @@ export class YtDlpHelper {
       name: null,
       path: null
     },
+    playlist: [],
     download: {
       pid: null,
       progress: null,
       speed: null
     }
   };
+  private ytdlp?: ChildProcessWithoutNullStreams;
   private isDownloadStarted = false;
   private isFormatExist = false;
   private pid?: number;
-  private metadata?: VideoMetadata;
+  private metadata?: VideoMetadata | PlaylistMetadata;
 
   constructor(querys: { url: string; uuid?: string; format?: string; pid?: number }) {
     this.url = querys.url;
@@ -77,73 +81,76 @@ export class YtDlpHelper {
     downloadErrorCallback?: (error: string) => void;
     processExitCallback?: () => void;
   }): Promise<void> {
+    const metadata = await this.getMetadata().catch((error: string) => error);
+
+    if (typeof metadata === 'string') {
+      const errorMessage = metadata || 'Not found. Please check the url again.';
+      this.videoInfo.status = 'failed';
+      this.videoInfo.error = errorMessage;
+      await CacheHelper.set(uuid, this.videoInfo);
+      downloadErrorCallback?.(errorMessage);
+      return;
+    }
+
+    if (!metadata?.id) {
+      const errorMessage = 'Not found. Please check the url again.';
+      this.videoInfo.status = 'failed';
+      this.videoInfo.error = errorMessage;
+      await CacheHelper.set(uuid, this.videoInfo);
+      downloadErrorCallback?.(errorMessage);
+      return;
+    }
+
+    const options = [
+      '--verbose',
+      '--progress',
+      '--no-continue',
+      '--windows-filenames',
+      // '--write-thumbnail',
+      // '-o',
+      // `thumbnail:${CACHE_PATH}/thumbnails/${CACHE_FILE_PREFIX}${uuid}.%(ext)s`,
+      '--print',
+      'after_move:filepath',
+      '--merge-output-format',
+      'mp4',
+      '-P',
+      `${DOWNLOAD_PATH}`
+    ];
+
+    switch (metadata.type) {
+      case 'video': {
+        options.push(
+          '-f',
+          this.videoInfo.format,
+          '--no-playlist',
+          '-o',
+          `%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
+        );
+        if (metadata?.isLive) options.push('--no-part');
+        break;
+      }
+      case 'playlist': {
+        options.push(
+          '-f',
+          'bv+ba/b',
+          '--match-filter',
+          '!is_live',
+          '-o',
+          `${playlistFolderPrefix} %(playlist_title)s(%(playlist_id)s)/%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
+        );
+        this.videoInfo.format = 'bv+ba/b';
+        break;
+      }
+    }
+
     return new Promise(async (resolve) => {
-      const metadata = await this.getMetadata().catch((error: string) => error);
-
-      if (typeof metadata === 'string') {
-        const errorMessage = metadata || 'Not found. Please check the url again.';
-        this.videoInfo.status = 'failed';
-        this.videoInfo.error = errorMessage;
-        await CacheHelper.set(uuid, this.videoInfo);
-        downloadErrorCallback?.(errorMessage);
-        return resolve();
-      }
-
-      if (!metadata?.id) {
-        const errorMessage = 'Not found. Please check the url again.';
-        this.videoInfo.status = 'failed';
-        this.videoInfo.error = errorMessage;
-        await CacheHelper.set(uuid, this.videoInfo);
-        downloadErrorCallback?.(errorMessage);
-        return resolve();
-      }
-
-      const options = [
-        '-f',
-        this.videoInfo.format,
-        '--no-playlist',
-        '--verbose',
-        '--progress',
-        '--no-continue',
-        '--windows-filenames',
-        // '--write-thumbnail',
-        // '-o',
-        // `thumbnail:${CACHE_PATH}/thumbnails/${CACHE_FILE_PREFIX}${uuid}.%(ext)s`,
-        '--print',
-        'after_move:filepath',
-        '--merge-output-format',
-        'mp4',
-        '-P',
-        DOWNLOAD_PATH,
-        '-o',
-        `%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
-      ];
-
-      if (metadata.isLive) options.push('--no-part');
-
       const ytdlp = spawn('yt-dlp', [...options, this.url], {
         killSignal: 'SIGINT',
         cwd: DOWNLOAD_PATH
       });
-      const videoInfo = this.videoInfo;
-      const throttleCacheSet = throttle(CacheHelper.set, 500);
 
       console.log(`new process, \`${ytdlp.pid}\``);
-      console.log(`download requested, \`${videoInfo.url}\``);
-
-      let _fileDestination: string | null = null;
-      let cachingInterval: NodeJS.Timer | null = null;
-
-      videoInfo.uuid = uuid;
-      videoInfo.id = metadata?.id || '';
-      videoInfo.url = this.url;
-      videoInfo.title = metadata?.title || '';
-      videoInfo.description = metadata?.description || '';
-      videoInfo.thumbnail = metadata?.thumbnail || '';
-      videoInfo.isLive = metadata?.isLive || false;
-      videoInfo.updatedAt = Date.now();
-      videoInfo.createdAt = Date.now();
-      videoInfo.download.pid = ytdlp.pid!;
+      this.ytdlp = ytdlp;
 
       ytdlp.stdout.setEncoding('utf-8');
       ytdlp.stderr.setEncoding('utf-8');
@@ -156,270 +163,30 @@ export class YtDlpHelper {
         });
       }
 
-      const initialListener = async (_text: string) => {
-        if (this.isDownloadStarted) {
-          ytdlp.stdout.off('data', initialListener);
-          ytdlp.stderr.off('data', initialListener);
-          return;
+      switch (metadata.type) {
+        case 'video': {
+          await this.downloadVideo({
+            uuid,
+            downloadErrorCallback,
+            downloadStartCallback,
+            processExitCallback
+          });
+          break;
         }
-        const text = _text?.trim?.();
-        if (!text) return;
-
-        try {
-          // Search Thumbnail
-          // if (!videoInfo.localThumbnail) {
-          //   const findThumbnail = thumbnailRegex.exec(text)?.[1];
-          //   if (findThumbnail) {
-          //     videoInfo.localThumbnail = findThumbnail;
-          //     return;
-          //   }
-          // }
-
-          if (text.endsWith('has already been downloaded')) {
-            this.isFormatExist = true;
-            const error = 'Has already been downloaded';
-            this.videoInfo.status = 'failed';
-            this.videoInfo.error = error;
-            await CacheHelper.set(uuid, this.videoInfo);
-            return downloadErrorCallback?.(error);
-          }
-
-          if (text.startsWith('ERROR: ')) {
-            const error = text?.split('\n')?.[0] || text;
-            this.videoInfo.status = 'failed';
-            this.videoInfo.error = error;
-            await CacheHelper.set(uuid, this.videoInfo);
-            return downloadErrorCallback?.(error);
-          }
-
-          let fileDestination = '';
-          if (metadata.isLive) {
-            fileDestination = streamFilePathRegex.exec(text)?.[1] || '';
-          } else {
-            fileDestination = /^\[download\]\sDestination\:\s(.+)$/gm.exec(text)?.[1] || '';
-          }
-
-          if (!fileDestination) {
-            return;
-          }
-          if (metadata.isLive) {
-            videoInfo.status = 'recording';
-          } else {
-            videoInfo.status = 'downloading';
-          }
-          videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
-          videoInfo.file.path = fileDestination;
-
-          if (metadata.isLive) {
-            cachingInterval = setInterval(async () => {
-              videoInfo.updatedAt = Date.now();
-              videoInfo.download.pid = ytdlp?.pid || null;
-              await throttleCacheSet(uuid, videoInfo);
-            }, 3000);
-          }
-
-          try {
-            // if (!isDownloadRestart) {
-            // const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
-            // uuidList.unshift(uuid);
-            // await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
-            await CacheHelper.set(uuid, videoInfo);
-            // }
-          } catch (e) {}
-
-          ytdlp.stdout.off('data', initialListener);
-          ytdlp.stderr.off('data', initialListener);
-          this.setIsDownloadStarted(true);
-          ytdlp.stdout.on('data', downloadListener);
-          ytdlp.stderr.on('data', downloadListener);
-
+        case 'playlist': {
           downloadStartCallback?.();
-        } catch (e) {}
-      };
-
-      const streamDownloadListener = async (message: string) => {
-        // const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
-
-        // if (movedThumbnailDestination) {
-        //   videoInfo.status = 'merging';
-        //   videoInfo.localThumbnail = movedThumbnailDestination.replace(
-        //     new RegExp(`^${CACHE_FILE_PREFIX}`),
-        //     ''
-        //   );
-        //   return;
-        // }
-
-        if (message.startsWith('[Fixup')) {
-          videoInfo.status = 'merging';
-          return;
+          await this.downloadPlaylist({
+            uuid
+          });
+          break;
         }
-
-        const fileDestination = filePathRegex.exec(message)?.[1];
-
-        if (fileDestination) {
-          videoInfo.download.pid = ytdlp?.pid || null;
-          videoInfo.file.path = fileDestination;
-          videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
-          _fileDestination = fileDestination;
-          return;
-        }
-      };
-
-      const videoDownloadListener = async (message: string) => {
-        const messageType = /^\[([a-z]+)\]\s/i.exec(message)?.[1];
-        if (!messageType) {
-          const isFilePathMessage = filePathRegex.test(message);
-          if (isFilePathMessage) {
-            videoInfo.file.path = message;
-            videoInfo.file.name = message.replace(DOWNLOAD_PATH + '/', '');
-            videoInfo.download.pid = null;
-            videoInfo.download.progress = '1';
-            videoInfo.status = 'completed';
-          }
-          return;
-        }
-
-        try {
-          switch (messageType) {
-            case 'download': {
-              const execResult = downloadRegex.exec(message);
-              if (execResult) {
-                // const match = execResult[0];
-                const progress = execResult[1];
-                // const filesize = execResult[2];
-                const speed = execResult[3];
-                videoInfo.status = 'downloading';
-                videoInfo.download.pid = ytdlp.pid!;
-                videoInfo.download.progress = numeral(progress).format('0.00');
-                videoInfo.download.speed = numeral(speed).format('0.0b') + '/s';
-                videoInfo.updatedAt = Date.now();
-                await throttleCacheSet(uuid, videoInfo);
-              }
-              break;
-            }
-            case 'Merger': {
-              const filePath = fileRegex.exec(message)?.[1];
-              if (!filePath) {
-                break;
-              }
-
-              videoInfo.file.path = filePath;
-              videoInfo.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
-              videoInfo.download.pid = ytdlp.pid!;
-              videoInfo.download.progress = '1';
-              videoInfo.status = 'merging';
-              videoInfo.updatedAt = Date.now();
-              await CacheHelper.set(uuid, videoInfo);
-              break;
-            }
-
-            // case 'MoveFiles': {
-            //   const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
-            //   if (movedThumbnailDestination) {
-            //     videoInfo.localThumbnail = movedThumbnailDestination.replace(
-            //       new RegExp(`^${CACHE_FILE_PREFIX}`),
-            //       ''
-            //     );
-            //   }
-            //   break;
-            // }
-          }
-        } catch (e) {}
-      };
-
-      const streamDownloadEndListener = async () => {
-        if (!this.isDownloadStarted) return;
-        const fileDestination = _fileDestination;
-        if (!fileDestination) {
-          return;
-        }
-        let stat: Stats | null = null;
-        _fileDestination = null;
-        try {
-          stat = await fs.stat(fileDestination);
-        } catch (e) {}
-        if (stat) {
-          if (cachingInterval) clearInterval(cachingInterval);
-
-          videoInfo.download.pid = null;
-          videoInfo.download.progress = '1';
-          videoInfo.status = 'completed';
-          videoInfo.file.path = fileDestination;
-          videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
-          videoInfo.file.size = stat.size;
-          videoInfo.updatedAt = Date.now();
-          await CacheHelper.set(uuid, videoInfo);
-
-          try {
-            const ffmpegHelper = new FFmpegHelper({
-              filePath: videoInfo.file.path
-            });
-            const streams = await ffmpegHelper.getVideoStreams();
-            videoInfo.file = {
-              ...videoInfo.file,
-              ...streams
-            };
-          } catch (error) {}
-          videoInfo.updatedAt = Date.now();
-          await CacheHelper.set(uuid, videoInfo);
-        }
-      };
-
-      const videoDownloadEndListener = async () => {
-        if (!this.isDownloadStarted) return;
-        if (videoInfo.file.path) {
-          let stat: Stats | null = null;
-          try {
-            stat = await fs.stat(videoInfo.file.path);
-            if (stat) {
-              videoInfo.download.pid = null;
-              videoInfo.download.progress = '1';
-              videoInfo.status = 'completed';
-              videoInfo.file.size = stat.size;
-
-              const ffmpegHelper = new FFmpegHelper({
-                filePath: videoInfo.file.path
-              });
-              const streams = await ffmpegHelper.getVideoStreams();
-              videoInfo.file = {
-                ...videoInfo.file,
-                ...streams
-              };
-            }
-          } catch (e) {}
-        }
-        videoInfo.updatedAt = Date.now();
-        await CacheHelper.set(uuid, videoInfo);
-      };
-
-      const downloadListener = async (_text: string) => {
-        const message = _text?.trim?.();
-        if (!message) return;
-
-        if (metadata.isLive) {
-          await streamDownloadListener(message);
-        } else {
-          await videoDownloadListener(message);
-        }
-      };
-
-      ytdlp.stdout.on('data', initialListener);
-      ytdlp.stderr.on('data', initialListener);
-      ytdlp.stdout.on(
-        'end',
-        metadata.isLive ? streamDownloadEndListener : videoDownloadEndListener
-      );
-
-      ytdlp?.on('exit', async () => {
-        if (cachingInterval) clearInterval(cachingInterval);
-        processExitCallback?.();
-      });
+      }
 
       return resolve();
     });
   }
 
-  public async getMetadata(): Promise<VideoMetadata> {
+  public async getMetadata(): Promise<VideoMetadata | PlaylistMetadata> {
     if (this.metadata) {
       return new Promise((resolve) => {
         resolve(this.metadata!);
@@ -427,7 +194,7 @@ export class YtDlpHelper {
     }
     let stdoutChunks = [] as Array<any>;
     let stderrMessage = '';
-    const ytdlp = spawn('yt-dlp', ['--dump-json', '--no-playlist', this.url]);
+    const ytdlp = spawn('yt-dlp', ['--dump-single-json', '--playlist-items', '0', this.url]);
 
     ytdlp.stdout.on('data', (data) => {
       stdoutChunks.push(data);
@@ -436,6 +203,7 @@ export class YtDlpHelper {
     ytdlp.stderr.setEncoding('utf-8');
     ytdlp.stderr.on('data', (data) => {
       const text = data?.trim?.();
+
       if (text.startsWith('ERROR: ')) {
         stderrMessage = text?.split('\n')?.[0] || text;
       }
@@ -451,48 +219,76 @@ export class YtDlpHelper {
           }
 
           const json = JSON.parse(buffer.toString());
+          const type = json?._type;
 
-          const metadata: VideoMetadata = {
-            id: json.id || '',
-            originalUrl: json.original_url || '',
-            title: json.title || '',
-            description: json.description || '',
-            thumbnail: json.thumbnail || '',
-            isLive: json.is_live || false,
-            best: {
-              formatId: json.format_id ?? '',
-              formatNote: json.format_note ?? '',
-              fps: json.fps ?? '',
-              resolution: json.resolution ?? '',
-              width: json.width ?? '',
-              height: json.height ?? '',
-              dynamicRange: json.dynamic_range ?? '',
-              vcodec: json.vcodec ?? '',
-              acodec: json.acodec ?? '',
-              filesize: json.filesize ?? ''
-            },
-            formats:
-              json.formats
-                ?.map((format: any) => {
-                  return {
-                    formatId: format.format_id ?? '',
-                    formatNote: format.format_note ?? '',
-                    resolution: format.resolution ?? '',
-                    fps: format.fps ?? '',
-                    dynamicRange: format.dynamic_range ?? '',
-                    vcodec: format.vcodec ?? '',
-                    acodec: format.acodec ?? '',
-                    filesize: format.filesize ?? '',
-                    videoExt: format?.video_ext ?? '',
-                    audioExt: format?.audio_ext ?? '',
-                    width: format?.width ?? '',
-                    height: format?.height ?? ''
-                  } as VideoFormat;
-                })
-                .filter((format: any) => format.format_note !== 'storyboard') || []
-          };
-          this.metadata = metadata;
-          resolve(metadata);
+          switch (type) {
+            case 'playlist': {
+              const metadata: PlaylistMetadata = {
+                id: json.id ?? '',
+                title: json.title ?? '',
+                description: json.description ?? '',
+                thumbnail:
+                  Array.isArray(json?.thumbnails) && json.thumbnails.length > 0
+                    ? json.thumbnails[json.thumbnails.length - 1]?.url ?? ''
+                    : '',
+                playlistCount: json.playlist_count ?? '',
+                type,
+                originalUrl: json.original_url ?? ''
+              };
+              this.metadata = metadata;
+              resolve(metadata);
+              break;
+            }
+            case 'video': {
+              const metadata: VideoMetadata = {
+                id: json.id || '',
+                originalUrl: json.original_url || '',
+                title: json.title || '',
+                description: json.description || '',
+                thumbnail: json.thumbnail || '',
+                isLive: json.is_live || false,
+                type,
+                best: {
+                  formatId: json.format_id ?? '',
+                  formatNote: json.format_note ?? '',
+                  fps: json.fps ?? '',
+                  resolution: json.resolution ?? '',
+                  width: json.width ?? '',
+                  height: json.height ?? '',
+                  dynamicRange: json.dynamic_range ?? '',
+                  vcodec: json.vcodec ?? '',
+                  acodec: json.acodec ?? '',
+                  filesize: json.filesize ?? ''
+                },
+                formats:
+                  json.formats
+                    ?.map((format: any) => {
+                      return {
+                        formatId: format.format_id ?? '',
+                        formatNote: format.format_note ?? '',
+                        resolution: format.resolution ?? '',
+                        fps: format.fps ?? '',
+                        dynamicRange: format.dynamic_range ?? '',
+                        vcodec: format.vcodec ?? '',
+                        acodec: format.acodec ?? '',
+                        filesize: format.filesize ?? '',
+                        videoExt: format?.video_ext ?? '',
+                        audioExt: format?.audio_ext ?? '',
+                        width: format?.width ?? '',
+                        height: format?.height ?? ''
+                      } as VideoFormat;
+                    })
+                    .filter((format: any) => format.format_note !== 'storyboard') || []
+              };
+              this.metadata = metadata;
+              resolve(metadata);
+              break;
+            }
+            default: {
+              reject('failed fetching formats');
+              break;
+            }
+          }
         } catch (e) {
           reject(e || 'failed fetching formats, downloading best available');
         }
@@ -523,31 +319,534 @@ export class YtDlpHelper {
     return this.isFormatExist;
   }
 
-  // 2와 15 사용을 추천, 9번은 클린업 코드가 실행 안된다.
+  private async downloadVideo({
+    uuid,
+    downloadStartCallback,
+    downloadErrorCallback,
+    processExitCallback
+  }: {
+    uuid: string;
+    downloadStartCallback?: () => void;
+    downloadErrorCallback?: (error: string) => void;
+    processExitCallback?: () => void;
+  }) {
+    const metadata = this.metadata as VideoMetadata;
+    const ytdlp = this.ytdlp;
+    if (!ytdlp || !metadata) {
+      return;
+    }
 
-  /**
-   *
-   * @param code SIGCODE
-   *
-   * 1	= SIGHUP							종료(연결끊기, 실행종료)
-   *
-   * 2	= SIGINT		CTRL + C	종료(, 인터럽트)
-   *
-   * 3	= SIGQUIT		CTRL + \	종료+코어 덤프
-   *
-   * 9	=	SIGKILL							강제종료(클린업 핸들러 불가능)
-   *
-   * 15	=	SIGTERM							정상종료
-   *
-   * 18	= SIGCONT							정리된 프로세스 재실행
-   *
-   * 19	=	SIGSTOP							정지(클린업 핸들러 불가능)
-   *
-   * 20	= SIGTSTP		CTRL + Z	정지
-   */
-  async kill(code = 2) {
-    spawn('kill', [`-${code}`, String(this.pid)]).on('exit', () => {
-      console.log(`stopped process \`${this.pid}\``);
+    const videoInfo = this.videoInfo;
+
+    videoInfo.uuid = uuid;
+    videoInfo.id = metadata?.id || '';
+    videoInfo.url = this.url;
+    videoInfo.title = metadata?.title || '';
+    videoInfo.description = metadata?.description || '';
+    videoInfo.thumbnail = metadata?.thumbnail || '';
+    videoInfo.isLive = metadata?.isLive || false;
+    videoInfo.updatedAt = Date.now();
+    videoInfo.createdAt = Date.now();
+    videoInfo.download.pid = ytdlp.pid!;
+    videoInfo.type = 'video';
+
+    const throttleCacheSet = throttle(CacheHelper.set, 500);
+    let _fileDestination: string | null = null;
+    let cachingInterval: NodeJS.Timer | null = null;
+
+    const initialListener = async (_text: string) => {
+      if (this.isDownloadStarted) {
+        ytdlp.stdout.off('data', initialListener);
+        ytdlp.stderr.off('data', initialListener);
+        return;
+      }
+      const text = _text?.trim?.();
+      if (!text) return;
+
+      try {
+        // Search Thumbnail
+        // if (!videoInfo.localThumbnail) {
+        //   const findThumbnail = thumbnailRegex.exec(text)?.[1];
+        //   if (findThumbnail) {
+        //     videoInfo.localThumbnail = findThumbnail;
+        //     return;
+        //   }
+        // }
+
+        if (text.endsWith('has already been downloaded')) {
+          this.isFormatExist = true;
+          const error = 'Has already been downloaded';
+          this.videoInfo.status = 'failed';
+          this.videoInfo.error = error;
+          await CacheHelper.set(uuid, this.videoInfo);
+          return downloadErrorCallback?.(error);
+        }
+
+        if (text.startsWith('ERROR: ')) {
+          const error = text?.split('\n')?.[0] || text;
+          this.videoInfo.status = 'failed';
+          this.videoInfo.error = error;
+          await CacheHelper.set(uuid, this.videoInfo);
+          return downloadErrorCallback?.(error);
+        }
+
+        let fileDestination = '';
+        if (metadata.isLive) {
+          fileDestination = streamFilePathRegex.exec(text)?.[1] || '';
+        } else {
+          fileDestination = downloadDestinationRegex.exec(text)?.[1] || '';
+        }
+
+        if (!fileDestination) {
+          return;
+        }
+        if (metadata.isLive) {
+          videoInfo.status = 'recording';
+        } else {
+          videoInfo.status = 'downloading';
+        }
+        videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
+        videoInfo.file.path = fileDestination;
+
+        if (metadata.isLive) {
+          cachingInterval = setInterval(async () => {
+            videoInfo.updatedAt = Date.now();
+            videoInfo.download.pid = ytdlp?.pid || null;
+            await throttleCacheSet(uuid, videoInfo);
+          }, 3000);
+        }
+
+        try {
+          // if (!isDownloadRestart) {
+          // const uuidList = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
+          // uuidList.unshift(uuid);
+          // await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
+          await CacheHelper.set(uuid, videoInfo);
+          // }
+        } catch (e) {}
+
+        ytdlp.stdout.off('data', initialListener);
+        ytdlp.stderr.off('data', initialListener);
+        this.setIsDownloadStarted(true);
+        ytdlp.stdout.on('data', downloadListener);
+        ytdlp.stderr.on('data', downloadListener);
+
+        downloadStartCallback?.();
+      } catch (e) {}
+    };
+
+    const streamDownloadListener = async (message: string) => {
+      // const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
+
+      // if (movedThumbnailDestination) {
+      //   videoInfo.status = 'merging';
+      //   videoInfo.localThumbnail = movedThumbnailDestination.replace(
+      //     new RegExp(`^${CACHE_FILE_PREFIX}`),
+      //     ''
+      //   );
+      //   return;
+      // }
+
+      if (message.startsWith('[Fixup')) {
+        videoInfo.status = 'merging';
+        return;
+      }
+
+      const fileDestination = filePathRegex.exec(message)?.[1];
+
+      if (fileDestination) {
+        videoInfo.download.pid = ytdlp?.pid || null;
+        videoInfo.file.path = fileDestination;
+        videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
+        _fileDestination = fileDestination;
+        return;
+      }
+    };
+
+    const videoDownloadListener = async (message: string) => {
+      const messageType = /^\[([a-z]+)\]\s/i.exec(message)?.[1];
+      if (!messageType) {
+        const isFilePathMessage = filePathRegex.test(message);
+        if (isFilePathMessage) {
+          videoInfo.file.path = message;
+          videoInfo.file.name = message.replace(DOWNLOAD_PATH + '/', '');
+          videoInfo.download.pid = null;
+          videoInfo.download.progress = '1';
+          videoInfo.status = 'completed';
+        }
+        return;
+      }
+
+      try {
+        switch (messageType) {
+          case 'download': {
+            const execResult = downloadProgressRegex.exec(message);
+            if (execResult) {
+              // const match = execResult[0];
+              const progress = execResult[1];
+              // const filesize = execResult[2];
+              const speed = execResult[3];
+              videoInfo.status = 'downloading';
+              videoInfo.download.pid = ytdlp.pid!;
+              videoInfo.download.progress = numeral(progress).format('0.00');
+              videoInfo.download.speed = numeral(speed).format('0.0b') + '/s';
+              videoInfo.updatedAt = Date.now();
+              await throttleCacheSet(uuid, videoInfo);
+            }
+            break;
+          }
+          case 'Merger': {
+            const filePath = fileRegex.exec(message)?.[1];
+            if (!filePath) {
+              break;
+            }
+
+            videoInfo.file.path = filePath;
+            videoInfo.file.name = filePath.replace(DOWNLOAD_PATH + '/', '');
+            videoInfo.download.pid = ytdlp.pid!;
+            videoInfo.download.progress = '1';
+            videoInfo.status = 'merging';
+            videoInfo.updatedAt = Date.now();
+            await CacheHelper.set(uuid, videoInfo);
+            break;
+          }
+
+          // case 'MoveFiles': {
+          //   const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
+          //   if (movedThumbnailDestination) {
+          //     videoInfo.localThumbnail = movedThumbnailDestination.replace(
+          //       new RegExp(`^${CACHE_FILE_PREFIX}`),
+          //       ''
+          //     );
+          //   }
+          //   break;
+          // }
+        }
+      } catch (e) {}
+    };
+
+    const streamDownloadEndListener = async () => {
+      if (!this.isDownloadStarted) return;
+      const fileDestination = _fileDestination;
+      if (!fileDestination) {
+        return;
+      }
+      let stat: Stats | null = null;
+      _fileDestination = null;
+      try {
+        stat = await fs.stat(fileDestination);
+      } catch (e) {}
+      if (stat) {
+        if (cachingInterval) clearInterval(cachingInterval);
+
+        videoInfo.download.pid = null;
+        videoInfo.download.progress = '1';
+        videoInfo.status = 'completed';
+        videoInfo.file.path = fileDestination;
+        videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
+        videoInfo.file.size = stat.size;
+        videoInfo.updatedAt = Date.now();
+        await CacheHelper.set(uuid, videoInfo);
+
+        try {
+          const ffmpegHelper = new FFmpegHelper({
+            filePath: videoInfo.file.path
+          });
+          const streams = await ffmpegHelper.getVideoStreams();
+          videoInfo.file = {
+            ...videoInfo.file,
+            ...streams
+          };
+        } catch (error) {}
+        videoInfo.updatedAt = Date.now();
+        await CacheHelper.set(uuid, videoInfo);
+      }
+    };
+
+    const videoDownloadEndListener = async () => {
+      if (!this.isDownloadStarted) return;
+      if (videoInfo.file.path) {
+        let stat: Stats | null = null;
+        try {
+          stat = await fs.stat(videoInfo.file.path);
+          if (stat) {
+            videoInfo.download.pid = null;
+            videoInfo.download.progress = '1';
+            videoInfo.status = 'completed';
+            videoInfo.file.size = stat.size;
+
+            const ffmpegHelper = new FFmpegHelper({
+              filePath: videoInfo.file.path
+            });
+            const streams = await ffmpegHelper.getVideoStreams();
+            videoInfo.file = {
+              ...videoInfo.file,
+              ...streams
+            };
+          }
+        } catch (e) {}
+      }
+      videoInfo.updatedAt = Date.now();
+      await CacheHelper.set(uuid, videoInfo);
+    };
+
+    const downloadListener = async (_text: string) => {
+      const message = _text?.trim?.();
+      if (!message) return;
+
+      if (metadata.isLive) {
+        await streamDownloadListener(message);
+      } else {
+        await videoDownloadListener(message);
+      }
+    };
+
+    ytdlp.stdout.on('data', initialListener);
+    ytdlp.stderr.on('data', initialListener);
+    ytdlp.stdout.on('end', metadata.isLive ? streamDownloadEndListener : videoDownloadEndListener);
+
+    ytdlp?.on('exit', async () => {
+      if (cachingInterval) clearInterval(cachingInterval);
+      processExitCallback?.();
+    });
+  }
+
+  private async downloadPlaylist({ uuid }: { uuid: string }) {
+    const metadata = this.metadata as PlaylistMetadata;
+    const ytdlp = this.ytdlp;
+    if (!ytdlp || !metadata) {
+      return;
+    }
+
+    const throttleCacheSet = throttle(CacheHelper.set, 500);
+    let cachingInterval: NodeJS.Timer | null = null;
+    let currentDownloadingIndex = 0;
+
+    const videoInfo = this.videoInfo;
+    videoInfo.uuid = uuid;
+    videoInfo.id = metadata?.id || '';
+    videoInfo.url = this.url;
+    videoInfo.title = metadata?.title || '';
+    videoInfo.description = metadata?.description || '';
+    videoInfo.thumbnail = metadata?.thumbnail || '';
+    videoInfo.isLive = false;
+    videoInfo.updatedAt = Date.now();
+    videoInfo.createdAt = Date.now();
+    videoInfo.download.pid = ytdlp.pid!;
+    videoInfo.type = 'playlist';
+    videoInfo.playlist = videoInfo.playlist || [];
+    videoInfo.download.playlist = {
+      current: currentDownloadingIndex + 1,
+      count: metadata.playlistCount
+    };
+
+    const videoDownloadListener = async (_text: string) => {
+      const message = _text?.trim?.();
+      if (!message) return;
+
+      let currentIndex = currentDownloadingIndex;
+
+      if (message.startsWith('ERROR: ')) {
+        videoInfo.playlist[currentIndex] = {
+          uuid: randomUUID(),
+          url: videoInfo.playlist[currentIndex]?.url
+        };
+        videoInfo.playlist[currentIndex].error = message?.split('\n')?.[0] || message;
+        return;
+      }
+
+      const isFilePathMessage = filePathRegex.test(message);
+      if (isFilePathMessage) {
+        const filePath = message;
+        try {
+          const stat = await fs.stat(filePath);
+
+          if (stat) {
+            const size = stat.size;
+            const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
+
+            videoInfo.playlist[currentIndex] = {
+              ...videoInfo.playlist[currentIndex],
+              ...streams,
+              size,
+              path: filePath,
+              name: filePath.replace(
+                new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+                ''
+              )
+            };
+            const dirPath = new RegExp(
+              `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+              'm'
+            ).exec(filePath);
+            if (dirPath) {
+              videoInfo.playlistDirPath = dirPath[1];
+            }
+            videoInfo.updatedAt = Date.now();
+            await throttleCacheSet(uuid, videoInfo);
+          }
+        } catch (e) {}
+      }
+
+      const hasAlready = new RegExp(
+        `^\\[download\\] (${DOWNLOAD_PATH}/.+) has already been downloaded$`,
+        'm'
+      ).exec(message);
+      if (hasAlready) {
+        const filePath = hasAlready[1];
+        try {
+          const stat = await fs.stat(filePath);
+
+          if (stat) {
+            const size = stat.size;
+            const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
+
+            videoInfo.playlist[currentIndex] = {
+              ...videoInfo.playlist[currentIndex],
+              ...streams,
+              size,
+              uuid: randomUUID(),
+              path: filePath,
+              name: filePath.replace(
+                new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+                ''
+              )
+            };
+            const dirPath = new RegExp(
+              `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+              'm'
+            ).exec(filePath);
+            if (dirPath) {
+              videoInfo.playlistDirPath = dirPath[1];
+            }
+            videoInfo.updatedAt = Date.now();
+            await throttleCacheSet(uuid, videoInfo);
+          }
+        } catch (e) {}
+      }
+
+      const downloadProgress = downloadProgressRegex.exec(message);
+      if (downloadProgress) {
+        // const match = downloadProgress[0];
+        const progress = downloadProgress[1];
+        // const filesize = downloadProgress[2];
+        const speed = downloadProgress[3];
+        videoInfo.status = 'downloading';
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.download.progress = numeral(progress).format('0.00');
+        videoInfo.download.speed = speed;
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const downloadingItem = downloadingItemRegex.exec(message);
+      if (downloadingItem) {
+        const current = Number(downloadingItem[1]) - 1;
+        currentIndex = current;
+        currentDownloadingIndex = current;
+        videoInfo.playlist[current] = { uuid: randomUUID() };
+        videoInfo.status = 'downloading';
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.download.playlist = {
+          current: current + 1,
+          count: metadata.playlistCount
+        };
+        videoInfo.download.progress = '0';
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const downloadDestination = downloadDestinationRegex.exec(message);
+      if (downloadDestination) {
+        const filePath = downloadDestination[1];
+        if (videoInfo.playlist[currentIndex]) {
+          videoInfo.playlist[currentIndex].path = filePath;
+          videoInfo.playlist[currentIndex].name = filePath.replace(
+            new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+            ''
+          );
+          const dirPath = new RegExp(
+            `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+            'm'
+          ).exec(filePath);
+          if (dirPath) {
+            videoInfo.playlistDirPath = dirPath[1];
+          }
+        }
+      }
+
+      const extractingUrl = extractingURLRegex.exec(message);
+      if (extractingUrl && videoInfo.playlist[currentIndex]) {
+        videoInfo.playlist[currentIndex].url = extractingUrl[1];
+      }
+
+      const isLiveSkip = message.includes('!is_live');
+      if (isLiveSkip && /skipping\s\.\.$/m.test(message)) {
+        videoInfo.playlist[currentIndex].isLive = true;
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const isFinished = finishedDownloadingPlaylistRegex.test(message);
+      if (isFinished) {
+        videoInfo.download.progress = '1';
+        videoInfo.status = 'completed';
+        videoInfo.updatedAt = Date.now();
+
+        await Promise.all(
+          videoInfo.playlist.map(async (item, i) => {
+            try {
+              videoInfo.playlist[i].uuid = item.uuid || randomUUID();
+
+              const filePath = item.path;
+              if (!filePath) {
+                return;
+              }
+
+              const stat = await fs.stat(filePath);
+              if (stat) {
+                videoInfo.playlist[i].size = stat.size;
+              }
+            } catch (e) {}
+          })
+        );
+
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const filePath = fileRegex.exec(message)?.[1];
+      if (filePath) {
+        if (!videoInfo.playlist[currentIndex]) {
+          videoInfo.playlist[currentIndex] = { uuid: randomUUID() };
+        }
+        videoInfo.playlist[currentIndex].path = filePath;
+        videoInfo.playlist[currentIndex].name = filePath.replace(
+          new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+          ''
+        );
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.status = 'merging';
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+    };
+
+    cachingInterval = setInterval(async () => {
+      videoInfo.updatedAt = Date.now();
+      videoInfo.download.pid = ytdlp?.pid || null;
+      await throttleCacheSet(uuid, videoInfo);
+    }, 3000);
+
+    ytdlp.stdout.on('data', videoDownloadListener);
+    ytdlp.stderr.on('data', videoDownloadListener);
+
+    ytdlp.on('exit', async () => {
+      if (cachingInterval) {
+        clearInterval(cachingInterval);
+      }
+      videoInfo.updatedAt = Date.now();
+      videoInfo.download.pid = null;
+      await throttleCacheSet(uuid, videoInfo);
     });
   }
 }

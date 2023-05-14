@@ -33,6 +33,7 @@ export interface VideoMetadata {
     height: string;
   };
   formats: Array<VideoFormat>;
+  type: 'video' | 'playlist';
 }
 
 export interface VideoInfo {
@@ -52,13 +53,30 @@ export interface VideoInfo {
     name: string | null;
     size?: number;
   };
+  playlistDirPath?: string;
+  playlist: Array<
+    Streams & {
+      uuid: string;
+      path?: string | null;
+      name?: string | null;
+      size?: number;
+      url?: string;
+      isLive?: boolean;
+      error?: string;
+    }
+  >;
   download: {
     pid: number | null;
     progress: string | null;
     speed: string | null;
+    playlist?: {
+      current: number;
+      count: number;
+    };
   };
   createdAt: number;
   updatedAt: number;
+  type?: 'playlist' | 'video';
 }
 
 export interface Streams {
@@ -81,3 +99,13 @@ export interface FFmpegStreamsJson {
     duration: string;
   }[];
 }
+
+export type PlaylistMetadata = {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  playlistCount: number;
+  type: 'playlist';
+  originalUrl: string;
+};

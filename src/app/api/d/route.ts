@@ -62,60 +62,14 @@ export async function GET(request: Request) {
     await CacheHelper.set(VIDEO_LIST_FILE, uuidList);
     await CacheHelper.set(uuid, videoInfo);
 
-    // const stream = new ReadableStream({
-    //   async start(controller) {
-
-    // 비동기로 작업, Don't add await
+    //! 비동기로 작업, Don't add await
     ytdlp
       .start({
         uuid,
         isDownloadRestart: false
-        // downloadStartCallback() {
-        //   try {
-        //     controller.enqueue(
-        //       encoder.encode(
-        //         JSON.stringify({
-        //           success: true,
-        //           url,
-        //           status: ytdlp.getIsFormatExist() ? 'already' : 'downloading',
-        //           timestamp: Date.now()
-        //         })
-        //       )
-        //     );
-        //     controller?.close?.();
-        //   } catch (e) {}
-        // },
-        // downloadErrorCallback(error) {
-        //   try {
-        //     controller.enqueue(
-        //       encoder.encode(
-        //         JSON.stringify({
-        //           success: false,
-        //           url,
-        //           error: error,
-        //           timestamp: Date.now()
-        //         })
-        //       )
-        //     );
-        //     controller?.close?.();
-        //   } catch (e) {}
-        // },
-        // processExitCallback() {
-        //   try {
-        //     controller?.close?.();
-        //   } catch (e) {}
-        // }
       })
       .catch(() => {});
 
-    //   }
-    // });
-
-    // return new Response(stream, {
-    //   headers: {
-    //     'Content-Type': 'text/plain; charset=utf-8'
-    //   }
-    // });
     return NextResponse.json({
       success: true,
       url,

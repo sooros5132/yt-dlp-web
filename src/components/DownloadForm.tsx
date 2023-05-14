@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import classNames from 'classnames';
-import React, { FormEvent, memo, useLayoutEffect, useRef, useState } from 'react';
+import React, { FormEvent, memo, useLayoutEffect, useState } from 'react';
 import { mutate } from 'swr';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -16,11 +16,11 @@ import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-ic
 import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
-import type { ChangeEvent } from 'react';
-import type { VideoFormat, VideoMetadata } from '@/types/video';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { AxiosResponse, DownloadResponse } from '@/types/types';
 import queryString from 'query-string';
+import type { ChangeEvent } from 'react';
+import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video';
+import type { AxiosResponse, DownloadResponse } from '@/types/types';
 
 interface State {
   url: string;
@@ -110,8 +110,7 @@ export function DownloadForm() {
   const { setUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
-  const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | null>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | PlaylistMetadata | null>(null);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
     setUrl(evt.target.value || '');
@@ -240,7 +239,7 @@ export function DownloadForm() {
 
   return (
     <div className='px-4 py-2 rounded-lg bg-base-content/5'>
-      <form ref={formRef} className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
+      <form className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
         <div className='input input-sm flex justify-between h-auto pr-1 focus:outline-none'>
           <input
             name='url'
@@ -313,23 +312,37 @@ export function DownloadForm() {
         </div>
       </form>
       {!isValidating && videoMetadata ? (
-        <div className='mb-2'>
-          <VideoMetadata
-            key={`${videoMetadata?.id || Date.now()}-metadata`}
-            metadata={videoMetadata}
-          />
-          <VideoDownload
-            key={`${videoMetadata?.id || Date.now()}-download`}
-            metadata={videoMetadata}
-          />
-        </div>
+        videoMetadata?.type === 'video' ? (
+          <div className='mb-2'>
+            <SearchedVideoMetadata
+              key={`${videoMetadata?.id || Date.now()}-video-metadata`}
+              metadata={videoMetadata}
+            />
+            <VideoDownload
+              key={`${videoMetadata?.id || Date.now()}-video-download`}
+              metadata={videoMetadata}
+            />
+          </div>
+        ) : videoMetadata?.type === 'playlist' ? (
+          <div className='mb-2'>
+            <SearchedVideoMetadata
+              key={`${videoMetadata?.id || Date.now()}-playlist-metadata`}
+              metadata={videoMetadata as unknown as VideoMetadata}
+            />
+            <PlaylistDownload
+              key={`${videoMetadata?.id || Date.now()}-playlist-download`}
+              metadata={videoMetadata as PlaylistMetadata}
+            />
+          </div>
+        ) : null
       ) : null}
     </div>
   );
 }
 
-type VideoMetadataProps = { metadata: VideoMetadata };
-const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
+type SearchedVideoMetadataProps = { metadata: VideoMetadata };
+
+const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) => {
   const [isImageError, setImageError] = useState(false);
 
   return (
@@ -371,7 +384,8 @@ const VideoMetadata = memo(({ metadata }: VideoMetadataProps) => {
     </section>
   );
 }, isEquals);
-VideoMetadata.displayName = 'VideoMetadata';
+
+SearchedVideoMetadata.displayName = 'SearchedVideoMetadata';
 
 type VideoDownloadProps = { metadata: VideoMetadata };
 
@@ -646,3 +660,60 @@ const VideoDownloadRadio = ({
     </div>
   );
 };
+
+type PlaylistDownloadProps = {
+  metadata: PlaylistMetadata;
+};
+
+const PlaylistDownload = memo(({ metadata }: PlaylistDownloadProps) => {
+  const [isValidating, setValidating] = useState(false);
+
+  const handleClickDownloadButton = async () => {
+    if (isValidating || !metadata?.originalUrl) {
+      return;
+    }
+    setValidating(true);
+    const { requestDownload } = useStore.getState();
+    try {
+      const result = await requestDownload({ url: metadata.originalUrl });
+
+      if (result?.error) {
+        toast.error(result?.error || 'Download Failed');
+      } else if (result?.success) {
+        if (result?.status === 'already') {
+          toast.info('Already been downloaded');
+          return;
+        }
+        if (result?.status === 'standby') {
+          toast.success('Download requested!');
+        } else if (result?.status === 'downloading') {
+          toast.success('Download requested!');
+        } else if (result?.status === 'restart') {
+          toast.success('Download restart');
+        }
+        mutate('/api/list');
+      }
+    } catch (e) {}
+    setValidating(false);
+  };
+
+  return (
+    <div className='my-2'>
+      <div className='text-zinc-400 text-sm text-center'>
+        <p>This url is a playlist.</p>
+        <p>Live is excluded and all are downloaded in the best quality.</p>
+        <button
+          className={classNames(
+            'btn btn-sm btn-primary normal-case my-2',
+            isValidating && 'loading'
+          )}
+          onClick={handleClickDownloadButton}
+        >
+          Download Playlist
+        </button>
+      </div>
+    </div>
+  );
+}, isEquals);
+
+PlaylistDownload.displayName = 'PlaylistDownload';
