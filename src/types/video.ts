@@ -62,6 +62,7 @@ export interface VideoInfo {
       size?: number;
       url?: string;
       isLive?: boolean;
+      error?: string;
     }
   >;
   download: {

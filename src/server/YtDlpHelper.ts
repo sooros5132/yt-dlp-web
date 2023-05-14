@@ -8,27 +8,27 @@ import type { PlaylistMetadata, VideoFormat, VideoInfo, VideoMetadata } from '@/
 import { randomUUID } from 'node:crypto';
 
 const downloadProgressRegex =
-  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/gim;
-const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/gm;
+  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/im;
+const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/m;
 const filePathRegex = new RegExp(
   `^(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))$`,
-  'gm'
+  'm'
 );
 const streamFilePathRegex = new RegExp(
   `file:(${DOWNLOAD_PATH}/(.+)\\.(avi|flv|mkv|mov|mp4|webm|3gp|part))'$`,
-  'gm'
+  'm'
 );
 const thumbnailRegex = new RegExp(
   `^\\[info\\]\\sWriting\\svideo\\sthumbnail\\s.+\\s(${DOWNLOAD_PATH}/.+)$`,
-  'gm'
+  'm'
 );
 const moveThumbnailMessageRegex = new RegExp(
   `^\\[MoveFiles\\] Moving file .+${CACHE_PATH}/thumbnails/(.+)\\"$`,
-  'gm'
+  'm'
 );
-const downloadingItemRegex = /^\[download\]\sDownloading\sitem\s([0-9]+)\sof\s([0-9]+)$/gm;
-const finishedDownloadingPlaylistRegex = /^\[download\]\sFinished\sdownloading\splaylist\:(.+)$/gm;
-const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/gm;
+const downloadingItemRegex = /^\[download\]\sDownloading\sitem\s([0-9]+)\sof\s([0-9]+)$/m;
+const finishedDownloadingPlaylistRegex = /^\[download\]\sFinished\sdownloading\splaylist\:(.+)$/m;
+const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/m;
 // [download] Downloading item 1 of 3
 // [download] Finished downloading playlist:
 // [youtube] Extracting URL
@@ -182,6 +182,7 @@ export class YtDlpHelper {
           break;
         }
         case 'playlist': {
+          downloadStartCallback?.();
           await this.downloadPlaylist({
             uuid
           });
@@ -403,7 +404,7 @@ export class YtDlpHelper {
         if (metadata.isLive) {
           fileDestination = streamFilePathRegex.exec(text)?.[1] || '';
         } else {
-          fileDestination = /^\[download\]\sDestination\:\s(.+)$/gm.exec(text)?.[1] || '';
+          fileDestination = /^\[download\]\sDestination\:\s(.+)$/m.exec(text)?.[1] || '';
         }
 
         if (!fileDestination) {
@@ -630,7 +631,6 @@ export class YtDlpHelper {
     const throttleCacheSet = throttle(CacheHelper.set, 500);
     let cachingInterval: NodeJS.Timer | null = null;
     let currentDownloadingIndex = 0;
-    let lastMessage = '';
 
     const videoInfo = this.videoInfo;
     videoInfo.uuid = uuid;
@@ -654,118 +654,156 @@ export class YtDlpHelper {
       const message = _text?.trim?.();
       if (!message) return;
 
-      lastMessage = message;
       let currentIndex = currentDownloadingIndex;
 
-      const messageType = /^\[([a-z]+)\]\s/i.exec(message)?.[1];
-      if (!messageType) {
-        const isFilePathMessage = filePathRegex.test(message);
-        if (isFilePathMessage) {
-          const filePath = message;
-          const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
-
-          videoInfo.playlist[currentIndex] = {
-            ...videoInfo.playlist[currentIndex],
-            ...streams,
-            path: filePath,
-            name: filePath.replace(
-              new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'gm'),
-              ''
-            )
-          };
-          const dirPath = new RegExp(
-            `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
-            'gm'
-          ).exec(message);
-          if (dirPath) {
-            videoInfo.playlistDirPath = dirPath[1];
-          }
-          videoInfo.updatedAt = Date.now();
-          await throttleCacheSet(uuid, videoInfo);
-        }
+      if (message.startsWith('ERROR: ')) {
+        videoInfo.playlist[currentIndex] = {
+          uuid: randomUUID(),
+          url: videoInfo.playlist[currentIndex]?.url
+        };
+        videoInfo.playlist[currentIndex].error = message?.split('\n')?.[0] || message;
         return;
       }
 
-      try {
-        switch (messageType) {
-          case 'download': {
-            const downloadProgress = downloadProgressRegex.exec(message);
-            if (downloadProgress) {
-              // const match = downloadProgress[0];
-              const progress = downloadProgress[1];
-              // const filesize = downloadProgress[2];
-              const speed = downloadProgress[3];
-              videoInfo.status = 'downloading';
-              videoInfo.download.pid = ytdlp.pid!;
-              videoInfo.download.progress = numeral(progress).format('0.00');
-              videoInfo.download.speed = speed;
-              videoInfo.updatedAt = Date.now();
-              await throttleCacheSet(uuid, videoInfo);
+      const isFilePathMessage = filePathRegex.test(message);
+      if (isFilePathMessage) {
+        const filePath = message;
+        try {
+          const stat = await fs.stat(filePath);
+
+          if (stat) {
+            const size = stat.size;
+            const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
+
+            videoInfo.playlist[currentIndex] = {
+              ...videoInfo.playlist[currentIndex],
+              ...streams,
+              size,
+              path: filePath,
+              name: filePath.replace(
+                new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+                ''
+              )
+            };
+            const dirPath = new RegExp(
+              `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+              'm'
+            ).exec(message);
+            if (dirPath) {
+              videoInfo.playlistDirPath = dirPath[1];
             }
-            const downloadingItem = downloadingItemRegex.exec(message);
-            if (downloadingItem) {
-              const current = Number(downloadingItem[1]) - 1;
-              videoInfo.playlist[current] = { uuid: randomUUID() };
-              videoInfo.download.playlist = {
-                current: current + 1,
-                count: metadata.playlistCount
-              };
-              videoInfo.download.pid = ytdlp.pid!;
-              currentIndex = current;
-              currentDownloadingIndex = current;
-              videoInfo.updatedAt = Date.now();
-              await throttleCacheSet(uuid, videoInfo);
-            }
-            const isLiveSkip = message.includes('!is_live');
-            if (isLiveSkip && /skipping\s\.\.$/gm.test(message)) {
-              videoInfo.playlist[currentIndex].isLive = true;
-              videoInfo.updatedAt = Date.now();
-              await throttleCacheSet(uuid, videoInfo);
-            }
-            const isFinished = finishedDownloadingPlaylistRegex.test(message);
-            if (isFinished) {
-              videoInfo.download.progress = '1';
-              videoInfo.status = 'completed';
-              videoInfo.updatedAt = Date.now();
-              await throttleCacheSet(uuid, videoInfo);
-            }
-            break;
-          }
-          case 'Merger': {
-            const filePath = fileRegex.exec(message)?.[1];
-            if (!filePath) {
-              break;
-            }
-            if (!videoInfo.playlist[currentIndex]) {
-              videoInfo.playlist[currentIndex] = { uuid: randomUUID() };
-            }
-            videoInfo.playlist[currentIndex].path = filePath;
-            videoInfo.playlist[currentIndex].name = filePath.replace(
-              new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'gm'),
-              ''
-            );
-            videoInfo.download.pid = ytdlp.pid!;
-            videoInfo.status = 'merging';
             videoInfo.updatedAt = Date.now();
             await throttleCacheSet(uuid, videoInfo);
-            break;
           }
+        } catch (e) {}
+      }
 
-          // case 'MoveFiles': {
-          //   const movedThumbnailDestination = moveThumbnailMessageRegex.exec(message)?.[1];
-          //   if (movedThumbnailDestination) {
-          //     videoInfo.localThumbnail = movedThumbnailDestination.replace(
-          //       new RegExp(`^${CACHE_FILE_PREFIX}`),
-          //       ''
-          //     );
-          //   }
-          //   break;
-          // }
-        }
-      } catch (e) {}
+      const hasAlready = new RegExp(
+        `^\\[download\\] (${DOWNLOAD_PATH}/.+) has already been downloaded$`,
+        'm'
+      ).exec(message);
+      if (hasAlready) {
+        const filePath = hasAlready[1];
+        try {
+          const stat = await fs.stat(filePath);
+
+          if (stat) {
+            const size = stat.size;
+            const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
+
+            videoInfo.playlist[currentIndex] = {
+              ...videoInfo.playlist[currentIndex],
+              ...streams,
+              size,
+              uuid: randomUUID(),
+              path: filePath,
+              name: filePath.replace(
+                new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+                ''
+              )
+            };
+            const dirPath = new RegExp(
+              `^(${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+)/`,
+              'm'
+            ).exec(message);
+            if (dirPath) {
+              videoInfo.playlistDirPath = dirPath[1];
+            }
+            videoInfo.updatedAt = Date.now();
+            await throttleCacheSet(uuid, videoInfo);
+          }
+        } catch (e) {}
+        const streams = await new FFmpegHelper({ filePath }).getVideoStreams();
+
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const downloadProgress = downloadProgressRegex.exec(message);
+      if (downloadProgress) {
+        // const match = downloadProgress[0];
+        const progress = downloadProgress[1];
+        // const filesize = downloadProgress[2];
+        const speed = downloadProgress[3];
+        videoInfo.status = 'downloading';
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.download.progress = numeral(progress).format('0.00');
+        videoInfo.download.speed = speed;
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const downloadingItem = downloadingItemRegex.exec(message);
+      if (downloadingItem) {
+        console.log(downloadingItem);
+        const current = Number(downloadingItem[1]) - 1;
+        currentIndex = current;
+        currentDownloadingIndex = current;
+        videoInfo.playlist[current] = { uuid: randomUUID() };
+        videoInfo.status = 'downloading';
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.download.playlist = {
+          current: current + 1,
+          count: metadata.playlistCount
+        };
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
       const extractingUrl = extractingURLRegex.exec(message);
-      if (extractingUrl && videoInfo.playlist[currentIndex]) {
+      if (extractingUrl) {
         videoInfo.playlist[currentIndex].url = extractingUrl[1];
+      }
+
+      const isLiveSkip = message.includes('!is_live');
+      if (isLiveSkip && /skipping\s\.\.$/m.test(message)) {
+        videoInfo.playlist[currentIndex].isLive = true;
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const isFinished = finishedDownloadingPlaylistRegex.test(message);
+      if (isFinished) {
+        videoInfo.download.progress = '1';
+        videoInfo.status = 'completed';
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
+      }
+
+      const filePath = fileRegex.exec(message)?.[1];
+      if (filePath) {
+        if (!videoInfo.playlist[currentIndex]) {
+          videoInfo.playlist[currentIndex] = { uuid: randomUUID() };
+        }
+        videoInfo.playlist[currentIndex].path = filePath;
+        videoInfo.playlist[currentIndex].name = filePath.replace(
+          new RegExp(`^${DOWNLOAD_PATH}/${playlistFolderPrefixRegexString}\\s.+/`, 'm'),
+          ''
+        );
+        videoInfo.download.pid = ytdlp.pid!;
+        videoInfo.status = 'merging';
+        videoInfo.updatedAt = Date.now();
+        await throttleCacheSet(uuid, videoInfo);
       }
     };
 
