@@ -191,6 +191,7 @@ export const VideoPlayer = () => {
           )}
           src={`/api/file?uuid=${video.uuid}`}
           controls
+          playsInline
           onClick={handleClickVideo}
         />
         {isNotSupportedCodec && (

@@ -342,6 +342,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 className='w-full h-full outline-none'
                 src={`/api/file?uuid=${video.uuid}`}
                 muted
+                playsInline
                 preload='none'
               />
             )}
