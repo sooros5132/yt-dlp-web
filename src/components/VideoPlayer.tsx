@@ -14,6 +14,7 @@ import {
 } from 'react-icons/tb';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { AiOutlineFullscreen } from 'react-icons/ai';
+import { CgClose } from 'react-icons/cg';
 
 export const VideoPlayer = () => {
   const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
@@ -134,7 +135,7 @@ export const VideoPlayer = () => {
       >
         <div className='flex items-center gap-x-1.5'>
           <button
-            className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl'
+            className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl hidden sm:flex'
             onClick={handleClose}
             title='Close video player'
           >
@@ -177,6 +178,13 @@ export const VideoPlayer = () => {
               <AiOutlineFullscreen />
             </button>
           )}
+          <button
+            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+            onClick={handleClose}
+            title='Close player'
+          >
+            <CgClose />
+          </button>
         </div>
       </div>
       <div

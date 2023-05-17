@@ -612,112 +612,110 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
 
   return (
     <div
-      className='fixed top-0 left-0 w-full h-full bg-base-100/80 backdrop-blur-xl z-10 cursor-pointer'
+      className='fixed top-0 left-0 flex items-center justify-center w-full h-full bg-base-100/90 dark:bg-base-100/80 backdrop-blur-xl z-10 cursor-pointer'
       onClick={onClose}
     >
-      <div className='flex items-center justify-center max-w-3xl h-full mx-auto'>
-        <div
-          className='max-w-[95%] max-h-[80%] mx-auto overflow-y-auto cursor-auto'
-          onClick={handleEventStopPropagation}
-        >
-          <div className='p-2 rounded-md bg-base-content/10'>
-            <div className='flex items-center gap-x-1 text-xl'>
-              <div className='flex-auto pl-2'>
-                <span className='font-bold'>{video.title} </span>
-                <span className='text-sm'>
-                  {video.download.playlist?.count && `(${video.download.playlist?.count})`}
-                </span>
-              </div>
-              <a
-                className={classNames('btn btn-xs btn-info text-lg', !video.url && 'btn-disabled')}
-                href={video.url || ''}
-                rel='noopener noreferrer'
-                target='_blank'
-                title='Open Original Link'
-              >
-                <TbExternalLink />
-              </a>
-              <div className='btn shrink-0 btn-xs btn-ghost text-lg' onClick={onClose}>
-                <CgClose />
-              </div>
+      <div
+        className='flex flex-col max-w-3xl px-3 sm:px-2 max-h-[80%] mx-auto cursor-auto'
+        onClick={handleEventStopPropagation}
+      >
+        <div className='flex flex-col p-2 rounded-md bg-base-content/10 overflow-y-auto'>
+          <div className='flex shrink-0 items-center gap-x-1 text-xl'>
+            <div className='flex-auto pl-2 py-1'>
+              <span className='font-bold'>{video.title} </span>
+              <span className='text-sm'>
+                {video.download.playlist?.count && `(${video.download.playlist?.count})`}
+              </span>
             </div>
-            <div className='divider mt-0 mb-2'></div>
-            <div className='flex flex-col gap-y-1'>
-              {video.playlist.map((item, i) => {
-                if (!item) {
-                  return (
-                    <div
-                      key={i}
-                      className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md text-zinc-500'
-                    >
-                      <div className='min-w-[2em] shrink-0 text-center font-bold'>{i + 1}</div>
-                      <div>No Data</div>
-                    </div>
-                  );
-                }
-
+            <a
+              className={classNames('btn btn-xs btn-info text-lg', !video.url && 'btn-disabled')}
+              href={video.url || ''}
+              rel='noopener noreferrer'
+              target='_blank'
+              title='Open Original Link'
+            >
+              <TbExternalLink />
+            </a>
+            <div className='btn shrink-0 btn-xs btn-ghost text-lg' onClick={onClose}>
+              <CgClose />
+            </div>
+          </div>
+          <div className='divider shrink-0 mt-0 mb-2'></div>
+          <div className='flex flex-col flex-auto gap-y-1 overflow-y-auto'>
+            {video.playlist.map((item, i) => {
+              if (!item) {
                 return (
                   <div
-                    key={item?.uuid ?? i}
-                    className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md'
+                    key={i}
+                    className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md text-zinc-500'
                   >
-                    <div
-                      className={classNames(
-                        'min-w-[2em] shrink-0 text-center font-bold',
-                        item.error && 'text-error',
-                        !item.error && item.isLive && 'text-zinc-500 line-through'
-                      )}
-                    >
-                      {i + 1}
-                    </div>
-                    <div className='flex-auto'>
-                      <div className='line-clamp-3'>
-                        {item.error ? (
-                          <span className='text-error' title={item.error}>
-                            {item.error}
-                          </span>
-                        ) : item.isLive ? (
-                          <span className='text-zinc-500'>Live has been excluded.</span>
-                        ) : (
-                          <span title={item.name || ''}>{item.name}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className='shrink-0 leading-4'>
-                      <a
-                        className={classNames(
-                          'btn btn-xs btn-info text-lg',
-                          !item.url && 'btn-disabled'
-                        )}
-                        href={item.url || ''}
-                        rel='noopener noreferrer'
-                        target='_blank'
-                        title='Open Item Link'
-                      >
-                        <TbExternalLink />
-                      </a>
-                    </div>
-                    <div className='shrink-0 leading-4'>
-                      <a
-                        className={classNames(
-                          'btn btn-xs text-xl',
-                          item?.error || !item.uuid || !item.path || !item.size || item.isLive
-                            ? 'btn-disabled'
-                            : 'btn-primary dark:btn-secondary'
-                        )}
-                        href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
-                        rel='noopener noreferrer'
-                        target='_blank'
-                        download={item.name}
-                        title='Download Video'
-                      >
-                        <AiOutlineCloudDownload />
-                      </a>
-                    </div>
+                    <div className='min-w-[2em] shrink-0 text-center font-bold'>{i + 1}</div>
+                    <div>No Data</div>
                   </div>
                 );
-              })}
-            </div>
+              }
+
+              return (
+                <div
+                  key={item?.uuid ?? i}
+                  className='flex gap-x-1 p-1 hover:bg-base-content/10 rounded-md'
+                >
+                  <div
+                    className={classNames(
+                      'min-w-[2em] shrink-0 text-center font-bold',
+                      item.error && 'text-error',
+                      !item.error && item.isLive && 'text-zinc-500 line-through'
+                    )}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className='flex-auto'>
+                    <div className='line-clamp-3'>
+                      {item.error ? (
+                        <span className='text-error' title={item.error}>
+                          {item.error}
+                        </span>
+                      ) : item.isLive ? (
+                        <span className='text-zinc-500'>Live has been excluded.</span>
+                      ) : (
+                        <span title={item.name || ''}>{item.name}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className='shrink-0 leading-4'>
+                    <a
+                      className={classNames(
+                        'btn btn-xs btn-info text-lg',
+                        !item.url && 'btn-disabled'
+                      )}
+                      href={item.url || ''}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                      title='Open Item Link'
+                    >
+                      <TbExternalLink />
+                    </a>
+                  </div>
+                  <div className='shrink-0 leading-4'>
+                    <a
+                      className={classNames(
+                        'btn btn-xs text-xl',
+                        item?.error || !item.uuid || !item.path || !item.size || item.isLive
+                          ? 'btn-disabled'
+                          : 'btn-primary dark:btn-secondary'
+                      )}
+                      href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                      download={item.name}
+                      title='Download Video'
+                    >
+                      <AiOutlineCloudDownload />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
