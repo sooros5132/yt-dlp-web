@@ -49,7 +49,7 @@ May 11, 2023 - v0.1.5 - Request download in iOS Shortcut
 
 Apr 28, 2023 - Support recording live stream
 
-Apr 24, 2023 - Create Repository
+Apr 23, 2023 - Create Repository
 ```
 
 <br />
