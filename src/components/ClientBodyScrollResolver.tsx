@@ -1,5 +1,6 @@
 'use client';
 
+import { useSiteSettingStore } from '@/store/siteSetting';
 import { useVideoPlayerStore } from '@/store/videoPlayer';
 import { useEffect } from 'react';
 import { shallow } from 'zustand/shallow';
@@ -12,10 +13,15 @@ export function ClientBodyScrollResolver() {
     }),
     shallow
   );
+  const { openCookiesEditor } = useSiteSettingStore(
+    ({ openCookiesEditor }) => ({ openCookiesEditor }),
+    shallow
+  );
 
   useEffect(() => {
-    document.body.style.overflow = !enableTopSticky && isVideoPlayerOpen ? 'hidden' : '';
-  }, [enableTopSticky, isVideoPlayerOpen]);
+    document.body.style.overflow =
+      (!enableTopSticky && isVideoPlayerOpen) || openCookiesEditor ? 'hidden' : '';
+  }, [enableTopSticky, isVideoPlayerOpen, openCookiesEditor]);
 
   return <></>;
 }
