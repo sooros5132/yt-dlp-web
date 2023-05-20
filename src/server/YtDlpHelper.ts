@@ -285,12 +285,12 @@ export class YtDlpHelper {
               break;
             }
             default: {
-              reject('failed fetching formats');
+              reject(stderrMessage || 'Failed fetching formats');
               break;
             }
           }
         } catch (e) {
-          reject(e || 'failed fetching formats, downloading best available');
+          reject(e || 'Failed fetching formats, downloading best available');
         }
       });
     });
