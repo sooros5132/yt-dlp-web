@@ -14,102 +14,35 @@ import { PingSvg } from '@/components/PingSvg';
 import { IoClose } from 'react-icons/io5';
 import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
 import { FcRemoveImage } from 'react-icons/fc';
-import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
-import { MdContentPaste } from 'react-icons/md';
+import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp, HiOutlinePencil } from 'react-icons/hi2';
+import {
+  MdContentPaste,
+  MdOutlineKeyboardArrowDown,
+  MdOutlineKeyboardArrowUp
+} from 'react-icons/md';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import queryString from 'query-string';
 import type { ChangeEvent } from 'react';
 import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video';
-import type { AxiosResponse, DownloadResponse } from '@/types/types';
-
-interface State {
-  url: string;
-  enabledBestFormat: boolean;
-}
-
-interface Store extends State {
-  setUrl: (url: string) => void;
-  enableBestFormat: () => void;
-  disableBestFormat: () => void;
-  requestDownload: (params?: {
-    url: string;
-    videoId?: string;
-    audioId?: string;
-  }) => Promise<AxiosResponse<DownloadResponse>>;
-  getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
-}
-
-const initialState: State = {
-  url: '',
-  enabledBestFormat: true
-};
-
-const useStore = create(
-  persist<Store>(
-    (set, get) => ({
-      ...initialState,
-      setUrl(url) {
-        set({
-          url
-        });
-      },
-      enableBestFormat() {
-        set({
-          enabledBestFormat: true
-        });
-      },
-      disableBestFormat() {
-        set({
-          enabledBestFormat: false
-        });
-      },
-      async requestDownload(params) {
-        const url = get().url;
-        const result = await axios
-          .get('/api/d', {
-            params: {
-              ...params,
-              url: params?.url || url
-            }
-          })
-          .then((res) => res.data)
-          .catch((res) => res.response.data);
-
-        return result as AxiosResponse<DownloadResponse>;
-      },
-      async getMetadata() {
-        const url = get().url;
-        const metadata = await axios
-          .get('/api/info', {
-            params: {
-              url
-            }
-          })
-          .then((res) => res.data)
-          .catch((res) => res.response.data);
-
-        return metadata as AxiosResponse<VideoMetadata>;
-      }
-    }),
-    {
-      name: 'downloadForm',
-      storage: createJSONStorage(() => localStorage),
-      version: 0.1,
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(([key]) => ['enabledBestFormat'].includes(key))
-        ) as Store
-    }
-  )
-);
+import { useDownloadFormStore } from '@/store/downloadForm';
+import { CookiesEditor } from './CookiesEditor';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { setUrl, disableBestFormat, enableBestFormat, enabledBestFormat, url } = useStore();
+  const {
+    setUrl,
+    disableBestFormat,
+    enableBestFormat,
+    enabledBestFormat,
+    url,
+    usingCookies,
+    setUsingCookies
+  } = useDownloadFormStore();
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
+  const [openMoreOptions, setOpenMoreOptions] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | PlaylistMetadata | null>(null);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +72,7 @@ export function DownloadForm() {
     }
     setValidating(true);
     setVideoMetadata(null);
-    const { getMetadata, requestDownload } = useStore.getState();
+    const { getMetadata, requestDownload } = useDownloadFormStore.getState();
     try {
       if (enabledBestFormat) {
         const result = await requestDownload();
@@ -188,6 +121,15 @@ export function DownloadForm() {
     setUrl(clipText);
   };
 
+  const handleClickUsingCookiesButton = () => {
+    setUsingCookies(!usingCookies);
+  };
+
+  const handleClickEditCookiesButton = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    useSiteSettingStore.getState().setOpenCookiesEditor(true);
+  };
+
   useLayoutEffect(() => {
     const initUrl = searchParams.get('url');
     if (initUrl) {
@@ -210,7 +152,7 @@ export function DownloadForm() {
 
           setValidating(true);
           router.replace(`${pathname}?${newQueryString}`);
-          const result = await useStore.getState().requestDownload();
+          const result = await useDownloadFormStore.getState().requestDownload();
 
           if (result?.error) {
             toast.error(result?.error || 'Download Failed');
@@ -274,17 +216,38 @@ export function DownloadForm() {
           )}
         </div>
         <div>
-          <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
-            <input
-              className='checkbox checkbox-xs'
-              name='enabledBestFormat'
-              type='checkbox'
-              checked={!hydrated ? true : enabledBestFormat}
-              readOnly={!hydrated}
-              onChange={handleChangeCheckBox}
-            />
-            <span className='text-sm'>Download immediately in the best quality</span>
-          </label>
+          <div>
+            <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+              <input
+                className='checkbox checkbox-xs rounded-md'
+                name='enabledBestFormat'
+                type='checkbox'
+                checked={!hydrated ? true : enabledBestFormat}
+                readOnly={!hydrated}
+                onChange={handleChangeCheckBox}
+              />
+              <span className='text-sm'>Download immediately in the best quality</span>
+            </label>
+          </div>
+          <div className='flex items-center'>
+            <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+              <input
+                className='checkbox checkbox-xs rounded-md'
+                name='usingCookies'
+                type='checkbox'
+                checked={!hydrated ? false : usingCookies}
+                readOnly={!hydrated}
+                onChange={handleClickUsingCookiesButton}
+              />
+              <span className='text-sm'>Using Cookies</span>
+            </label>
+            <button
+              className='btn btn-xs w-[20px] h-[20px] min-w-[20px] min-h-[20px] btn-circle btn-ghost'
+              onClick={handleClickEditCookiesButton}
+            >
+              <HiOutlinePencil />
+            </button>
+          </div>
         </div>
         <div className='text-right'>
           <button
@@ -311,6 +274,11 @@ export function DownloadForm() {
           </button>
         </div>
       </form>
+      {openMoreOptions && (
+        <div>
+          <CookiesEditor />
+        </div>
+      )}
       {!isValidating && videoMetadata ? (
         videoMetadata?.type === 'video' ? (
           <div className='mb-2'>
@@ -336,6 +304,7 @@ export function DownloadForm() {
           </div>
         ) : null
       ) : null}
+      <CookiesEditor />
     </div>
   );
 }
@@ -447,7 +416,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
       return;
     }
     setValidating(true);
-    const { requestDownload } = useStore.getState();
+    const { requestDownload } = useDownloadFormStore.getState();
     try {
       const result = await requestDownload(params);
 
@@ -673,7 +642,7 @@ const PlaylistDownload = memo(({ metadata }: PlaylistDownloadProps) => {
       return;
     }
     setValidating(true);
-    const { requestDownload } = useStore.getState();
+    const { requestDownload } = useDownloadFormStore.getState();
     try {
       const result = await requestDownload({ url: metadata.originalUrl });
 

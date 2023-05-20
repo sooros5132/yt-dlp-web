@@ -2,10 +2,11 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH } from '@/server/CacheHelper';
+import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/CacheHelper';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
 import type { PlaylistMetadata, VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
 import { randomUUID } from 'node:crypto';
+import { COOKIES_FILE } from '@/server/FileHelper';
 
 const downloadProgressRegex =
   /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/im;
@@ -40,8 +41,7 @@ export class YtDlpHelper {
     localThumbnail: null,
     isLive: false,
     format: 'bv+ba/b',
-    updatedAt: Date.now(),
-    createdAt: Date.now(),
+    usingCookies: false,
     file: {
       name: null,
       path: null
@@ -51,7 +51,9 @@ export class YtDlpHelper {
       pid: null,
       progress: null,
       speed: null
-    }
+    },
+    updatedAt: Date.now(),
+    createdAt: Date.now()
   };
   private ytdlp?: ChildProcessWithoutNullStreams;
   private isDownloadStarted = false;
@@ -59,12 +61,19 @@ export class YtDlpHelper {
   private pid?: number;
   private metadata?: VideoMetadata | PlaylistMetadata;
 
-  constructor(querys: { url: string; uuid?: string; format?: string; pid?: number }) {
+  constructor(querys: {
+    url: string;
+    uuid?: string;
+    format?: string;
+    pid?: number;
+    usingCookies: boolean;
+  }) {
     this.url = querys.url;
     this.pid = querys.pid;
     this.metadata = undefined;
     this.videoInfo.url = querys.url;
     this.videoInfo.format = querys.format || 'bv+ba/b';
+    this.videoInfo.usingCookies = querys.usingCookies;
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
@@ -116,6 +125,10 @@ export class YtDlpHelper {
       '-P',
       `${DOWNLOAD_PATH}`
     ];
+
+    if (this.videoInfo?.usingCookies) {
+      options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
+    }
 
     switch (metadata.type) {
       case 'video': {
@@ -194,7 +207,16 @@ export class YtDlpHelper {
     }
     let stdoutChunks = [] as Array<any>;
     let stderrMessage = '';
-    const ytdlp = spawn('yt-dlp', ['--dump-single-json', '--playlist-items', '0', this.url]);
+
+    const options = ['--dump-single-json', '--playlist-items', '0'];
+
+    if (this.videoInfo?.usingCookies) {
+      options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
+    }
+
+    options.push(this.url);
+
+    const ytdlp = spawn('yt-dlp', options);
 
     ytdlp.stdout.on('data', (data) => {
       stdoutChunks.push(data);

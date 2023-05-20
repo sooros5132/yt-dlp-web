@@ -33,7 +33,8 @@ export async function GET(request: Request) {
   const ytdlp = new YtDlpHelper({
     url,
     format: videoInfo.format,
-    uuid: videoInfo.uuid
+    uuid: videoInfo.uuid,
+    usingCookies: videoInfo?.usingCookies || false
   });
 
   const stream = new ReadableStream({
