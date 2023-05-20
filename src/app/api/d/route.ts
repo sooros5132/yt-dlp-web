@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
   const url = searchParams.get('url')?.trim?.();
+  const usingCookies = searchParams.get('usingCookies') === 'true';
   // const url = context?.params?.url;
 
   try {
@@ -53,7 +54,8 @@ export async function GET(request: Request) {
     const ytdlp = new YtDlpHelper({
       url,
       format,
-      uuid
+      uuid,
+      usingCookies
     });
     const videoInfo = ytdlp.getVideoInfo();
 

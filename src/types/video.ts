@@ -48,6 +48,7 @@ export interface VideoInfo {
   error?: string;
   isLive: boolean;
   format: string;
+  usingCookies: boolean;
   file: Streams & {
     path: string | null;
     name: string | null;

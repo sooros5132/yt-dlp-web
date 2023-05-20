@@ -8,8 +8,8 @@ export const VIDEO_LIST_FILE = 'video-list';
 
 export const CACHE_FILE_PREFIX = 'yt-dlp-cache-';
 
-function getCacheFilePath(uuid: string) {
-  return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.json`);
+export function getCacheFilePath(uuid: string, extention = 'json') {
+  return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.${extention}`);
 }
 
 export class CacheHelper {
