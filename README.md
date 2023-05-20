@@ -43,6 +43,8 @@ docker compose up -d
 
 # Change Logs
 ```
+May 20, 2023 - v0.2.2 - Added Using Cookies feature
+
 May 15, 2023 - v0.2.0 - Support playlist download
 
 May 11, 2023 - v0.1.5 - Request download in iOS Shortcut
