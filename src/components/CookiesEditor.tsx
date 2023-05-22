@@ -3,12 +3,11 @@
 import { useCookiesEditorStore } from '@/store/cookiesEditor';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { AxiosResponse } from '@/types/types';
-import axios, { Canceler } from 'axios';
+import axios from 'axios';
 import classNames from 'classnames';
 import { useEffect, useState } from 'react';
 import { AiOutlineInfoCircle } from 'react-icons/ai';
 import { toast } from 'react-toastify';
-import useSWR from 'swr';
 import { shallow } from 'zustand/shallow';
 
 export const CookiesEditor = () => {
