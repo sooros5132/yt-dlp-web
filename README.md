@@ -43,7 +43,9 @@ docker compose up -d
 
 # Change Logs
 ```
-May 20, 2023 - v0.2.2 - Added Using Cookies feature
+May 22, 2023 - v0.2.3 - Added Proxy, Embed Subs, Embed Chapters, Embed Metadata Options
+
+May 20, 2023 - v0.2.2 - Added Using Cookies Option
 
 May 15, 2023 - v0.2.0 - Support playlist download
 
