@@ -6,13 +6,14 @@ import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 
-const encoder = new TextEncoder();
-
 export async function GET(request: Request) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
   const url = searchParams.get('url')?.trim?.();
   const usingCookies = searchParams.get('usingCookies') === 'true';
+  const embedChapters = searchParams.get('embedChapters') === 'true';
+  const embedMetadata = searchParams.get('embedMetadata') === 'true';
+  const embedSubs = searchParams.get('embedSubs') === 'true';
   // const url = context?.params?.url;
 
   try {
@@ -55,7 +56,10 @@ export async function GET(request: Request) {
       url,
       format,
       uuid,
-      usingCookies
+      usingCookies,
+      embedChapters,
+      embedMetadata,
+      embedSubs
     });
     const videoInfo = ytdlp.getVideoInfo();
 

@@ -34,7 +34,10 @@ export async function GET(request: Request) {
     url,
     format: videoInfo.format,
     uuid: videoInfo.uuid,
-    usingCookies: videoInfo?.usingCookies || false
+    usingCookies: videoInfo?.usingCookies || false,
+    embedChapters: videoInfo?.embedChapters || false,
+    embedMetadata: videoInfo?.embedMetadata || false,
+    embedSubs: videoInfo?.embedSubs || false
   });
 
   const stream = new ReadableStream({

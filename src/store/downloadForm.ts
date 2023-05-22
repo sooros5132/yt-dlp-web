@@ -8,6 +8,9 @@ interface State {
   url: string;
   enabledBestFormat: boolean;
   usingCookies: boolean;
+  embedMetadata: boolean;
+  embedChapters: boolean;
+  embedSubs: boolean;
 }
 
 interface Store extends State {
@@ -21,12 +24,18 @@ interface Store extends State {
   }) => Promise<AxiosResponse<DownloadResponse>>;
   getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
   setUsingCookies: (usingCookies: boolean) => void;
+  setEmbedSubs: (embedSubs: boolean) => void;
+  setEmbedMetadata: (embedMetadata: boolean) => void;
+  setEmbedChapters: (embedChapters: boolean) => void;
 }
 
 const initialState: State = {
   url: '',
   enabledBestFormat: true,
-  usingCookies: false
+  usingCookies: false,
+  embedMetadata: false,
+  embedChapters: false,
+  embedSubs: false
 };
 
 export const useDownloadFormStore = create(
@@ -49,13 +58,16 @@ export const useDownloadFormStore = create(
         });
       },
       async requestDownload(params) {
-        const { url, usingCookies } = get();
+        const { url, usingCookies, embedChapters, embedMetadata, embedSubs } = get();
         const result = await axios
           .get('/api/d', {
             params: {
               ...params,
               url: params?.url || url,
-              usingCookies
+              usingCookies,
+              embedChapters,
+              embedMetadata,
+              embedSubs
             }
           })
           .then((res) => res.data)
@@ -79,6 +91,15 @@ export const useDownloadFormStore = create(
       },
       setUsingCookies(usingCookies) {
         set({ usingCookies });
+      },
+      setEmbedMetadata(embedMetadata) {
+        set({ embedMetadata });
+      },
+      setEmbedChapters(embedChapters) {
+        set({ embedChapters });
+      },
+      setEmbedSubs(embedSubs) {
+        set({ embedSubs });
       }
     }),
     {
@@ -88,7 +109,13 @@ export const useDownloadFormStore = create(
       partialize: (state) =>
         Object.fromEntries(
           Object.entries(state).filter(([key]) =>
-            ['enabledBestFormat', 'usingCookie'].includes(key)
+            [
+              'enabledBestFormat',
+              'usingCookie',
+              'embedMetadata',
+              'embedChapters',
+              'embedSubs'
+            ].includes(key)
           )
         ) as Store
     }

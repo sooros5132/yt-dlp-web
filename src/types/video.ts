@@ -49,6 +49,9 @@ export interface VideoInfo {
   isLive: boolean;
   format: string;
   usingCookies: boolean;
+  embedChapters: boolean;
+  embedMetadata: boolean;
+  embedSubs: boolean;
   file: Streams & {
     path: string | null;
     name: string | null;

@@ -23,20 +23,40 @@ import type { ChangeEvent } from 'react';
 import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video';
 import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from './CookiesEditor';
+import { shallow } from 'zustand/shallow';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const {
-    setUrl,
-    disableBestFormat,
-    enableBestFormat,
     enabledBestFormat,
     url,
     usingCookies,
+    setUrl,
+    disableBestFormat,
+    enableBestFormat,
     setUsingCookies
-  } = useDownloadFormStore();
+  } = useDownloadFormStore(
+    ({
+      enabledBestFormat,
+      url,
+      usingCookies,
+      setUrl,
+      disableBestFormat,
+      enableBestFormat,
+      setUsingCookies
+    }) => ({
+      enabledBestFormat,
+      url,
+      usingCookies,
+      setUrl,
+      disableBestFormat,
+      enableBestFormat,
+      setUsingCookies
+    }),
+    shallow
+  );
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [openMoreOptions, setOpenMoreOptions] = useState(false);
@@ -120,6 +140,10 @@ export function DownloadForm() {
 
   const handleClickUsingCookiesButton = () => {
     setUsingCookies(!usingCookies);
+  };
+
+  const handleClickMoreOptionsButton = () => {
+    setOpenMoreOptions((prev) => !prev);
   };
 
   const handleClickEditCookiesButton = (event: React.MouseEvent<HTMLElement>) => {
@@ -212,8 +236,8 @@ export function DownloadForm() {
             </button>
           )}
         </div>
-        <div>
-          <div>
+        <div className='flex flex-col gap-y-1'>
+          <div className='flex items-center'>
             <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
               <input
                 className='checkbox checkbox-xs rounded-md'
@@ -246,7 +270,16 @@ export function DownloadForm() {
             </button>
           </div>
         </div>
-        <div className='text-right'>
+        <div className='flex items-center justify-between'>
+          <button
+            type='button'
+            className='btn btn-sm btn-ghost normal-case gap-x-1 [&>svg]:text-lg'
+            onClick={handleClickMoreOptionsButton}
+            title={'More Options'}
+          >
+            {openMoreOptions ? <MdOutlineKeyboardArrowUp /> : <MdOutlineKeyboardArrowDown />}
+            <span>More Options</span>
+          </button>
           <button
             className={classNames(
               'btn btn-sm btn-primary px-3 normal-case gap-x-1',
@@ -270,6 +303,7 @@ export function DownloadForm() {
             )}
           </button>
         </div>
+        {openMoreOptions && <MoreOptions />}
       </form>
       {!isValidating && videoMetadata ? (
         videoMetadata?.type === 'video' ? (
@@ -300,6 +334,89 @@ export function DownloadForm() {
     </div>
   );
 }
+
+const MoreOptions = memo(() => {
+  const {
+    embedChapters,
+    embedMetadata,
+    embedSubs,
+    setEmbedChapters,
+    setEmbedMetadata,
+    setEmbedSubs
+  } = useDownloadFormStore(
+    ({
+      embedChapters,
+      embedMetadata,
+      embedSubs,
+      setEmbedChapters,
+      setEmbedMetadata,
+      setEmbedSubs
+    }) => ({
+      embedChapters,
+      embedMetadata,
+      embedSubs,
+      setEmbedChapters,
+      setEmbedMetadata,
+      setEmbedSubs
+    }),
+    shallow
+  );
+
+  const handleClickEmbedMetadataCheckbox = () => {
+    setEmbedMetadata(!embedMetadata);
+  };
+
+  const handleClickEmbedChaptersCheckbox = () => {
+    setEmbedChapters(!embedChapters);
+  };
+
+  const handleClickEmbedSubsCheckbox = () => {
+    setEmbedSubs(!embedSubs);
+  };
+
+  return (
+    <div>
+      <div>
+        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+          <input
+            className='checkbox checkbox-xs rounded-md'
+            name='embedSubs'
+            type='checkbox'
+            checked={embedSubs}
+            onChange={handleClickEmbedSubsCheckbox}
+          />
+          <span className='text-sm'>Embed Subs</span>
+        </label>
+      </div>
+      <div>
+        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+          <input
+            className='checkbox checkbox-xs rounded-md'
+            name='embedChapters'
+            type='checkbox'
+            checked={embedChapters}
+            onChange={handleClickEmbedChaptersCheckbox}
+          />
+          <span className='text-sm'>Embed Chapters</span>
+        </label>
+      </div>
+      <div>
+        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+          <input
+            className='checkbox checkbox-xs rounded-md'
+            name='embedMetadata'
+            type='checkbox'
+            checked={embedMetadata}
+            onChange={handleClickEmbedMetadataCheckbox}
+          />
+          <span className='text-sm'>Embed Metadata</span>
+        </label>
+      </div>
+    </div>
+  );
+}, isEquals);
+
+MoreOptions.displayName = 'MoreOptions';
 
 type SearchedVideoMetadataProps = { metadata: VideoMetadata };
 

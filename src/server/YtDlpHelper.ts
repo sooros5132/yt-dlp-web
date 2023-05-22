@@ -42,6 +42,9 @@ export class YtDlpHelper {
     isLive: false,
     format: 'bv+ba/b',
     usingCookies: false,
+    embedChapters: false,
+    embedMetadata: false,
+    embedSubs: false,
     file: {
       name: null,
       path: null
@@ -67,6 +70,9 @@ export class YtDlpHelper {
     format?: string;
     pid?: number;
     usingCookies: boolean;
+    embedChapters?: boolean;
+    embedMetadata?: boolean;
+    embedSubs?: boolean;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -74,6 +80,9 @@ export class YtDlpHelper {
     this.videoInfo.url = querys.url;
     this.videoInfo.format = querys.format || 'bv+ba/b';
     this.videoInfo.usingCookies = querys.usingCookies;
+    this.videoInfo.embedChapters = querys.embedChapters || false;
+    this.videoInfo.embedMetadata = querys.embedMetadata || false;
+    this.videoInfo.embedSubs = querys.embedSubs || false;
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
@@ -123,12 +132,14 @@ export class YtDlpHelper {
       '--merge-output-format',
       'mp4',
       '-P',
-      `${DOWNLOAD_PATH}`
+      DOWNLOAD_PATH
     ];
 
-    if (this.videoInfo?.usingCookies) {
+    if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
+    if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
+    if (this.videoInfo?.embedSubs) options.push('--embed-subs');
+    if (this.videoInfo?.usingCookies)
       options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
-    }
 
     switch (metadata.type) {
       case 'video': {
