@@ -52,6 +52,8 @@ export interface VideoInfo {
   embedChapters: boolean;
   embedMetadata: boolean;
   embedSubs: boolean;
+  enableProxy: boolean;
+  proxyAddress: string;
   file: Streams & {
     path: string | null;
     name: string | null;

@@ -591,6 +591,7 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           <progress
             className='progress progress-info w-full h-1'
             value={Number(numeral(video.download.progress).format('0.00') || 0)}
+            title={video.download.progress ? `${Number(video.download.progress) * 100}%` : ''}
           />
         )}
       </div>

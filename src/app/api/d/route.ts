@@ -14,6 +14,9 @@ export async function GET(request: Request) {
   const embedChapters = searchParams.get('embedChapters') === 'true';
   const embedMetadata = searchParams.get('embedMetadata') === 'true';
   const embedSubs = searchParams.get('embedSubs') === 'true';
+  const enableProxy = searchParams.get('enableProxy') === 'true';
+  const proxyAddress = searchParams.get('proxyAddress') || '';
+
   // const url = context?.params?.url;
 
   try {
@@ -59,7 +62,9 @@ export async function GET(request: Request) {
       usingCookies,
       embedChapters,
       embedMetadata,
-      embedSubs
+      embedSubs,
+      enableProxy,
+      proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : ''
     });
     const videoInfo = ytdlp.getVideoInfo();
 

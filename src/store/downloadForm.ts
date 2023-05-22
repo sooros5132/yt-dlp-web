@@ -11,6 +11,8 @@ interface State {
   embedMetadata: boolean;
   embedChapters: boolean;
   embedSubs: boolean;
+  enableProxy: boolean;
+  proxyAddress: string;
 }
 
 interface Store extends State {
@@ -27,6 +29,8 @@ interface Store extends State {
   setEmbedSubs: (embedSubs: boolean) => void;
   setEmbedMetadata: (embedMetadata: boolean) => void;
   setEmbedChapters: (embedChapters: boolean) => void;
+  setEnableProxy: (enableProxy: boolean) => void;
+  setProxyAddress: (proxyAddress: string) => void;
 }
 
 const initialState: State = {
@@ -35,7 +39,9 @@ const initialState: State = {
   usingCookies: false,
   embedMetadata: false,
   embedChapters: false,
-  embedSubs: false
+  embedSubs: false,
+  enableProxy: false,
+  proxyAddress: ''
 };
 
 export const useDownloadFormStore = create(
@@ -58,7 +64,15 @@ export const useDownloadFormStore = create(
         });
       },
       async requestDownload(params) {
-        const { url, usingCookies, embedChapters, embedMetadata, embedSubs } = get();
+        const {
+          url,
+          usingCookies,
+          embedChapters,
+          embedMetadata,
+          embedSubs,
+          enableProxy,
+          proxyAddress
+        } = get();
         const result = await axios
           .get('/api/d', {
             params: {
@@ -67,7 +81,9 @@ export const useDownloadFormStore = create(
               usingCookies,
               embedChapters,
               embedMetadata,
-              embedSubs
+              embedSubs,
+              enableProxy,
+              proxyAddress
             }
           })
           .then((res) => res.data)
@@ -76,12 +92,14 @@ export const useDownloadFormStore = create(
         return result as AxiosResponse<DownloadResponse>;
       },
       async getMetadata() {
-        const { url, usingCookies } = get();
+        const { url, usingCookies, enableProxy, proxyAddress } = get();
         const metadata = await axios
           .get('/api/info', {
             params: {
               url,
-              usingCookies
+              usingCookies,
+              enableProxy,
+              proxyAddress
             }
           })
           .then((res) => res.data)
@@ -100,6 +118,12 @@ export const useDownloadFormStore = create(
       },
       setEmbedSubs(embedSubs) {
         set({ embedSubs });
+      },
+      setEnableProxy(enableProxy) {
+        set({ enableProxy });
+      },
+      setProxyAddress(proxyAddress) {
+        set({ proxyAddress });
       }
     }),
     {
@@ -114,7 +138,9 @@ export const useDownloadFormStore = create(
               'usingCookie',
               'embedMetadata',
               'embedChapters',
-              'embedSubs'
+              'embedSubs',
+              'enableProxy',
+              'proxyAddress'
             ].includes(key)
           )
         ) as Store

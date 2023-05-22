@@ -8,6 +8,8 @@ export async function GET(request: Request, context: { params: { url: string } }
   const searchParams = urlObject.searchParams;
   const url = searchParams.get('url');
   const usingCookies = searchParams.get('usingCookies') === 'true';
+  const enableProxy = searchParams.get('enableProxy') === 'true';
+  const proxyAddress = searchParams.get('proxyAddress') || '';
   // const url = context?.params?.url;
   const abortController = new AbortController();
   const { signal } = abortController;
@@ -22,7 +24,9 @@ export async function GET(request: Request, context: { params: { url: string } }
 
     const ytdlp = new YtDlpHelper({
       url,
-      usingCookies
+      usingCookies,
+      enableProxy,
+      proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : ''
     });
 
     const metadata = await ytdlp.getMetadata();

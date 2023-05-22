@@ -238,7 +238,10 @@ export function DownloadForm() {
         </div>
         <div className='flex flex-col gap-y-1'>
           <div className='flex items-center'>
-            <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+            <label
+              className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+              title='Download immediately in the best quality'
+            >
               <input
                 className='checkbox checkbox-xs rounded-md'
                 name='enabledBestFormat'
@@ -251,7 +254,10 @@ export function DownloadForm() {
             </label>
           </div>
           <div className='flex items-center'>
-            <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+            <label
+              className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+              title='Using Cookies'
+            >
               <input
                 className='checkbox checkbox-xs rounded-md'
                 name='usingCookies'
@@ -342,7 +348,11 @@ const MoreOptions = memo(() => {
     embedSubs,
     setEmbedChapters,
     setEmbedMetadata,
-    setEmbedSubs
+    setEmbedSubs,
+    enableProxy,
+    proxyAddress,
+    setEnableProxy,
+    setProxyAddress
   } = useDownloadFormStore(
     ({
       embedChapters,
@@ -350,14 +360,22 @@ const MoreOptions = memo(() => {
       embedSubs,
       setEmbedChapters,
       setEmbedMetadata,
-      setEmbedSubs
+      setEmbedSubs,
+      enableProxy,
+      proxyAddress,
+      setEnableProxy,
+      setProxyAddress
     }) => ({
       embedChapters,
       embedMetadata,
       embedSubs,
       setEmbedChapters,
       setEmbedMetadata,
-      setEmbedSubs
+      setEmbedSubs,
+      enableProxy,
+      proxyAddress,
+      setEnableProxy,
+      setProxyAddress
     }),
     shallow
   );
@@ -374,10 +392,19 @@ const MoreOptions = memo(() => {
     setEmbedSubs(!embedSubs);
   };
 
+  const handleClickEnableProxyCheckbox = () => {
+    setEnableProxy(!enableProxy);
+  };
+
+  const handleChangeProxyServer = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value || '';
+    setProxyAddress(value);
+  };
+
   return (
     <div>
       <div>
-        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer' title='Embed Subs'>
           <input
             className='checkbox checkbox-xs rounded-md'
             name='embedSubs'
@@ -389,7 +416,10 @@ const MoreOptions = memo(() => {
         </label>
       </div>
       <div>
-        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+        <label
+          className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+          title='Embed Chapters'
+        >
           <input
             className='checkbox checkbox-xs rounded-md'
             name='embedChapters'
@@ -401,7 +431,10 @@ const MoreOptions = memo(() => {
         </label>
       </div>
       <div>
-        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'>
+        <label
+          className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+          title='Embed Metadata'
+        >
           <input
             className='checkbox checkbox-xs rounded-md'
             name='embedMetadata'
@@ -411,6 +444,33 @@ const MoreOptions = memo(() => {
           />
           <span className='text-sm'>Embed Metadata</span>
         </label>
+      </div>
+      <div className='flex items-center gap-x-1'>
+        <label
+          className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+          title='Enable Proxy'
+        >
+          <input
+            className='checkbox checkbox-xs rounded-md'
+            name='enableProxy'
+            type='checkbox'
+            checked={enableProxy}
+            onChange={handleClickEnableProxyCheckbox}
+          />
+          <span className='text-sm'>Enable Proxy</span>
+        </label>
+        <input
+          className={classNames(
+            'input input-xs w-full max-w-[300px] shrink rounded-md focus:outline-none',
+            !enableProxy && 'input-disabled'
+          )}
+          name='proxyAddress'
+          value={!enableProxy ? '' : proxyAddress}
+          readOnly={!enableProxy}
+          placeholder='Proxy Address HTTP/HTTPS/SOCKS'
+          title='Proxy Address HTTP/HTTPS/SOCKS'
+          onChange={handleChangeProxyServer}
+        />
       </div>
     </div>
   );

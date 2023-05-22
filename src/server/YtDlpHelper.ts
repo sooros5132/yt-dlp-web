@@ -45,6 +45,8 @@ export class YtDlpHelper {
     embedChapters: false,
     embedMetadata: false,
     embedSubs: false,
+    enableProxy: false,
+    proxyAddress: '',
     file: {
       name: null,
       path: null
@@ -73,6 +75,8 @@ export class YtDlpHelper {
     embedChapters?: boolean;
     embedMetadata?: boolean;
     embedSubs?: boolean;
+    enableProxy?: boolean;
+    proxyAddress?: string;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -83,6 +87,8 @@ export class YtDlpHelper {
     this.videoInfo.embedChapters = querys.embedChapters || false;
     this.videoInfo.embedMetadata = querys.embedMetadata || false;
     this.videoInfo.embedSubs = querys.embedSubs || false;
+    this.videoInfo.enableProxy = querys.enableProxy || false;
+    this.videoInfo.proxyAddress = querys.proxyAddress || '';
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
@@ -138,8 +144,16 @@ export class YtDlpHelper {
     if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
     if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
     if (this.videoInfo?.embedSubs) options.push('--embed-subs');
-    if (this.videoInfo?.usingCookies)
+    if (this.videoInfo?.usingCookies) {
       options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
+    }
+    if (
+      this.videoInfo?.enableProxy &&
+      typeof this.videoInfo?.proxyAddress === 'string' &&
+      this.videoInfo?.proxyAddress
+    ) {
+      options.push('--proxy', this.videoInfo?.proxyAddress);
+    }
 
     switch (metadata.type) {
       case 'video': {
@@ -223,6 +237,13 @@ export class YtDlpHelper {
 
     if (this.videoInfo?.usingCookies) {
       options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
+    }
+    if (
+      this.videoInfo?.enableProxy &&
+      typeof this.videoInfo?.proxyAddress === 'string' &&
+      this.videoInfo?.proxyAddress
+    ) {
+      options.push('--proxy', this.videoInfo?.proxyAddress);
     }
 
     options.push(this.url);
