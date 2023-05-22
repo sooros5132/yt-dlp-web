@@ -1,11 +1,8 @@
 'use client';
 
-import axios from 'axios';
 import classNames from 'classnames';
 import React, { FormEvent, memo, useLayoutEffect, useState } from 'react';
 import { mutate } from 'swr';
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { toast } from 'react-toastify';
 import numeral from 'numeral';
 import isEquals from 'react-fast-compare';
@@ -274,11 +271,6 @@ export function DownloadForm() {
           </button>
         </div>
       </form>
-      {openMoreOptions && (
-        <div>
-          <CookiesEditor />
-        </div>
-      )}
       {!isValidating && videoMetadata ? (
         videoMetadata?.type === 'video' ? (
           <div className='mb-2'>
