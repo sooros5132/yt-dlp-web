@@ -13,22 +13,9 @@ const initialState: State = {
   secretKey: ''
 };
 
-export const useCookiesEditorStore = create(
-  persist<Store>(
-    (set, get) => ({
-      ...initialState,
-      setSecretKey(secretKey) {
-        set({ secretKey });
-      }
-    }),
-    {
-      name: 'cookiesEditor',
-      storage: createJSONStorage(() => localStorage),
-      version: 0.1,
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(([key]) => ['secretKey'].includes(key))
-        ) as Store
-    }
-  )
-);
+export const useCookiesEditorStore = create<Store>((set, get) => ({
+  ...initialState,
+  setSecretKey(secretKey) {
+    set({ secretKey });
+  }
+}));
