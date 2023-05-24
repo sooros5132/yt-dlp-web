@@ -133,7 +133,7 @@ export const VideoPlayer = () => {
           enableTopSticky && 'opacity-0 group-hover:opacity-100'
         )}
       >
-        <div className='flex items-center gap-x-1.5'>
+        <div className='flex items-center gap-x-1.5 overflow-hidden break-words'>
           <button
             className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl hidden sm:flex'
             onClick={handleClose}
