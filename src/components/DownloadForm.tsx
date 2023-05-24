@@ -269,6 +269,7 @@ export function DownloadForm() {
               <span className='text-sm'>Using Cookies</span>
             </label>
             <button
+              type='button'
               className='btn btn-xs w-[20px] h-[20px] min-w-[20px] min-h-[20px] btn-circle btn-ghost'
               onClick={handleClickEditCookiesButton}
             >
@@ -287,13 +288,13 @@ export function DownloadForm() {
             <span>More Options</span>
           </button>
           <button
+            type='submit'
             className={classNames(
               'btn btn-sm btn-primary px-3 normal-case gap-x-1',
               !hydrated && 'btn-disabled',
               isValidating && 'loading'
             )}
             disabled={!hydrated}
-            type='submit'
             title={!hydrated || enabledBestFormat ? 'Download' : 'Search'}
           >
             {!hydrated || enabledBestFormat ? (

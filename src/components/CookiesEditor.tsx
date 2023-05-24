@@ -103,6 +103,12 @@ const CookiesEditorInner = () => {
     setExisted(false);
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      getCookies();
+    }
+  };
+
   const handleClose = () => {
     useSiteSettingStore.getState().setOpenCookiesEditor(false);
   };
@@ -152,6 +158,7 @@ const CookiesEditorInner = () => {
               placeholder='1 character or more password'
               value={secretKey}
               onChange={handleChangeSecretKey}
+              onKeyDown={handleKeyDown}
               readOnly={isLoading}
             />
           </div>
