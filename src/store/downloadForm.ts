@@ -135,7 +135,7 @@ export const useDownloadFormStore = create(
           Object.entries(state).filter(([key]) =>
             [
               'enabledBestFormat',
-              'usingCookie',
+              'usingCookies',
               'embedMetadata',
               'embedChapters',
               'embedSubs',
