@@ -442,7 +442,10 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
           )}
         </div>
         <div className='card-body grow-0 shrink p-3 overflow-hidden'>
-          <h2 className='card-title line-clamp-2 text-base min-h-[3em] mb-2'>
+          <h2
+            className='card-title line-clamp-2 text-base min-h-[3em] mb-2'
+            title={video.title || undefined}
+          >
             {video.isLive && isRecording && (
               <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
                 <PingSvg />

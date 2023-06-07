@@ -505,8 +505,15 @@ const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) =>
           )}
         </div>
         <div className='card-body basis-[60%] grow shrink p-4 overflow-hidden'>
-          <h2 className='card-title line-clamp-2'>{metadata.title}</h2>
-          <p className='line-clamp-3 grow-0 text-sm text-base-content/60'>{metadata.description}</p>
+          <h2 className='card-title line-clamp-2' title={metadata.title}>
+            {metadata.title}
+          </h2>
+          <p
+            className='line-clamp-3 grow-0 text-sm text-base-content/60'
+            title={metadata.description}
+          >
+            {metadata.description}
+          </p>
           <div className='mt-auto line-clamp-2 break-all text-base-content/60'>
             <a
               className='link link-hover text-sm'
