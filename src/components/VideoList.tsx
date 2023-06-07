@@ -670,8 +670,8 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
                   >
                     {i + 1}
                   </div>
-                  <div className='flex-auto'>
-                    <div className='line-clamp-3'>
+                  <div className='flex items-center justify-between gap-x-1 flex-auto'>
+                    <div className='line-clamp-3 shrink'>
                       {item.error ? (
                         <span className='text-error' title={item.error}>
                           {item.error}
@@ -682,6 +682,9 @@ const PlaylistView = memo(({ video, onClose }: PlaylistViewProps) => {
                         <span title={item.name || ''}>{item.name}</span>
                       )}
                     </div>
+                    <span className='shrink-0'>
+                      {item.size && numeral(item.size).format('0.0b')}
+                    </span>
                   </div>
                   <div className='shrink-0 leading-4'>
                     <a
