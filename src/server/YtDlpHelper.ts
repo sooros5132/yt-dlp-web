@@ -520,6 +520,14 @@ export class YtDlpHelper {
     const videoDownloadListener = async (message: string) => {
       const messageType = /^\[([a-z]+)\]\s/i.exec(message)?.[1];
       if (!messageType) {
+        if (message.startsWith('ERROR: ')) {
+          const error = message?.split('\n')?.[0] || message;
+          this.videoInfo.status = 'failed';
+          this.videoInfo.error = error;
+          await CacheHelper.set(uuid, this.videoInfo);
+          return;
+        }
+
         const isFilePathMessage = filePathRegex.test(message);
         if (isFilePathMessage) {
           videoInfo.file.path = message;
