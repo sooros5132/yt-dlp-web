@@ -162,7 +162,7 @@ export class YtDlpHelper {
           this.videoInfo.format,
           '--no-playlist',
           '-o',
-          `%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
+          `%(title)s (%(id)s).%(ext)s`
         );
 
         if (metadata?.isLive) {
@@ -184,7 +184,7 @@ export class YtDlpHelper {
           '--match-filter',
           '!is_live',
           '-o',
-          `${playlistFolderPrefix} %(playlist_title)s(%(playlist_id)s)/%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
+          `${playlistFolderPrefix} %(playlist_title)s(%(playlist_id)s)/%(title)s (%(id)s).%(ext)s`
         );
         this.videoInfo.format = 'bv+ba/b';
         break;
