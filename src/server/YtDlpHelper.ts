@@ -157,20 +157,16 @@ export class YtDlpHelper {
 
     switch (metadata.type) {
       case 'video': {
-        options.push(
-          '-f',
-          this.videoInfo.format,
-          '--no-playlist',
-          '-o',
-          `%(title)s (%(id)s).%(ext)s`
-        );
+        options.push('-f', this.videoInfo.format, '--no-playlist');
 
         if (metadata?.isLive) {
+          options.push('-o', `%(title)s %(epoch-3600>%y-%m-%d %H_%M)s(%(id)s).%(ext)s`);
           options.push('--no-part');
           if (this.videoInfo?.enableLiveFromStart) {
             options.push('--live-from-start');
           }
         } else {
+          options.push('-o', `%(title)s (%(id)s).%(ext)s`);
           if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
           if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
           if (this.videoInfo?.embedSubs) options.push('--embed-subs');
