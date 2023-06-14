@@ -43,6 +43,8 @@ docker compose up -d
 
 # Change Logs
 ```
+Jun 13, 2023 - v0.2.6 - Added Live From Start Option
+
 May 22, 2023 - v0.2.3 - Added Proxy, Embed Subs, Embed Chapters, Embed Metadata Options
 
 May 20, 2023 - v0.2.2 - Added Using Cookies Option
