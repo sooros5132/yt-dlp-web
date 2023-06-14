@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     if (Array.isArray(uuids) && uuids.length) {
       const videoList = await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)));
       for (const video of videoList) {
-        if (video?.url === url && video.format === format) {
+        if (video?.url === url && video.format === format && !video?.isLive) {
           isAlreadyFormat = true;
           // throw 'You are already downloading in the same format.';
         }
