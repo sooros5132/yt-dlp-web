@@ -13,6 +13,7 @@ interface State {
   embedSubs: boolean;
   enableProxy: boolean;
   proxyAddress: string;
+  enableLiveFromStart: boolean;
 }
 
 interface Store extends State {
@@ -31,6 +32,7 @@ interface Store extends State {
   setEmbedChapters: (embedChapters: boolean) => void;
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
+  setEnableLiveFromStart: (enableLiveFromStart: boolean) => void;
 }
 
 const initialState: State = {
@@ -41,7 +43,8 @@ const initialState: State = {
   embedChapters: false,
   embedSubs: false,
   enableProxy: false,
-  proxyAddress: ''
+  proxyAddress: '',
+  enableLiveFromStart: false
 };
 
 export const useDownloadFormStore = create(
@@ -71,7 +74,8 @@ export const useDownloadFormStore = create(
           embedMetadata,
           embedSubs,
           enableProxy,
-          proxyAddress
+          proxyAddress,
+          enableLiveFromStart
         } = get();
         const result = await axios
           .get('/api/d', {
@@ -83,7 +87,8 @@ export const useDownloadFormStore = create(
               embedMetadata,
               embedSubs,
               enableProxy,
-              proxyAddress
+              proxyAddress,
+              enableLiveFromStart
             }
           })
           .then((res) => res.data)
@@ -124,6 +129,9 @@ export const useDownloadFormStore = create(
       },
       setProxyAddress(proxyAddress) {
         set({ proxyAddress });
+      },
+      setEnableLiveFromStart(enableLiveFromStart) {
+        set({ enableLiveFromStart });
       }
     }),
     {
@@ -140,7 +148,8 @@ export const useDownloadFormStore = create(
               'embedChapters',
               'embedSubs',
               'enableProxy',
-              'proxyAddress'
+              'proxyAddress',
+              'enableLiveFromStart'
             ].includes(key)
           )
         ) as Store

@@ -353,7 +353,9 @@ const MoreOptions = memo(() => {
     enableProxy,
     proxyAddress,
     setEnableProxy,
-    setProxyAddress
+    setProxyAddress,
+    enableLiveFromStart,
+    setEnableLiveFromStart
   } = useDownloadFormStore(
     ({
       embedChapters,
@@ -365,7 +367,9 @@ const MoreOptions = memo(() => {
       enableProxy,
       proxyAddress,
       setEnableProxy,
-      setProxyAddress
+      setProxyAddress,
+      enableLiveFromStart,
+      setEnableLiveFromStart
     }) => ({
       embedChapters,
       embedMetadata,
@@ -376,7 +380,9 @@ const MoreOptions = memo(() => {
       enableProxy,
       proxyAddress,
       setEnableProxy,
-      setProxyAddress
+      setProxyAddress,
+      enableLiveFromStart,
+      setEnableLiveFromStart
     }),
     shallow
   );
@@ -397,6 +403,10 @@ const MoreOptions = memo(() => {
     setEnableProxy(!enableProxy);
   };
 
+  const handleClickEnableLiveFromStart = () => {
+    setEnableLiveFromStart(!enableLiveFromStart);
+  };
+
   const handleChangeProxyServer = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value || '';
     setProxyAddress(value);
@@ -404,47 +414,72 @@ const MoreOptions = memo(() => {
 
   return (
     <div>
-      <div>
-        <label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer' title='Embed Subs'>
-          <input
-            className='checkbox checkbox-xs rounded-md'
-            name='embedSubs'
-            type='checkbox'
-            checked={embedSubs}
-            onChange={handleClickEmbedSubsCheckbox}
-          />
-          <span className='text-sm'>Embed Subs</span>
-        </label>
-      </div>
-      <div>
-        <label
-          className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-          title='Embed Chapters'
-        >
-          <input
-            className='checkbox checkbox-xs rounded-md'
-            name='embedChapters'
-            type='checkbox'
-            checked={embedChapters}
-            onChange={handleClickEmbedChaptersCheckbox}
-          />
-          <span className='text-sm'>Embed Chapters</span>
-        </label>
-      </div>
-      <div>
-        <label
-          className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-          title='Embed Metadata'
-        >
-          <input
-            className='checkbox checkbox-xs rounded-md'
-            name='embedMetadata'
-            type='checkbox'
-            checked={embedMetadata}
-            onChange={handleClickEmbedMetadataCheckbox}
-          />
-          <span className='text-sm'>Embed Metadata</span>
-        </label>
+      <div className='p-2 bg-base-300/20 dark:bg-base-300/40 rounded-md mb-2'>
+        <div className='text-warning mb-2 font-bold'>
+          The options below do not apply when downloading live or playlist.
+        </div>
+        <div>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Embed Subs'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='embedSubs'
+              type='checkbox'
+              checked={embedSubs}
+              onChange={handleClickEmbedSubsCheckbox}
+            />
+            <span className='text-sm'>Embed subtitles</span>
+          </label>
+        </div>
+        <div>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Embed Chapters'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='embedChapters'
+              type='checkbox'
+              checked={embedChapters}
+              onChange={handleClickEmbedChaptersCheckbox}
+            />
+            <span className='text-sm'>Embed chapter markers</span>
+          </label>
+        </div>
+        <div>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Embed Metadata'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='embedMetadata'
+              type='checkbox'
+              checked={embedMetadata}
+              onChange={handleClickEmbedMetadataCheckbox}
+            />
+            <span className='text-sm'>Embed metadata</span>
+          </label>
+        </div>
+        <div>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Enable Live From Start'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='enableLiveFromStart'
+              type='checkbox'
+              checked={enableLiveFromStart}
+              onChange={handleClickEnableLiveFromStart}
+            />
+            <span className='text-sm'>
+              Download livestreams from the start. Only supported for YouTube.(Experimental)
+            </span>
+          </label>
+        </div>
       </div>
       <div className='flex items-center gap-x-1'>
         <label

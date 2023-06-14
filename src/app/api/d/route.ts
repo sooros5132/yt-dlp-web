@@ -16,6 +16,7 @@ export async function GET(request: Request) {
   const embedSubs = searchParams.get('embedSubs') === 'true';
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
+  const enableLiveFromStart = searchParams.get('enableLiveFromStart') === 'true';
 
   // const url = context?.params?.url;
 
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
       embedMetadata,
       embedSubs,
       enableProxy,
+      enableLiveFromStart,
       proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : ''
     });
     const videoInfo = ytdlp.getVideoInfo();

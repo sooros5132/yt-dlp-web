@@ -39,7 +39,8 @@ export async function GET(request: Request) {
     embedMetadata: videoInfo?.embedMetadata || false,
     embedSubs: videoInfo?.embedSubs || false,
     enableProxy: videoInfo?.enableProxy || false,
-    proxyAddress: videoInfo?.proxyAddress || ''
+    proxyAddress: videoInfo?.proxyAddress || '',
+    enableLiveFromStart: videoInfo?.enableLiveFromStart || false
   });
 
   const stream = new ReadableStream({

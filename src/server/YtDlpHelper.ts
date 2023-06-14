@@ -47,6 +47,7 @@ export class YtDlpHelper {
     embedSubs: false,
     enableProxy: false,
     proxyAddress: '',
+    enableLiveFromStart: false,
     file: {
       name: null,
       path: null
@@ -77,6 +78,7 @@ export class YtDlpHelper {
     embedSubs?: boolean;
     enableProxy?: boolean;
     proxyAddress?: string;
+    enableLiveFromStart?: boolean;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -89,6 +91,7 @@ export class YtDlpHelper {
     this.videoInfo.embedSubs = querys.embedSubs || false;
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
+    this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
@@ -141,9 +144,6 @@ export class YtDlpHelper {
       DOWNLOAD_PATH
     ];
 
-    if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
-    if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
-    if (this.videoInfo?.embedSubs) options.push('--embed-subs');
     if (this.videoInfo?.usingCookies) {
       options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
     }
@@ -164,7 +164,17 @@ export class YtDlpHelper {
           '-o',
           `%(title)s (%(width)sx%(height)s)(%(id)s).%(ext)s`
         );
-        if (metadata?.isLive) options.push('--no-part');
+
+        if (metadata?.isLive) {
+          options.push('--no-part');
+          if (this.videoInfo?.enableLiveFromStart) {
+            options.push('--live-from-start');
+          }
+        } else {
+          if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
+          if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
+          if (this.videoInfo?.embedSubs) options.push('--embed-subs');
+        }
         break;
       }
       case 'playlist': {
@@ -444,16 +454,13 @@ export class YtDlpHelper {
           return downloadErrorCallback?.(error);
         }
 
-        let fileDestination = '';
-        if (metadata.isLive) {
-          fileDestination = streamFilePathRegex.exec(text)?.[1] || '';
-        } else {
-          fileDestination = downloadDestinationRegex.exec(text)?.[1] || '';
-        }
+        let fileDestination =
+          streamFilePathRegex.exec(text)?.[1] || downloadDestinationRegex.exec(text)?.[1] || '';
 
         if (!fileDestination) {
           return;
         }
+
         if (metadata.isLive) {
           videoInfo.status = 'recording';
         } else {
