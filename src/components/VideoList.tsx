@@ -13,7 +13,7 @@ import { PingSvg } from '@/components/PingSvg';
 import { isMobile } from '@/client/utils';
 import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
-import { VscRefresh } from 'react-icons/vsc';
+import { VscRefresh, VscWarning } from 'react-icons/vsc';
 import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
 import { BsDatabaseGear } from 'react-icons/bs';
 import { TbExternalLink } from 'react-icons/tb';
@@ -386,6 +386,8 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                   <span className='font-bold'>Standby</span>
                 ) : isFailed ? (
                   <span className='text-rose-400 font-bold'>Failed</span>
+                ) : recommendedDownloadRetry ? (
+                  <VscWarning className='text-3xl text-warning' />
                 ) : (
                   <LoadingSvg className='text-xl' />
                 )}
@@ -403,13 +405,17 @@ const VideoDetailCard = memo(({ video }: { video: VideoInfo }) => {
                 <div
                   className={classNames(
                     'text-sm text-center animate-pulse',
-                    isFailed && 'overflow-y-auto'
+                    isFailed && 'overflow-y-auto',
+                    video.sliceByTime && video.download.ffmpeg && 'whitespace-pre-wrap'
                   )}
                 >
                   {isFailed && video.error
                     ? video.error
                     : recommendedDownloadRetry
                     ? "The download doesn't seem to work. Try again with the refresh button below."
+                    : video.status === 'downloading' && video.sliceByTime && video.download.ffmpeg
+                    ? `${video.download.ffmpeg.time} downloaded...
+encode speed ${video.download.ffmpeg.speed}`
                     : `${video.status}...`}
                 </div>
               </div>

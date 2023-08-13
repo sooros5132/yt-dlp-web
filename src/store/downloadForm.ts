@@ -1,5 +1,5 @@
 import { AxiosResponse, DownloadResponse } from '@/types/types';
-import { VideoMetadata } from '@/types/video';
+import { VideoInfo, VideoMetadata } from '@/types/video';
 import axios from 'axios';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -14,6 +14,9 @@ interface State {
   enableProxy: boolean;
   proxyAddress: string;
   enableLiveFromStart: boolean;
+  sliceByTime: boolean;
+  sliceStartTime: string;
+  sliceEndTime: string;
 }
 
 interface Store extends State {
@@ -33,6 +36,9 @@ interface Store extends State {
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
   setEnableLiveFromStart: (enableLiveFromStart: boolean) => void;
+  setSliceByTime: (sliceByTime: boolean) => void;
+  setSliceStartTime: (sliceStartTime: string) => void;
+  setSliceEndTime: (sliceEndTime: string) => void;
 }
 
 const initialState: State = {
@@ -44,7 +50,10 @@ const initialState: State = {
   embedSubs: false,
   enableProxy: false,
   proxyAddress: '',
-  enableLiveFromStart: false
+  enableLiveFromStart: false,
+  sliceByTime: false,
+  sliceStartTime: '',
+  sliceEndTime: ''
 };
 
 export const useDownloadFormStore = create(
@@ -66,7 +75,7 @@ export const useDownloadFormStore = create(
           enabledBestFormat: false
         });
       },
-      async requestDownload(params) {
+      async requestDownload(_params) {
         const {
           url,
           usingCookies,
@@ -75,21 +84,32 @@ export const useDownloadFormStore = create(
           embedSubs,
           enableProxy,
           proxyAddress,
-          enableLiveFromStart
+          enableLiveFromStart,
+          sliceByTime,
+          sliceStartTime,
+          sliceEndTime
         } = get();
+
+        const params: Partial<Record<keyof VideoInfo, any>> = {
+          ..._params,
+          url: _params?.url || url,
+          usingCookies,
+          embedChapters,
+          embedMetadata,
+          embedSubs,
+          enableProxy,
+          proxyAddress,
+          enableLiveFromStart
+        };
+        if (sliceByTime) {
+          params.sliceByTime = sliceByTime;
+          params.sliceStartTime = sliceStartTime;
+          params.sliceEndTime = sliceEndTime;
+        }
+
         const result = await axios
           .get('/api/d', {
-            params: {
-              ...params,
-              url: params?.url || url,
-              usingCookies,
-              embedChapters,
-              embedMetadata,
-              embedSubs,
-              enableProxy,
-              proxyAddress,
-              enableLiveFromStart
-            }
+            params
           })
           .then((res) => res.data)
           .catch((res) => res.response.data);
@@ -132,6 +152,15 @@ export const useDownloadFormStore = create(
       },
       setEnableLiveFromStart(enableLiveFromStart) {
         set({ enableLiveFromStart });
+      },
+      setSliceByTime(sliceByTime) {
+        set({ sliceByTime });
+      },
+      setSliceStartTime(sliceStartTime) {
+        set({ sliceStartTime });
+      },
+      setSliceEndTime(sliceEndTime) {
+        set({ sliceEndTime });
       }
     }),
     {

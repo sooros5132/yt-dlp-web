@@ -9,14 +9,15 @@ import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { PingSvg } from '@/components/PingSvg';
 import { IoClose } from 'react-icons/io5';
-import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
+import {
+  AiOutlineCloudDownload,
+  AiOutlineInfoCircle,
+  AiOutlineLink,
+  AiOutlineSearch
+} from 'react-icons/ai';
 import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp, HiOutlinePencil } from 'react-icons/hi2';
-import {
-  MdContentPaste,
-  MdOutlineKeyboardArrowDown,
-  MdOutlineKeyboardArrowUp
-} from 'react-icons/md';
+import { MdContentPaste } from 'react-icons/md';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import queryString from 'query-string';
 import type { ChangeEvent } from 'react';
@@ -24,6 +25,7 @@ import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video
 import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from './CookiesEditor';
 import { shallow } from 'zustand/shallow';
+import { PatternFormat } from 'react-number-format';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
@@ -36,27 +38,65 @@ export function DownloadForm() {
     setUrl,
     disableBestFormat,
     enableBestFormat,
-    setUsingCookies
-  } = useDownloadFormStore(
-    ({
-      enabledBestFormat,
-      url,
-      usingCookies,
-      setUrl,
-      disableBestFormat,
-      enableBestFormat,
-      setUsingCookies
-    }) => ({
-      enabledBestFormat,
-      url,
-      usingCookies,
-      setUrl,
-      disableBestFormat,
-      enableBestFormat,
-      setUsingCookies
-    }),
-    shallow
-  );
+    setUsingCookies,
+    embedChapters,
+    embedMetadata,
+    embedSubs,
+    setEmbedChapters,
+    setEmbedMetadata,
+    setEmbedSubs,
+    enableProxy,
+    proxyAddress,
+    setEnableProxy,
+    setProxyAddress,
+    enableLiveFromStart,
+    setEnableLiveFromStart,
+    setSliceByTime,
+    sliceByTime,
+    setSliceStartTime,
+    sliceStartTime,
+    setSliceEndTime,
+    sliceEndTime
+  } = useDownloadFormStore((state) => state, shallow);
+
+  const handleClickEmbedMetadataCheckbox = () => {
+    setEmbedMetadata(!embedMetadata);
+  };
+
+  const handleClickEmbedChaptersCheckbox = () => {
+    setEmbedChapters(!embedChapters);
+  };
+
+  const handleClickEmbedSubsCheckbox = () => {
+    setEmbedSubs(!embedSubs);
+  };
+
+  const handleClickEnableProxyCheckbox = () => {
+    setEnableProxy(!enableProxy);
+  };
+
+  const handleClickEnableLiveFromStart = () => {
+    setEnableLiveFromStart(!enableLiveFromStart);
+  };
+
+  const handleChangeProxyServer = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value || '';
+    setProxyAddress(value);
+  };
+
+  const handleClickSliceByTimeCheckbox = () => {
+    setSliceByTime(!sliceByTime);
+  };
+  const handleChangeSliceStartTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value || '';
+    setSliceStartTime(value);
+  };
+
+  const handleChangeSliceEndTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value || '';
+    setSliceEndTime(value);
+  };
+
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [openMoreOptions, setOpenMoreOptions] = useState(false);
@@ -202,7 +242,7 @@ export function DownloadForm() {
 
   return (
     <div className='px-4 py-2 rounded-lg bg-base-content/5'>
-      <form className='[&>div]:my-2' method='GET' onSubmit={handleSubmit}>
+      <form className='flex flex-col py-2 gap-y-2' method='GET' onSubmit={handleSubmit}>
         <div className='input input-sm flex justify-between h-auto pr-1 focus:outline-none'>
           <input
             name='url'
@@ -236,57 +276,188 @@ export function DownloadForm() {
             </button>
           )}
         </div>
-        <div className='flex flex-col gap-y-1'>
-          <div className='flex items-center'>
-            <label
-              className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-              title='Download immediately in the best quality'
-            >
-              <input
-                className='checkbox checkbox-xs rounded-md'
-                name='enabledBestFormat'
-                type='checkbox'
-                checked={!hydrated ? true : enabledBestFormat}
-                readOnly={!hydrated}
-                onChange={handleChangeCheckBox}
-              />
-              <span className='text-sm'>Download immediately in the best quality</span>
-            </label>
-          </div>
-          <div className='flex items-center'>
-            <label
-              className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-              title='Using Cookies'
-            >
-              <input
-                className='checkbox checkbox-xs rounded-md'
-                name='usingCookies'
-                type='checkbox'
-                checked={!hydrated ? false : usingCookies}
-                readOnly={!hydrated}
-                onChange={handleClickUsingCookiesButton}
-              />
-              <span className='text-sm'>Using Cookies</span>
-            </label>
-            <button
-              type='button'
-              className='btn btn-xs w-[20px] h-[20px] min-w-[20px] min-h-[20px] btn-circle btn-ghost'
-              onClick={handleClickEditCookiesButton}
-            >
-              <HiOutlinePencil />
-            </button>
-          </div>
+        <div className='flex items-center'>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Download immediately in the best quality'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='enabledBestFormat'
+              type='checkbox'
+              checked={!hydrated ? true : enabledBestFormat}
+              readOnly={!hydrated}
+              onChange={handleChangeCheckBox}
+            />
+            <span className='text-sm'>Download immediately in the best quality</span>
+          </label>
         </div>
-        <div className='flex items-center justify-between'>
+        <div className='flex items-center'>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Using Cookies'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='usingCookies'
+              type='checkbox'
+              checked={!hydrated ? false : usingCookies}
+              readOnly={!hydrated}
+              onChange={handleClickUsingCookiesButton}
+            />
+            <span className='text-sm'>Using Cookies</span>
+          </label>
           <button
             type='button'
-            className='btn btn-sm btn-ghost normal-case gap-x-1 [&>svg]:text-lg'
-            onClick={handleClickMoreOptionsButton}
-            title={'More Options'}
+            className='btn btn-xs w-[20px] h-[20px] min-w-[20px] min-h-[20px] btn-circle btn-ghost'
+            onClick={handleClickEditCookiesButton}
           >
-            {openMoreOptions ? <MdOutlineKeyboardArrowUp /> : <MdOutlineKeyboardArrowDown />}
-            <span>More Options</span>
+            <HiOutlinePencil />
           </button>
+        </div>
+        <div className='p-2 bg-base-300/20 dark:bg-base-300/40 rounded-md'>
+          <div className='text-warning text-sm mb-1'>
+            The options below are excluded for <b>livestreams</b> and <b>playlist</b> downloads.
+          </div>
+          <div className='flex flex-col gap-y-2'>
+            <div className='flex flex-wrap items-center gap-x-1'>
+              <label
+                className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+                title='Slice by Time'
+              >
+                <input
+                  className='checkbox checkbox-xs rounded-md'
+                  name='sliceByTime'
+                  type='checkbox'
+                  checked={sliceByTime}
+                  onChange={handleClickSliceByTimeCheckbox}
+                />
+                <span className='text-sm'>Slice by Time</span>{' '}
+              </label>
+              <span
+                className='tooltip align-text-top text-zinc-500 before:max-w-[300px]'
+                data-tip='Set the start and end time.'
+              >
+                <AiOutlineInfoCircle />
+              </span>
+              <PatternFormat
+                displayType='input'
+                className={classNames(
+                  'input input-xs w-full max-w-[100px] shrink rounded-md focus:outline-none',
+                  !sliceByTime && 'input-disabled'
+                )}
+                name='sliceStartTime'
+                value={!sliceByTime || !sliceStartTime ? '' : sliceStartTime}
+                readOnly={!sliceByTime}
+                title='Start Time'
+                onChange={handleChangeSliceStartTime}
+                format='##:##:##.##'
+                placeholder='00:00:00.00'
+                mask='_'
+              />
+              <span>~</span>
+              <PatternFormat
+                displayType='input'
+                className={classNames(
+                  'input input-xs w-full max-w-[100px] shrink rounded-md focus:outline-none',
+                  !sliceByTime && 'input-disabled'
+                )}
+                name='sliceEndTime'
+                value={!sliceByTime || !sliceEndTime ? '' : sliceEndTime}
+                readOnly={!sliceByTime}
+                title='End Time'
+                onChange={handleChangeSliceEndTime}
+                format='##:##:##.##'
+                placeholder='00:00:00.00'
+                mask='_'
+              />
+            </div>
+            <label
+              className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
+              title='Embed Subs'
+            >
+              <input
+                className='checkbox checkbox-xs rounded-md'
+                name='embedSubs'
+                type='checkbox'
+                checked={embedSubs}
+                onChange={handleClickEmbedSubsCheckbox}
+              />
+              <span className='text-sm'>Embed subtitles</span>
+            </label>
+            <label
+              className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
+              title='Embed Chapters'
+            >
+              <input
+                className='checkbox checkbox-xs rounded-md'
+                name='embedChapters'
+                type='checkbox'
+                checked={embedChapters}
+                onChange={handleClickEmbedChaptersCheckbox}
+              />
+              <span className='text-sm'>Embed chapter markers</span>
+            </label>
+            <label
+              className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
+              title='Embed Metadata'
+            >
+              <input
+                className='checkbox checkbox-xs rounded-md'
+                name='embedMetadata'
+                type='checkbox'
+                checked={embedMetadata}
+                onChange={handleClickEmbedMetadataCheckbox}
+              />
+              <span className='text-sm'>Embed metadata</span>
+            </label>
+          </div>
+        </div>
+        <div className='flex items-center'>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+            title='Enable Live From Start'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='enableLiveFromStart'
+              type='checkbox'
+              checked={enableLiveFromStart}
+              onChange={handleClickEnableLiveFromStart}
+            />
+            <span className='text-sm'>
+              Download livestreams from the start. Only supported for YouTube.(Experimental)
+            </span>
+          </label>
+        </div>
+        <div className='flex items-center gap-x-1'>
+          <label
+            className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+            title='Enable Proxy'
+          >
+            <input
+              className='checkbox checkbox-xs rounded-md'
+              name='enableProxy'
+              type='checkbox'
+              checked={enableProxy}
+              onChange={handleClickEnableProxyCheckbox}
+            />
+            <span className='text-sm'>Enable Proxy</span>
+          </label>
+          <input
+            className={classNames(
+              'input input-xs w-full max-w-[300px] shrink rounded-md focus:outline-none',
+              !enableProxy && 'input-disabled'
+            )}
+            name='proxyAddress'
+            value={!enableProxy ? '' : proxyAddress}
+            readOnly={!enableProxy}
+            placeholder='Proxy Address HTTP/HTTPS/SOCKS'
+            title='Proxy Address HTTP/HTTPS/SOCKS'
+            onChange={handleChangeProxyServer}
+          />
+        </div>
+        <div className='flex items-center justify-end'>
           <button
             type='submit'
             className={classNames(
@@ -310,7 +481,6 @@ export function DownloadForm() {
             )}
           </button>
         </div>
-        {openMoreOptions && <MoreOptions />}
       </form>
       {!isValidating && videoMetadata ? (
         videoMetadata?.type === 'video' ? (
@@ -341,178 +511,6 @@ export function DownloadForm() {
     </div>
   );
 }
-
-const MoreOptions = memo(() => {
-  const {
-    embedChapters,
-    embedMetadata,
-    embedSubs,
-    setEmbedChapters,
-    setEmbedMetadata,
-    setEmbedSubs,
-    enableProxy,
-    proxyAddress,
-    setEnableProxy,
-    setProxyAddress,
-    enableLiveFromStart,
-    setEnableLiveFromStart
-  } = useDownloadFormStore(
-    ({
-      embedChapters,
-      embedMetadata,
-      embedSubs,
-      setEmbedChapters,
-      setEmbedMetadata,
-      setEmbedSubs,
-      enableProxy,
-      proxyAddress,
-      setEnableProxy,
-      setProxyAddress,
-      enableLiveFromStart,
-      setEnableLiveFromStart
-    }) => ({
-      embedChapters,
-      embedMetadata,
-      embedSubs,
-      setEmbedChapters,
-      setEmbedMetadata,
-      setEmbedSubs,
-      enableProxy,
-      proxyAddress,
-      setEnableProxy,
-      setProxyAddress,
-      enableLiveFromStart,
-      setEnableLiveFromStart
-    }),
-    shallow
-  );
-
-  const handleClickEmbedMetadataCheckbox = () => {
-    setEmbedMetadata(!embedMetadata);
-  };
-
-  const handleClickEmbedChaptersCheckbox = () => {
-    setEmbedChapters(!embedChapters);
-  };
-
-  const handleClickEmbedSubsCheckbox = () => {
-    setEmbedSubs(!embedSubs);
-  };
-
-  const handleClickEnableProxyCheckbox = () => {
-    setEnableProxy(!enableProxy);
-  };
-
-  const handleClickEnableLiveFromStart = () => {
-    setEnableLiveFromStart(!enableLiveFromStart);
-  };
-
-  const handleChangeProxyServer = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value || '';
-    setProxyAddress(value);
-  };
-
-  return (
-    <div>
-      <div className='p-2 bg-base-300/20 dark:bg-base-300/40 rounded-md mb-2'>
-        <div className='text-warning mb-2 font-bold'>
-          The options below do not apply when downloading live or playlist.
-        </div>
-        <div>
-          <label
-            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-            title='Embed Subs'
-          >
-            <input
-              className='checkbox checkbox-xs rounded-md'
-              name='embedSubs'
-              type='checkbox'
-              checked={embedSubs}
-              onChange={handleClickEmbedSubsCheckbox}
-            />
-            <span className='text-sm'>Embed subtitles</span>
-          </label>
-        </div>
-        <div>
-          <label
-            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-            title='Embed Chapters'
-          >
-            <input
-              className='checkbox checkbox-xs rounded-md'
-              name='embedChapters'
-              type='checkbox'
-              checked={embedChapters}
-              onChange={handleClickEmbedChaptersCheckbox}
-            />
-            <span className='text-sm'>Embed chapter markers</span>
-          </label>
-        </div>
-        <div>
-          <label
-            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-            title='Embed Metadata'
-          >
-            <input
-              className='checkbox checkbox-xs rounded-md'
-              name='embedMetadata'
-              type='checkbox'
-              checked={embedMetadata}
-              onChange={handleClickEmbedMetadataCheckbox}
-            />
-            <span className='text-sm'>Embed metadata</span>
-          </label>
-        </div>
-        <div>
-          <label
-            className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-            title='Enable Live From Start'
-          >
-            <input
-              className='checkbox checkbox-xs rounded-md'
-              name='enableLiveFromStart'
-              type='checkbox'
-              checked={enableLiveFromStart}
-              onChange={handleClickEnableLiveFromStart}
-            />
-            <span className='text-sm'>
-              Download livestreams from the start. Only supported for YouTube.(Experimental)
-            </span>
-          </label>
-        </div>
-      </div>
-      <div className='flex items-center gap-x-1'>
-        <label
-          className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
-          title='Enable Proxy'
-        >
-          <input
-            className='checkbox checkbox-xs rounded-md'
-            name='enableProxy'
-            type='checkbox'
-            checked={enableProxy}
-            onChange={handleClickEnableProxyCheckbox}
-          />
-          <span className='text-sm'>Enable Proxy</span>
-        </label>
-        <input
-          className={classNames(
-            'input input-xs w-full max-w-[300px] shrink rounded-md focus:outline-none',
-            !enableProxy && 'input-disabled'
-          )}
-          name='proxyAddress'
-          value={!enableProxy ? '' : proxyAddress}
-          readOnly={!enableProxy}
-          placeholder='Proxy Address HTTP/HTTPS/SOCKS'
-          title='Proxy Address HTTP/HTTPS/SOCKS'
-          onChange={handleChangeProxyServer}
-        />
-      </div>
-    </div>
-  );
-}, isEquals);
-
-MoreOptions.displayName = 'MoreOptions';
 
 type SearchedVideoMetadataProps = { metadata: VideoMetadata };
 
@@ -890,7 +888,7 @@ const PlaylistDownload = memo(({ metadata }: PlaylistDownloadProps) => {
           )}
           onClick={handleClickDownloadButton}
         >
-          Download Playlist
+          Download&nbsp;<b>{metadata?.playlistCount}</b>&nbsp;items from a playlist
         </button>
       </div>
     </div>

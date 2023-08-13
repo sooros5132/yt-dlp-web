@@ -229,7 +229,7 @@ Example)
               disabled={isLoading || (Boolean(errorMessage) && isExisted)}
               onClick={handleClickApplyCookiesButton}
             >
-              Apply
+              Save
             </button>
           </div>
         </div>

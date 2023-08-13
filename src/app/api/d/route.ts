@@ -17,6 +17,9 @@ export async function GET(request: Request) {
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
   const enableLiveFromStart = searchParams.get('enableLiveFromStart') === 'true';
+  const sliceByTime = searchParams.get('sliceByTime') === 'true';
+  const sliceStartTime = searchParams.get('sliceStartTime') || '';
+  const sliceEndTime = searchParams.get('sliceEndTime') || '';
 
   // const url = context?.params?.url;
 
@@ -66,6 +69,9 @@ export async function GET(request: Request) {
       embedSubs,
       enableProxy,
       enableLiveFromStart,
+      sliceByTime,
+      sliceStartTime,
+      sliceEndTime,
       proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : ''
     });
     const videoInfo = ytdlp.getVideoInfo();

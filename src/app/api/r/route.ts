@@ -40,7 +40,10 @@ export async function GET(request: Request) {
     embedSubs: videoInfo?.embedSubs || false,
     enableProxy: videoInfo?.enableProxy || false,
     proxyAddress: videoInfo?.proxyAddress || '',
-    enableLiveFromStart: videoInfo?.enableLiveFromStart || false
+    enableLiveFromStart: videoInfo?.enableLiveFromStart || false,
+    sliceByTime: videoInfo?.sliceByTime || false,
+    sliceStartTime: videoInfo?.sliceStartTime || '',
+    sliceEndTime: videoInfo?.sliceEndTime || ''
   });
 
   const stream = new ReadableStream({

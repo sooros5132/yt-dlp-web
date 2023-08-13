@@ -55,6 +55,9 @@ export interface VideoInfo {
   enableProxy: boolean;
   enableLiveFromStart: boolean;
   proxyAddress: string;
+  sliceByTime: boolean;
+  sliceStartTime: string;
+  sliceEndTime: string;
   file: Streams & {
     path: string | null;
     name: string | null;
@@ -79,6 +82,16 @@ export interface VideoInfo {
     playlist?: {
       current: number;
       count: number;
+    };
+    ffmpeg?: {
+      frame: string;
+      fps: string;
+      q: string;
+      sizeType: string;
+      size: string;
+      time: string;
+      bitrate: string;
+      speed: string;
     };
   };
   createdAt: number;

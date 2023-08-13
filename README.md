@@ -25,7 +25,7 @@ services:
       - /path/to/downloads:/downloads # Downloads folder
       - /path/to/cache:/cache         # Cache folder
     ports:
-      - 3000:3000 # Port mapping
+      - 3000:3000 # Web Page Port Mapping
     restart: unless-stopped
 ```
 # 시작
@@ -43,6 +43,11 @@ docker compose up -d
 
 # Change Logs
 ```
+Aug 13, 2023 - v0.2.7
+  1. Updated to the latest version of yt-dlp.(v2023.07.06)
+  2. Added option to set the start or end time of the video when downloading
+  3. Removed the option to insert metadata
+
 Jun 13, 2023 - v0.2.6 - Added Live From Start Option
 
 May 22, 2023 - v0.2.3 - Added Proxy, Embed Subs, Embed Chapters, Embed Metadata Options
@@ -65,7 +70,7 @@ Apr 23, 2023 - Create Repository
 - macOS Ventura v13.2.1
 
 # 사용한 기술스택
-- [yt-dlp v2023.03.04](https://github.com/yt-dlp/yt-dlp)
+- [yt-dlp v2023.07.06](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
 - [Next.js v13.3](https://nextjs.org/)
 - [React v18.2](https://react.dev/)

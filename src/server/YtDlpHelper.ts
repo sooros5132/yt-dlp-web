@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { COOKIES_FILE } from '@/server/FileHelper';
 
 const downloadProgressRegex =
-  /^\[download\]\s+([0-9\.]+\%)\s+of\s+~\s+([0-9\.a-zA-Z\/]+)\s+at\s+([0-9a-zA_Z\.\/\ ]+)\s+ETA\s+([0-9a-zA_Z\.\/\:\ ]+)/im;
+  /^\[download\]\s+([0-9.]+%)\s+of[ ~]+([0-9.a-zA-Z/]+)\s+at\s+([0-9a-zA-Z./ ]+)\s+ETA\s+([0-9a-zA-Z./: ]+)/im;
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/m;
 const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(.+))$`, 'm');
 const streamFilePathRegex = new RegExp(`file:(${DOWNLOAD_PATH}/(.+)\\.(.+))'$`, 'm');
@@ -27,6 +27,26 @@ const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/m;
 const playlistFolderPrefixRegexString = '\\[Playlist\\]';
 const downloadDestinationRegex = /^\[download\]\sDestination\:\s(.+)$/m;
 const playlistFolderPrefix = '[Playlist]';
+const ffmpegProgressTrackingRegex =
+  /^frame=([0-9 ]+)\s+fps=([0-9. ]+)\s+q=([-0-9. ]+)\s+(L?size)=([0-9a-zA-Z. ]+)\s+time=([0-9:. -]+)\s+bitrate=([0-9a-zA-Z./ ]+)\s+speed=([0-9a-zA-Z./ ]+)$/;
+const sliceTimeRegex = /^[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{2}$/;
+
+/**
+ *
+ * @param timeString '02:04:03' or '02:04:03.33'
+ * @returns minutes(number)
+ */
+const convertToMinutes = function (_timeString: string) {
+  const [timeString, millisecond] = _timeString.split('.');
+  if (!/[0-9]{2}:[0-9]{2}:[0-9]{2}/.test(timeString)) {
+    return NaN;
+  }
+  return (
+    timeString.split(':').reduce(function (seconds, v) {
+      return +v + seconds * 60;
+    }, 0) + (Number(`0.${millisecond}`) || 0)
+  );
+};
 
 export class YtDlpHelper {
   public readonly url: string;
@@ -48,6 +68,9 @@ export class YtDlpHelper {
     enableProxy: false,
     proxyAddress: '',
     enableLiveFromStart: false,
+    sliceByTime: false,
+    sliceStartTime: '',
+    sliceEndTime: '',
     file: {
       name: null,
       path: null
@@ -79,6 +102,9 @@ export class YtDlpHelper {
     enableProxy?: boolean;
     proxyAddress?: string;
     enableLiveFromStart?: boolean;
+    sliceByTime?: boolean;
+    sliceStartTime?: string;
+    sliceEndTime?: string;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -92,6 +118,20 @@ export class YtDlpHelper {
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
+
+    if (querys.sliceStartTime && sliceTimeRegex.test(querys.sliceStartTime))
+      this.videoInfo.sliceStartTime = querys.sliceStartTime;
+    if (querys.sliceEndTime && sliceTimeRegex.test(querys.sliceEndTime))
+      this.videoInfo.sliceEndTime = querys.sliceEndTime;
+
+    if (this.videoInfo.sliceStartTime || this.videoInfo.sliceEndTime) {
+      this.videoInfo.sliceByTime = true;
+    } else {
+      this.videoInfo.sliceByTime = false;
+      this.videoInfo.sliceStartTime = '';
+      this.videoInfo.sliceEndTime = '';
+    }
+
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
   }
 
@@ -136,17 +176,22 @@ export class YtDlpHelper {
       // '--write-thumbnail',
       // '-o',
       // `thumbnail:${CACHE_PATH}/thumbnails/${CACHE_FILE_PREFIX}${uuid}.%(ext)s`,
-      '--print',
-      'after_move:filepath',
+      // '--print',
+      // 'after_move:filepath',
       '--merge-output-format',
       'mp4',
       '-P',
       DOWNLOAD_PATH
     ];
 
+    if (!this.videoInfo.sliceByTime) {
+      options.push('--print', 'after_move:filepath');
+    }
+
     if (this.videoInfo?.usingCookies) {
       options.push('--cookies', getCacheFilePath(COOKIES_FILE, 'txt'));
     }
+
     if (
       this.videoInfo?.enableProxy &&
       typeof this.videoInfo?.proxyAddress === 'string' &&
@@ -166,10 +211,24 @@ export class YtDlpHelper {
             options.push('--live-from-start');
           }
         } else {
-          options.push('-o', `%(title)s (%(id)s).%(ext)s`);
+          options.push('-o', '%(title)s (%(id)s).%(ext)s');
           if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
           if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
           if (this.videoInfo?.embedSubs) options.push('--embed-subs');
+
+          if (this.videoInfo?.sliceByTime) {
+            const ffpmegSliceTimeArgs: Array<string> = [];
+
+            if (this.videoInfo?.sliceStartTime)
+              ffpmegSliceTimeArgs.push('-ss', this.videoInfo.sliceStartTime);
+            if (this.videoInfo?.sliceEndTime)
+              ffpmegSliceTimeArgs.push('-to', this.videoInfo.sliceEndTime);
+
+            if (ffpmegSliceTimeArgs.length) {
+              const downloaderArgs = `ffmpeg_i:${ffpmegSliceTimeArgs.join(' ')}`;
+              options.push('--downloader', 'ffmpeg', '--downloader-args', downloaderArgs);
+            }
+          }
         }
         break;
       }
@@ -450,8 +509,13 @@ export class YtDlpHelper {
           return downloadErrorCallback?.(error);
         }
 
-        let fileDestination =
-          streamFilePathRegex.exec(text)?.[1] || downloadDestinationRegex.exec(text)?.[1] || '';
+        let fileDestination = '';
+        if (this.videoInfo.sliceByTime) {
+          fileDestination = downloadDestinationRegex.exec(text)?.[1] || '';
+        } else {
+          fileDestination =
+            streamFilePathRegex.exec(text)?.[1] || downloadDestinationRegex.exec(text)?.[1] || '';
+        }
 
         if (!fileDestination) {
           return;
@@ -538,6 +602,27 @@ export class YtDlpHelper {
           videoInfo.download.pid = null;
           videoInfo.download.progress = '1';
           videoInfo.status = 'completed';
+        }
+
+        if (this.videoInfo.sliceByTime) {
+          const progress = ffmpegProgressTrackingRegex.exec(message);
+          if (progress) {
+            const [, frame, fps, q, sizeType, size, time, bitrate, speed] = progress;
+            videoInfo.status = 'downloading';
+            videoInfo.download.pid = ytdlp.pid!;
+            videoInfo.download.ffmpeg = {
+              frame: frame.trim(),
+              fps: fps.trim(),
+              q: q.trim(),
+              sizeType: sizeType.trim(),
+              size: size.trim(),
+              time: time.trim(),
+              bitrate: bitrate.trim(),
+              speed: speed.trim()
+            };
+            videoInfo.updatedAt = Date.now();
+            await throttleCacheSet(uuid, videoInfo);
+          }
         }
         return;
       }
