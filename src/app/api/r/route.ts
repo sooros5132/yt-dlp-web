@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     uuid: videoInfo.uuid,
     usingCookies: videoInfo?.usingCookies || false,
     embedChapters: videoInfo?.embedChapters || false,
-    embedMetadata: videoInfo?.embedMetadata || false,
+    // embedMetadata: videoInfo?.embedMetadata || false,
     embedSubs: videoInfo?.embedSubs || false,
     enableProxy: videoInfo?.enableProxy || false,
     proxyAddress: videoInfo?.proxyAddress || '',

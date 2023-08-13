@@ -40,10 +40,10 @@ export function DownloadForm() {
     enableBestFormat,
     setUsingCookies,
     embedChapters,
-    embedMetadata,
+    // embedMetadata,
     embedSubs,
     setEmbedChapters,
-    setEmbedMetadata,
+    // setEmbedMetadata,
     setEmbedSubs,
     enableProxy,
     proxyAddress,
@@ -59,9 +59,9 @@ export function DownloadForm() {
     sliceEndTime
   } = useDownloadFormStore((state) => state, shallow);
 
-  const handleClickEmbedMetadataCheckbox = () => {
-    setEmbedMetadata(!embedMetadata);
-  };
+  // const handleClickEmbedMetadataCheckbox = () => {
+  //   setEmbedMetadata(!embedMetadata);
+  // };
 
   const handleClickEmbedChaptersCheckbox = () => {
     setEmbedChapters(!embedChapters);
@@ -398,7 +398,7 @@ export function DownloadForm() {
               />
               <span className='text-sm'>Embed chapter markers</span>
             </label>
-            <label
+            {/* <label
               className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
               title='Embed Metadata'
             >
@@ -410,7 +410,7 @@ export function DownloadForm() {
                 onChange={handleClickEmbedMetadataCheckbox}
               />
               <span className='text-sm'>Embed metadata</span>
-            </label>
+            </label> */}
           </div>
         </div>
         <div className='flex items-center'>

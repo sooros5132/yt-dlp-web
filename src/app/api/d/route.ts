@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const url = searchParams.get('url')?.trim?.();
   const usingCookies = searchParams.get('usingCookies') === 'true';
   const embedChapters = searchParams.get('embedChapters') === 'true';
-  const embedMetadata = searchParams.get('embedMetadata') === 'true';
+  // const embedMetadata = searchParams.get('embedMetadata') === 'true';
   const embedSubs = searchParams.get('embedSubs') === 'true';
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       uuid,
       usingCookies,
       embedChapters,
-      embedMetadata,
+      // embedMetadata,
       embedSubs,
       enableProxy,
       enableLiveFromStart,

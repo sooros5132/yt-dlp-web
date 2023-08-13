@@ -63,7 +63,7 @@ export class YtDlpHelper {
     format: 'bv+ba/b',
     usingCookies: false,
     embedChapters: false,
-    embedMetadata: false,
+    // embedMetadata: false,
     embedSubs: false,
     enableProxy: false,
     proxyAddress: '',
@@ -97,7 +97,7 @@ export class YtDlpHelper {
     pid?: number;
     usingCookies: boolean;
     embedChapters?: boolean;
-    embedMetadata?: boolean;
+    // embedMetadata?: boolean;
     embedSubs?: boolean;
     enableProxy?: boolean;
     proxyAddress?: string;
@@ -113,7 +113,7 @@ export class YtDlpHelper {
     this.videoInfo.format = querys.format || 'bv+ba/b';
     this.videoInfo.usingCookies = querys.usingCookies;
     this.videoInfo.embedChapters = querys.embedChapters || false;
-    this.videoInfo.embedMetadata = querys.embedMetadata || false;
+    // this.videoInfo.embedMetadata = querys.embedMetadata || false;
     this.videoInfo.embedSubs = querys.embedSubs || false;
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
@@ -213,7 +213,7 @@ export class YtDlpHelper {
         } else {
           options.push('-o', '%(title)s (%(id)s).%(ext)s');
           if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
-          if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
+          // if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
           if (this.videoInfo?.embedSubs) options.push('--embed-subs');
 
           if (this.videoInfo?.sliceByTime) {

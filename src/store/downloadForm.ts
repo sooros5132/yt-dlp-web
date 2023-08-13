@@ -8,7 +8,7 @@ interface State {
   url: string;
   enabledBestFormat: boolean;
   usingCookies: boolean;
-  embedMetadata: boolean;
+  // embedMetadata: boolean;
   embedChapters: boolean;
   embedSubs: boolean;
   enableProxy: boolean;
@@ -31,7 +31,7 @@ interface Store extends State {
   getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
   setUsingCookies: (usingCookies: boolean) => void;
   setEmbedSubs: (embedSubs: boolean) => void;
-  setEmbedMetadata: (embedMetadata: boolean) => void;
+  // setEmbedMetadata: (embedMetadata: boolean) => void;
   setEmbedChapters: (embedChapters: boolean) => void;
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
@@ -45,7 +45,7 @@ const initialState: State = {
   url: '',
   enabledBestFormat: true,
   usingCookies: false,
-  embedMetadata: false,
+  // embedMetadata: false,
   embedChapters: false,
   embedSubs: false,
   enableProxy: false,
@@ -80,7 +80,7 @@ export const useDownloadFormStore = create(
           url,
           usingCookies,
           embedChapters,
-          embedMetadata,
+          // embedMetadata,
           embedSubs,
           enableProxy,
           proxyAddress,
@@ -95,7 +95,7 @@ export const useDownloadFormStore = create(
           url: _params?.url || url,
           usingCookies,
           embedChapters,
-          embedMetadata,
+          // embedMetadata,
           embedSubs,
           enableProxy,
           proxyAddress,
@@ -135,9 +135,9 @@ export const useDownloadFormStore = create(
       setUsingCookies(usingCookies) {
         set({ usingCookies });
       },
-      setEmbedMetadata(embedMetadata) {
-        set({ embedMetadata });
-      },
+      // setEmbedMetadata(embedMetadata) {
+      // set({ embedMetadata });
+      // },
       setEmbedChapters(embedChapters) {
         set({ embedChapters });
       },
@@ -173,7 +173,7 @@ export const useDownloadFormStore = create(
             [
               'enabledBestFormat',
               'usingCookies',
-              'embedMetadata',
+              // 'embedMetadata',
               'embedChapters',
               'embedSubs',
               'enableProxy',

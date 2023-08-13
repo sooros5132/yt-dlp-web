@@ -46,7 +46,7 @@ docker compose up -d
 Aug 13, 2023 - v0.2.7
   1. Updated to the latest version of yt-dlp.(v2023.07.06)
   2. Added option to set the start or end time of the video when downloading
-  3. Removed the option to insert metadata
+  3. Deleted the option to embed metadata
 
 Jun 13, 2023 - v0.2.6 - Added Live From Start Option
 

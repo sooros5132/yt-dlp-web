@@ -50,7 +50,7 @@ export interface VideoInfo {
   format: string;
   usingCookies: boolean;
   embedChapters: boolean;
-  embedMetadata: boolean;
+  // embedMetadata: boolean;
   embedSubs: boolean;
   enableProxy: boolean;
   enableLiveFromStart: boolean;
