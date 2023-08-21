@@ -1,4 +1,5 @@
 import { DownloadForm } from '@/components/DownloadForm';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { VideoList } from '@/components/VideoList';
 import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import type { VideoInfo } from '@/types/video';
@@ -24,7 +25,10 @@ export default async function Home() {
 
   return (
     <main className='mx-auto max-w-3xl pb-5'>
-      <h1 className='text-center text-2xl mt-16 mb-8'>yt-dlp-web Download Station</h1>
+      <div className='flex justify-end pt-2 px-2'>
+        <ThemeToggle />
+      </div>
+      <h1 className='text-center text-2xl mt-14 mb-8'>yt-dlp-web Download Station</h1>
       <div className='p-4 text-base-content rounded-md'>
         <DownloadForm />
         <VideoList videoList={videoList} />

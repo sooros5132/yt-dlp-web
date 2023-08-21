@@ -7,6 +7,7 @@ import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
 import { ClientWorks } from '@/components/ClientWorks';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { ClientBodyScrollResolver } from '@/components/ClientBodyScrollResolver';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
       <body className={classNames(inter.className, 'min-w-[var(--site-min-width)]')}>
         <VideoPlayer />
         {/* <Header /> */}
-        {children}
+        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+          {children}
+        </ThemeProvider>
         <ToastContainerWrapper />
         <ClientWorks />
         <ClientBodyScrollResolver />

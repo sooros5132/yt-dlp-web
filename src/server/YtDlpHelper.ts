@@ -471,7 +471,7 @@ export class YtDlpHelper {
 
     const throttleCacheSet = throttle(CacheHelper.set, 500);
     let _fileDestination: string | null = null;
-    let cachingInterval: NodeJS.Timer | null = null;
+    let cachingInterval: NodeJS.Timeout | null = null;
 
     const initialListener = async (_text: string) => {
       if (this.isDownloadStarted) {
@@ -769,7 +769,7 @@ export class YtDlpHelper {
     }
 
     const throttleCacheSet = throttle(CacheHelper.set, 500);
-    let cachingInterval: NodeJS.Timer | null = null;
+    let cachingInterval: NodeJS.Timeout | null = null;
     let currentDownloadingIndex = 0;
 
     const videoInfo = this.videoInfo;
