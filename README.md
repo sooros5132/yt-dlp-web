@@ -9,7 +9,7 @@
 # 프리뷰
 | Light | Dark |
 |--|--|
-| <img width="981" alt="SCR-20230426" src="https://user-images.githubusercontent.com/74892930/234488572-00fcc4f0-f368-4e34-b3d3-2ff0acc03b4a.png"> | <img width="977" alt="SCR-20230427" src="https://user-images.githubusercontent.com/74892930/234488581-8aeddb8b-e1b7-48a4-8a73-70c179ca21d3.png"> |
+| <img width="976" alt="light" src="https://github.com/sooros5132/yt-dlp-web/assets/74892930/222c497f-fdd4-4ad0-9c10-ebc67ae7ef25"> | <img width="976" alt="dark" src="https://github.com/sooros5132/yt-dlp-web/assets/74892930/2d197285-edab-4c12-8b0e-a40c04b5de0b"> |
 
 # 설치
 
