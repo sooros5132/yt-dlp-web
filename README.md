@@ -43,7 +43,8 @@ docker compose up -d
 [https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155](https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155)
 
 # To Do
-- [ ] Change to the component library shadcn/ui
+- [X] Change to the component library shadcn/ui
+- [X] Add the ability to delete selected videos
 - [ ] Options for setting filename
 - [ ] Choose quality when downloading immediately
 - [ ] Table View
@@ -51,6 +52,11 @@ docker compose up -d
 
 # Change Logs
 ```
+Aug 23, 2023 - v0.2.8
+  1. Change to the component library shadcn/ui
+  2. Added the ability to delete selected videos
+  3. Added the Original Media URL visible when searched.
+
 Aug 13, 2023 - v0.2.7
   1. Updated to the latest version of yt-dlp.(v2023.07.06)
   2. Added option to set the start or end time of the video when downloading

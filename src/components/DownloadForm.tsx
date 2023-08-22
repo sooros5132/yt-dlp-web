@@ -30,6 +30,7 @@ import { Divider } from './Divider';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from './ui/alert-dialog';
+import { BsLink45Deg } from 'react-icons/bs';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
@@ -729,7 +730,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
               <div className='my-4 text-center'>
                 <Button
                   className={cn(
-                    'bg-info rounded-full hover:bg-info/90 text-info-foreground px-3',
+                    'bg-info rounded-full hover:bg-info/90 px-3',
                     metadata.isLive && 'text-white gradient-background border-0'
                   )}
                   size='sm'
@@ -808,11 +809,22 @@ const VideoDownloadRadio = ({
           defaultChecked={false}
           className='shrink-0'
         />
-        <span className='shrink text-sm overflow-hidden text-ellipsis'>{content}</span>
+        <span className='grow shrink text-sm overflow-hidden text-ellipsis'>{content}</span>
         {format?.filesize && (
-          <span className='ml-auto shrink-0 text-sm overflow-hidden'>
+          <span className='shrink-0 text-sm overflow-hidden'>
             {numeral(format.filesize).format('0.0b')}
           </span>
+        )}
+        {format?.url && (
+          <a
+            className='shrink-0 text-right'
+            href={format.url}
+            rel='noopener noreferrer'
+            target='_blank'
+            title='Open Original Media Url'
+          >
+            <BsLink45Deg />
+          </a>
         )}
       </label>
     </div>

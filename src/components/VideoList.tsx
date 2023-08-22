@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR, { mutate } from 'swr';
 import numeral from 'numeral';
@@ -24,7 +24,7 @@ import type { VideoInfo } from '@/types/video';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import { LayoutList, LinkIcon } from 'lucide-react';
+import { LinkIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,7 @@ import {
 } from './ui/dialog';
 import { Progress } from './ui/progress';
 import { Divider } from './Divider';
-import { BiDotsVerticalRounded, BiSelectMultiple } from 'react-icons/bi';
+import { BiDotsVerticalRounded } from 'react-icons/bi';
 import { BsCheckCircleFill } from 'react-icons/bs';
 import { useVideoListStore } from '@/store/videoList';
 import {

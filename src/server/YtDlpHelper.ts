@@ -394,7 +394,8 @@ export class YtDlpHelper {
                         videoExt: format?.video_ext ?? '',
                         audioExt: format?.audio_ext ?? '',
                         width: format?.width ?? '',
-                        height: format?.height ?? ''
+                        height: format?.height ?? '',
+                        url: format?.url ?? ''
                       } as VideoFormat;
                     })
                     .filter((format: any) => format.format_note !== 'storyboard') || []

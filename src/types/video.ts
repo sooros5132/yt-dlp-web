@@ -11,6 +11,7 @@ export interface VideoFormat {
   audioExt: string;
   width: string;
   height: string;
+  url: string;
 }
 
 export interface VideoMetadata {
