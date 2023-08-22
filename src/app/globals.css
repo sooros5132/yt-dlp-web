@@ -30,7 +30,7 @@
     --error: 349.72 89.16% 60.2%;
     --error-foreground: 351.3 94.52% 71.37%;
     --info: 217.22 91.22% 59.8%;
-    --info-foreground: 355.7 100% 97.3%;
+    --info-foreground: 213.12 93.9% 67.84%;
   }
 
   .dark {
@@ -60,7 +60,7 @@
     --error: 345.35 82.69% 40.78%;
     --error-foreground: 349.72 89.16% 60.2%;
     --info: 212.98 77.51% 66.86%;
-    --info-foreground: 144.9 80.4% 10%;
+    --info-foreground: 213.12 93.9% 67.84%;
   }
 
   :root {
