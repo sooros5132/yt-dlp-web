@@ -1,4 +1,4 @@
-import classNames from 'classnames';
+import { cn } from '@/lib/utils';
 import type { SVGProps } from 'react';
 
 export const LoadingSvg = ({
@@ -7,7 +7,7 @@ export const LoadingSvg = ({
   height,
   ...props
 }: Omit<SVGProps<SVGSVGElement>, 'viewBox'>) => {
-  const className = classNames('animate-[spin_2s_linear_infinite]', _className);
+  const className = cn('animate-[spin_2s_linear_infinite]', _className);
   return (
     <svg
       className={className}

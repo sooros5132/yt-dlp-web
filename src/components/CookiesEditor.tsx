@@ -4,28 +4,29 @@ import { useCookiesEditorStore } from '@/store/cookiesEditor';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { AxiosResponse } from '@/types/types';
 import axios from 'axios';
-import classNames from 'classnames';
-import { useEffect, useState } from 'react';
-import { AiOutlineInfoCircle } from 'react-icons/ai';
+import { memo, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import isEqual from 'react-fast-compare';
+import { cn } from '@/lib/utils';
 
 export type CookiesEditorProps = {
   open: boolean;
   onClose: () => void;
 };
 
-export const CookiesEditor = (props: CookiesEditorProps) => {
+export const CookiesEditor = memo((props: CookiesEditorProps) => {
   const hydrated = useSiteSettingStore(({ hydrated }) => hydrated);
   if (!hydrated) {
     return null;
   }
 
   return <CookiesEditorInner open={props.open} onClose={props.onClose} />;
-};
+}, isEqual);
+
+CookiesEditor.displayName = 'CookiesEditor';
 
 const CookiesEditorInner = ({ open, onClose }: CookiesEditorProps) => {
   const _initSecretKey = useCookiesEditorStore.getState().secretKey;
@@ -150,7 +151,7 @@ const CookiesEditorInner = ({ open, onClose }: CookiesEditorProps) => {
       </div>
       <div className='relative text-[0] border'>
         <Textarea
-          className={classNames(
+          className={cn(
             'border-none leading-5 max-h-[calc(100vh_-_240px)] resize-none',
             isLoading && 'textarea-disabled'
           )}
@@ -199,7 +200,7 @@ Example)
         </Button>
         <Button
           size='sm'
-          className={classNames(
+          className={cn(
             'rounded-full',
             (isLoading || (errorMessage && isExisted)) && 'btn-disabled'
           )}

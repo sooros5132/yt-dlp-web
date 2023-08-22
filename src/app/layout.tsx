@@ -1,20 +1,20 @@
 import './globals.css';
 import type { PropsWithChildren } from 'react';
 import { Inter } from 'next/font/google';
-import classNames from 'classnames';
 import type { Metadata } from 'next';
 import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
 import { ClientWorks } from '@/components/ClientWorks';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { ClientBodyScrollResolver } from '@/components/ClientBodyScrollResolver';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang='en'>
-      <body className={classNames(inter.className, 'min-w-[var(--site-min-width)]')}>
+    <html lang='en' suppressHydrationWarning>
+      <body className={cn(inter.className, 'min-w-[var(--site-min-width)]')}>
         <VideoPlayer />
         {/* <Header /> */}
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>

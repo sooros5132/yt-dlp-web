@@ -2,21 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import { shallow } from 'zustand/shallow';
-import classNames from 'classnames';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { useVideoPlayerStore } from '@/store/videoPlayer';
-import {
-  TbExternalLink,
-  TbPin,
-  TbPinnedOff,
-  TbViewportNarrow,
-  TbViewportWide
-} from 'react-icons/tb';
+import { TbPin, TbPinnedOff, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { AiOutlineFullscreen } from 'react-icons/ai';
 import { CgClose } from 'react-icons/cg';
 import { Button } from './ui/button';
 import { LinkIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const VideoPlayer = () => {
   const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
@@ -123,13 +117,13 @@ export const VideoPlayer = () => {
 
   return (
     <div
-      className={classNames(
+      className={cn(
         'group top-0 left-0 w-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden',
         enableTopSticky ? 'sticky min-h-[200px] h-[35vh] md:h-[30vh]' : 'fixed h-full'
       )}
     >
       <div
-        className={classNames(
+        className={cn(
           'flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/30 text-white transition-opacity duration-500',
           (enableWideScreen || enableTopSticky) && 'absolute top-0 left-0 z-10',
           enableTopSticky && 'opacity-0 group-hover:opacity-100'
@@ -211,7 +205,7 @@ export const VideoPlayer = () => {
       >
         <video
           ref={videoRef}
-          className={classNames(
+          className={cn(
             'max-w-full max-h-full object-contain outline-none',
             enableWideScreen && 'w-full'
           )}

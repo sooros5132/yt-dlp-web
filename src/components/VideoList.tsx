@@ -14,7 +14,7 @@ import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { VscRefresh, VscWarning } from 'react-icons/vsc';
 import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
-import { CgClose, CgPlayListSearch } from 'react-icons/cg';
+import { CgPlayListSearch } from 'react-icons/cg';
 import type { VideoInfo } from '@/types/video';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -142,9 +142,9 @@ const VideoListHeader = ({ isValidating, layoutMode, setLayoutMode }: VideoListH
             viewBox='0 0 24 24'
             fill='none'
             stroke='currentColor'
-            stroke-width='2'
-            stroke-linecap='round'
-            stroke-linejoin='round'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
             className='lucide lucide-grid-2x2'
           >
             <rect width='18' height='18' x='3' y='3' rx='2' />

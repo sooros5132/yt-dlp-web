@@ -1,7 +1,6 @@
 'use client';
 
-import classNames from 'classnames';
-import React, { FormEvent, Suspense, memo, useLayoutEffect, useState } from 'react';
+import React, { FormEvent, memo, useLayoutEffect, useState } from 'react';
 import { mutate } from 'swr';
 import { toast } from 'react-toastify';
 import numeral from 'numeral';
@@ -9,12 +8,7 @@ import isEquals from 'react-fast-compare';
 import { useSiteSettingStore } from '@/store/siteSetting';
 import { PingSvg } from '@/components/PingSvg';
 import { IoClose } from 'react-icons/io5';
-import {
-  AiOutlineCloudDownload,
-  AiOutlineInfoCircle,
-  AiOutlineLink,
-  AiOutlineSearch
-} from 'react-icons/ai';
+import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
 import { FcRemoveImage } from 'react-icons/fc';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp, HiOutlinePencil } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
@@ -35,7 +29,6 @@ import { Loader2 } from 'lucide-react';
 import { Divider } from './Divider';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from './ui/alert-dialog';
 
 export function DownloadForm() {
@@ -695,7 +688,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 )}
               </Button>
             </Divider>
-            <div className={classNames(!isOpen && 'pointer-events-none select-none opacity-60')}>
+            <div className={cn(!isOpen && 'pointer-events-none select-none opacity-60')}>
               <div className='flex flex-wrap gap-2 sm:flex-nowrap'>
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
                   <div>
@@ -869,7 +862,7 @@ const PlaylistDownload = memo(({ metadata }: PlaylistDownloadProps) => {
         <p>Live is excluded and all are downloaded in the best quality.</p>
         <Button
           size='sm'
-          className={classNames('rounded-full my-2', isValidating && 'loading')}
+          className={cn('rounded-full my-2', isValidating && 'loading')}
           onClick={handleClickDownloadButton}
         >
           Download&nbsp;<b>{metadata?.playlistCount}</b>&nbsp;items from a playlist
