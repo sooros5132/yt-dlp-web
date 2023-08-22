@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR, { mutate } from 'swr';
 import numeral from 'numeral';
@@ -13,7 +13,12 @@ import { isMobile } from '@/client/utils';
 import { FcRemoveImage } from 'react-icons/fc';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
 import { VscRefresh, VscWarning } from 'react-icons/vsc';
-import { MdOutlineVideocamOff, MdPlaylistRemove, MdStop } from 'react-icons/md';
+import {
+  MdOutlineKeyboardReturn,
+  MdOutlineVideocamOff,
+  MdPlaylistRemove,
+  MdStop
+} from 'react-icons/md';
 import { CgPlayListSearch } from 'react-icons/cg';
 import type { VideoInfo } from '@/types/video';
 import { Card } from './ui/card';
@@ -30,6 +35,21 @@ import {
 } from './ui/dialog';
 import { Progress } from './ui/progress';
 import { Divider } from './Divider';
+import { BiDotsVerticalRounded, BiSelectMultiple } from 'react-icons/bi';
+import { BsCheckCircleFill } from 'react-icons/bs';
+import { useVideoListStore } from '@/store/videoList';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from './ui/dropdown-menu';
+import { useSiteSettingStore } from '@/store/siteSetting';
+import { NoSSR } from './NoSSR';
+import { shallow } from 'zustand/shallow';
+import { RiListCheck3 } from 'react-icons/ri';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -71,22 +91,70 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
   return (
     <Card className='my-8 p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
+        videos={videos}
         isValidating={isValidating}
         layoutMode={layoutMode}
         setLayoutMode={setLayoutMode}
       />
-      {videos && <VideoListContent layoutMode={layoutMode} videos={videos} />}
+      <VideoListContent layoutMode={layoutMode} videos={videos} />
     </Card>
   );
 }
 
 type VideoListHeaderProps = {
+  videos?: Array<VideoInfo>;
   isValidating: boolean;
   layoutMode: LayoutMode;
   setLayoutMode: (mode: LayoutMode) => void;
 };
 
-const VideoListHeader = ({ isValidating, layoutMode, setLayoutMode }: VideoListHeaderProps) => {
+const VideoListHeader = ({
+  videos,
+  isValidating,
+  layoutMode,
+  setLayoutMode
+}: VideoListHeaderProps) => {
+  const { hydrated } = useSiteSettingStore();
+  const { isSelectMode, selectedUuids, setSelectMode, addUuids, clearUuids } = useVideoListStore();
+  const isAllSelected = videos?.length && selectedUuids.size === videos.length;
+
+  const [openDeleteList, setOpenDeleteList] = useState(false);
+  const [openDeleteFile, setOpenDeleteFile] = useState(false);
+  const [openDeleteAllList, setOpenDeleteAllList] = useState(false);
+  const [openDeleteAllFile, setOpenDeleteAllFile] = useState(false);
+
+  const handleCloseDeleteList = () => {
+    setOpenDeleteList(false);
+  };
+
+  const handleChangeDeleteList = (open: boolean) => {
+    setOpenDeleteList(open);
+  };
+
+  const handleCloseDeleteFile = () => {
+    setOpenDeleteFile(false);
+  };
+
+  const handleChangeDeleteFile = (open: boolean) => {
+    setOpenDeleteFile(open);
+  };
+
+  const handleCloseDeleteAllList = () => {
+    setOpenDeleteAllList(false);
+  };
+
+  const handleChangeDeleteAllList = (open: boolean) => {
+    setOpenDeleteAllList(open);
+  };
+
+  const handleCloseDeleteAllFile = () => {
+    setOpenDeleteAllFile(false);
+  };
+
+  const handleChangeDeleteAllFile = (open: boolean) => {
+    setOpenDeleteAllFile(open);
+  };
+
   const handleClickRefreshButton = async () => {
     await mutate('/api/list');
   };
@@ -95,21 +163,271 @@ const VideoListHeader = ({ isValidating, layoutMode, setLayoutMode }: VideoListH
     setLayoutMode(mode);
   };
 
+  const handleClickSelectMode = () => {
+    setSelectMode(!isSelectMode);
+  };
+
+  const handleClickSelectAll = () => {
+    if (!videos) {
+      return;
+    }
+    const uuids = videos.map((video) => video.uuid).filter((f) => f);
+    addUuids(uuids);
+  };
+  const handleClickClearAll = () => {
+    clearUuids();
+  };
+
+  const handleClickDelete =
+    (deleteType: 'deleteFile' | 'deleteList' | 'deleteAllFile' | 'deleteAllList') => async () => {
+      if (!deleteType) {
+        return;
+      }
+      const { clearUuids, selectedUuids } = useVideoListStore.getState();
+      const isDeleteAll = ['deleteAllFile', 'deleteAllList'].includes(deleteType);
+
+      const deleteFile = ['deleteFile', 'deleteAllFile'].includes(deleteType);
+      const uuids = isDeleteAll
+        ? videos?.map((v) => v.uuid).filter((u) => u) || []
+        : Array.from(selectedUuids);
+
+      if (!uuids.length) {
+        clearUuids();
+        return;
+      }
+
+      switch (deleteType) {
+        case 'deleteAllFile':
+        case 'deleteAllList':
+        case 'deleteList':
+        case 'deleteFile': {
+          const result = await axios
+            .delete('/api/files', {
+              data: {
+                uuids,
+                deleteFile
+              }
+            })
+            .then((res) => res.data)
+            .catch((res) => res.response.data);
+
+          if (result?.success) {
+            clearUuids();
+            toast.success('Selected video has been deleted.');
+            setTimeout(() => {
+              mutate('/api/list');
+            }, 10);
+
+            switch (deleteType) {
+              case 'deleteAllFile': {
+                handleCloseDeleteAllFile();
+                break;
+              }
+              case 'deleteAllList': {
+                handleCloseDeleteAllList();
+                break;
+              }
+              case 'deleteList': {
+                handleCloseDeleteList();
+                break;
+              }
+              case 'deleteFile': {
+                handleCloseDeleteFile();
+                break;
+              }
+            }
+          } else {
+            toast.error(result.error || 'Failed to delete.');
+          }
+
+          break;
+        }
+      }
+    };
+
   return (
-    <div className='flex justify-between items-center mb-4'>
+    <div className='flex justify-between items-center mb-4 flex-wrap'>
       <div className='flex items-center'>
-        <h1 className='text-center text-3xl font-bold'>Videos</h1>
+        <h1 className='text-center text-3xl font-bold'>
+          {hydrated && isSelectMode ? 'Select Mode' : 'Videos'}
+        </h1>
         <Button
           variant='ghost'
           size='icon'
-          className='text-2xl'
+          className='text-2xl rounded-full'
           disabled={isValidating}
           onClick={handleClickRefreshButton}
         >
           <VscRefresh className={isValidating ? 'animate-spin' : undefined} />
         </Button>
       </div>
-      <div className='flex items-center border-join'>
+      <div className='flex items-center justify-end ml-auto gap-x-2'>
+        {hydrated && isSelectMode && (
+          <>
+            {isAllSelected ? (
+              <Button
+                variant='outline'
+                size='sm'
+                className='text-lg text-blue-400 hover:text-blue-400/90'
+                onClick={handleClickClearAll}
+              >
+                Clear Selected
+              </Button>
+            ) : (
+              <Button
+                variant='outline'
+                size='sm'
+                className='text-lg text-blue-400 hover:text-blue-400/90'
+                onClick={handleClickSelectAll}
+                disabled={!Boolean(videos?.length)}
+              >
+                Select All
+              </Button>
+            )}
+            <Dialog open={openDeleteFile} onOpenChange={handleChangeDeleteFile}>
+              <DialogTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='text-lg text-error-foreground hover:text-error-foreground/90'
+                  disabled={!Boolean(selectedUuids.size)}
+                >
+                  <MdOutlineVideocamOff />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Do you want to delete the selected video and item?</DialogTitle>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant='outline' size='sm' onClick={handleCloseDeleteFile}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size='sm'
+                    className='bg-error hover:bg-error/90 text-foreground'
+                    onClick={handleClickDelete('deleteFile')}
+                  >
+                    Yes, Delete Selected
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={openDeleteList} onOpenChange={handleChangeDeleteList}>
+              <DialogTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='text-lg text-warning-foreground hover:text-warning-foreground/90'
+                  disabled={!Boolean(selectedUuids.size)}
+                >
+                  <MdPlaylistRemove />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Do you want to delete the selected item?</DialogTitle>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant='outline' size='sm' onClick={handleCloseDeleteList}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size='sm'
+                    className='bg-warning hover:bg-warning/90'
+                    onClick={handleClickDelete('deleteList')}
+                  >
+                    Yes, Delete Selected
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' size='icon' className='text-2xl rounded-full'>
+              <BiDotsVerticalRounded />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' className='w-56'>
+            <DropdownMenuItem className='cursor-pointer' onClick={handleClickSelectMode}>
+              {hydrated && isSelectMode ? (
+                <span className='flex items-center gap-x-2'>
+                  <MdOutlineKeyboardReturn />
+                  Leave Select Mode
+                </span>
+              ) : (
+                <span className='flex items-center gap-x-2'>
+                  <RiListCheck3 />
+                  Switch Select Mode
+                </span>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>
+              <span className='text-error-foreground'>Danger Zone!</span>
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              className='cursor-pointer'
+              onClick={() => handleChangeDeleteAllList(true)}
+            >
+              <span className='flex items-center gap-x-2 text-warning-foreground hover:text-warning-foreground/90'>
+                <MdOutlineVideocamOff />
+                Delete All Item
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className='cursor-pointer'
+              onClick={() => handleChangeDeleteAllFile(true)}
+            >
+              <span className='flex items-center gap-x-2 text-error-foreground hover:text-error-foreground/90'>
+                <MdPlaylistRemove />
+                Delete All Item and File
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Dialog open={openDeleteAllFile} onOpenChange={handleChangeDeleteAllFile}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Do you want to delete the All video and item?</DialogTitle>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant='outline' size='sm' onClick={handleCloseDeleteAllFile}>
+                Cancel
+              </Button>
+              <Button
+                size='sm'
+                className='bg-error hover:bg-error/90 text-foreground'
+                onClick={handleClickDelete('deleteAllFile')}
+              >
+                Yes, Delete All
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={openDeleteAllList} onOpenChange={handleChangeDeleteAllList}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Do you want to delete the All item?</DialogTitle>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant='outline' size='sm' onClick={handleCloseDeleteAllList}>
+                Cancel
+              </Button>
+              <Button
+                size='sm'
+                className='bg-warning hover:bg-warning/90'
+                onClick={handleClickDelete('deleteAllList')}
+              >
+                Yes, Delete All
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      {/* <div className='flex items-center border-join'>
         <Button
           variant='ghost'
           size='icon'
@@ -132,9 +450,6 @@ const VideoListHeader = ({ isValidating, layoutMode, setLayoutMode }: VideoListH
           )}
           onClick={handleClickChangeLayoutButton('grid')}
         >
-          {/**
-           * lucide-react에서 grid관련 아이콘들이 import되지 않음
-           */}
           <svg
             xmlns='http://www.w3.org/2000/svg'
             width='1em'
@@ -152,14 +467,14 @@ const VideoListHeader = ({ isValidating, layoutMode, setLayoutMode }: VideoListH
             <path d='M12 3v18' />
           </svg>
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };
 
 type VideoListContentProps = {
   layoutMode: LayoutMode;
-  videos: Array<VideoInfo>;
+  videos?: Array<VideoInfo>;
 };
 
 const VideoListContent = ({ layoutMode, videos }: VideoListContentProps) => {
@@ -172,15 +487,15 @@ const VideoListContent = ({ layoutMode, videos }: VideoListContentProps) => {
   }
 
   switch (layoutMode) {
-    case 'table': {
-      return (
-        <>
-          {videos.map((video) => (
-            <VideoTableItem key={video.uuid} video={video} />
-          ))}
-        </>
-      );
-    }
+    // case 'table': {
+    //   return (
+    //     <div className='space-y-2'>
+    //       {videos.map((video) => (
+    //         <VideoTableItem key={video.uuid} video={video} />
+    //       ))}
+    //     </div>
+    //   );
+    // }
     case 'grid': {
       return (
         <div className='grid gap-x-3 gap-y-6 grid-cols-1 sm:gap-5 sm:grid-cols-2'>
@@ -196,24 +511,91 @@ const VideoListContent = ({ layoutMode, videos }: VideoListContentProps) => {
   }
 };
 
-const VideoTableItem = memo(({ video }: { video: VideoInfo }) => {
-  return <></>;
-}, isEqual);
-VideoTableItem.displayName = 'VideoTableItem';
+// const VideoTableItem = memo(({ video }: { video: VideoInfo }) => {
+//   const isCompleted = video.status === 'completed';
+//   const isStandby = video.status === 'standby';
+//   const isFailed = video.status === 'failed';
+//   const isRecording = video.status === 'recording';
+//   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
+//   const handleImageError = () => {
+//     setThumbnailImageError(true);
+//   };
 
-const VideoGridItem = memo(({ video }: { video: VideoInfo }) => {
+//   return (
+//     <Card className='flex rounded-lg bg-card-nested border-none h-[100px] overflow-hidden'>
+//       <div className='shrink-0 basis-[100px]'>
+//         <figure className='relative w-full h-full bg-black/30'>
+//           {video.thumbnail && !isThumbnailImageError ? (
+//             <img
+//               className='w-full h-full object-cover'
+//               src={
+//                 isCompleted && video.localThumbnail
+//                   ? '/api/thumbnail?uuid=' + video.uuid
+//                   : video.thumbnail
+//               }
+//               alt={'thumbnail'}
+//               onError={handleImageError}
+//               loading='lazy'
+//             />
+//           ) : (
+//             <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl bg-base-content/5 select-none'>
+//               <FcRemoveImage />
+//             </div>
+//           )}
+//         </figure>
+//       </div>
+//       <div className='flex flex-col grow p-2'>
+//         <div className='line-clamp-2'>{video.title}</div>
+//         <div className='flex gap-x-1 mt-auto text-xs text-muted-foreground'>
+//           {typeof video.file.height === 'number' && video.file.height > 0 && (
+//             <div className='bg-black/70 text-white p-0.5 px-1 rounded-lg'>
+//               {video.file.height}p
+//               {typeof video.file.rFrameRate === 'number' && video.file.rFrameRate > 0
+//                 ? Math.round(video.file.rFrameRate)
+//                 : ''}
+//               {video.file.codecName ? ' ' + video.file.codecName : ''}
+//               {video.file.colorPrimaries === 'bt2020' ? ' HDR' : ''}
+//             </div>
+//           )}
+//           {typeof video.file.size === 'number' && (
+//             <div className='bg-black/70 text-white p-0.5 px-1 rounded-lg'>
+//               {numeral(video.file.size).format('0.0b')}
+//             </div>
+//           )}
+//           {video.file.duration && (
+//             <div className='bg-black/70 text-white p-0.5 px-1 rounded-lg'>
+//               {numeral(video.file.duration).format('00:00:00')}
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </Card>NoSSR
+//   );
+// }, isEqual);
+// VideoTableItem.displayName = 'VideoTableItem';
+
+type VideoGridItem = {
+  video: VideoInfo;
+};
+
+const VideoGridItem = memo(({ video }: VideoGridItem) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
   const [isNotSupportedCodec, setNotSupportedCodec] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
   const [openPlaylistView, setOpenPlaylistView] = useState(false);
+  const { isSelectMode, addUuid, deleteUuid } = useVideoListStore(
+    ({ isSelectMode, addUuid, deleteUuid }) => ({ isSelectMode, addUuid, deleteUuid }),
+    shallow
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
   const isCompleted = video.status === 'completed';
   const isStandby = video.status === 'standby';
   const isFailed = video.status === 'failed';
   const isRecording = video.status === 'recording';
+  const [isSelected, setSelected] = useState(false);
 
   const [openDeleteList, setOpenDeleteList] = useState(false);
   const [openDeleteFile, setOpenDeleteFile] = useState(false);
@@ -398,6 +780,30 @@ const VideoGridItem = memo(({ video }: { video: VideoInfo }) => {
     setOpenPlaylistView(false);
   };
 
+  const handleClickSelectItem = () => {
+    const uuid = video?.uuid;
+    if (!uuid) {
+      return;
+    }
+
+    const action = isSelected ? deleteUuid : addUuid;
+    action(uuid);
+  };
+
+  useEffect(() => {
+    const unsubscribe = useVideoListStore.subscribe((state) => {
+      if (video?.uuid) {
+        const newIsSelected = state.selectedUuids.has(video.uuid);
+        if (newIsSelected !== isSelected) {
+          setSelected(newIsSelected);
+        }
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  });
+
   useEffect(() => {
     if (
       video.status === 'completed' ||
@@ -428,8 +834,8 @@ const VideoGridItem = memo(({ video }: { video: VideoInfo }) => {
   }, [video]);
 
   return (
-    <div>
-      <Card className='bg-card-nested flex flex-col rounded-xl overflow-hidden border-none'>
+    <div className={cn(isSelectMode && 'select-none')}>
+      <Card className='relative bg-card-nested flex flex-col rounded-xl overflow-hidden border-none'>
         <div
           className={cn(
             'relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video',
@@ -532,12 +938,12 @@ encode speed ${video.download.ffmpeg.speed}`
             )}
           </div>
           {isCompleted && video?.type === 'playlist' && (
-            <div className='absolute top-1.5 left-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+            <div className='absolute top-1.5 left-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
               Playlist {video.download.playlist?.count && `(${video.download.playlist?.count})`}
             </div>
           )}
           {!isMouseEntered && typeof video.file.height === 'number' && video.file.height > 0 && (
-            <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+            <div className='absolute left-1.5 top-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
               {video.file.height}p
               {typeof video.file.rFrameRate === 'number' && video.file.rFrameRate > 0
                 ? Math.round(video.file.rFrameRate)
@@ -547,12 +953,12 @@ encode speed ${video.download.ffmpeg.speed}`
             </div>
           )}
           {!isMouseEntered && typeof video.file.size === 'number' && (
-            <div className='absolute left-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+            <div className='absolute left-1.5 bottom-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
               {numeral(video.file.size).format('0.0b')}
             </div>
           )}
           {!isMouseEntered && video.file.duration && (
-            <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/70 py-0.5 px-1.5 rounded-sm'>
+            <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
               {numeral(video.file.duration).format('00:00:00')}
             </div>
           )}
@@ -589,14 +995,14 @@ encode speed ${video.download.ffmpeg.speed}`
                     </DialogHeader>
                     <DialogFooter>
                       <Button variant='outline' size='sm' onClick={handleCloseDeleteFile}>
-                        No
+                        Cancel
                       </Button>
                       <Button
                         size='sm'
                         className='bg-error hover:bg-error/90 text-foreground'
                         onClick={handleClickDelete(video, 'deleteFile')}
                       >
-                        Yes
+                        Delete
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -609,7 +1015,7 @@ encode speed ${video.download.ffmpeg.speed}`
                     size='sm'
                     borderCurrentColor
                     className={cn(
-                      'h-[1.7em] text-lg text-warning hover:text-warning/90',
+                      'h-[1.7em] text-lg text-warning-foreground hover:text-warning-foreground/90',
                       (isStandby || isFailed || !isCompleted) && 'rounded-xl'
                     )}
                     title='Delete from List'
@@ -623,14 +1029,14 @@ encode speed ${video.download.ffmpeg.speed}`
                   </DialogHeader>
                   <DialogFooter>
                     <Button variant='outline' size='sm' onClick={handleCloseDeleteList}>
-                      No
+                      Cancel
                     </Button>
                     <Button
                       size='sm'
                       className='bg-yellow-300 hover:bg-yellow-300/90'
                       onClick={handleClickDelete(video, 'deleteList')}
                     >
-                      Yes
+                      Delete
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -718,6 +1124,24 @@ encode speed ${video.download.ffmpeg.speed}`
             title={video.download.progress ? `${Number(video.download.progress) * 100}%` : ''}
           />
         )}
+        <NoSSR>
+          {isSelectMode && (
+            <div
+              className={cn(
+                'absolute top-0 left-0 w-full h-full flex items-center justify-center rounded-xl overflow-hidden border-4 isolate will-change-transform cursor-pointer',
+                isSelected && 'border-primary'
+              )}
+              onClick={handleClickSelectItem}
+            >
+              <BsCheckCircleFill
+                className={cn(
+                  'absolute top-2 right-2 text-2xl',
+                  isSelected ? 'text-primary' : 'opacity-30'
+                )}
+              />
+            </div>
+          )}
+        </NoSSR>
       </Card>
       {video.type === 'playlist' && video.playlist && video.playlist.length && (
         <PlaylistViewDialog
