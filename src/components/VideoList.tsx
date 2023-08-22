@@ -373,7 +373,7 @@ const VideoListHeader = ({
               onClick={() => handleChangeDeleteAllList(true)}
             >
               <span className='flex items-center gap-x-2 text-warning-foreground hover:text-warning-foreground/90'>
-                <MdOutlineVideocamOff />
+                <MdPlaylistRemove />
                 Delete All Item
               </span>
             </DropdownMenuItem>
@@ -382,7 +382,7 @@ const VideoListHeader = ({
               onClick={() => handleChangeDeleteAllFile(true)}
             >
               <span className='flex items-center gap-x-2 text-error-foreground hover:text-error-foreground/90'>
-                <MdPlaylistRemove />
+                <MdOutlineVideocamOff />
                 Delete All Item and File
               </span>
             </DropdownMenuItem>
