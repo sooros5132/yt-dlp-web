@@ -495,7 +495,7 @@ const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) =>
       <Divider className='mt-4 mb-6' />
       <Card className='flex flex-col bg-card-nested rounded-xl border-none overflow-hidden sm:flex-row-reverse sm:h-[220px]'>
         <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%]'>
-          {isImageError && metadata.thumbnail ? (
+          {!isImageError && metadata.thumbnail ? (
             <figure className='w-full h-full'>
               <img
                 className='w-full h-full object-cover'

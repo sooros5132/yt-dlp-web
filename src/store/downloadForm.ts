@@ -166,7 +166,7 @@ export const useDownloadFormStore = createWithEqualityFn(
         Object.fromEntries(
           Object.entries(state).filter(([key]) =>
             [
-              'url',
+              // 'url',
               'enableBestFormat',
               'usingCookies',
               // 'embedMetadata',
