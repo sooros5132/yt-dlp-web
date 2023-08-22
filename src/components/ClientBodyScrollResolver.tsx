@@ -13,15 +13,10 @@ export function ClientBodyScrollResolver() {
     }),
     shallow
   );
-  const { openCookiesEditor } = useSiteSettingStore(
-    ({ openCookiesEditor }) => ({ openCookiesEditor }),
-    shallow
-  );
 
   useEffect(() => {
-    document.body.style.overflow =
-      (!enableTopSticky && isVideoPlayerOpen) || openCookiesEditor ? 'hidden' : '';
-  }, [enableTopSticky, isVideoPlayerOpen, openCookiesEditor]);
+    document.body.style.overflow = !enableTopSticky && isVideoPlayerOpen ? 'hidden' : '';
+  }, [enableTopSticky, isVideoPlayerOpen]);
 
   return <></>;
 }

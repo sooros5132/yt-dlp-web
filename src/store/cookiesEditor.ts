@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { createWithEqualityFn } from 'zustand/traditional';
+import { shallow } from 'zustand/shallow';
 
 interface State {
   secretKey: string;
@@ -13,9 +13,12 @@ const initialState: State = {
   secretKey: ''
 };
 
-export const useCookiesEditorStore = create<Store>((set, get) => ({
-  ...initialState,
-  setSecretKey(secretKey) {
-    set({ secretKey });
-  }
-}));
+export const useCookiesEditorStore = createWithEqualityFn<Store>(
+  (set, get) => ({
+    ...initialState,
+    setSecretKey(secretKey) {
+      set({ secretKey });
+    }
+  }),
+  shallow
+);

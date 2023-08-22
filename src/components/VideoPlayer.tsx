@@ -15,6 +15,8 @@ import {
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { AiOutlineFullscreen } from 'react-icons/ai';
 import { CgClose } from 'react-icons/cg';
+import { Button } from './ui/button';
+import { LinkIcon } from 'lucide-react';
 
 export const VideoPlayer = () => {
   const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
@@ -134,57 +136,73 @@ export const VideoPlayer = () => {
         )}
       >
         <div className='flex items-center gap-x-1.5 overflow-hidden break-words'>
-          <button
-            className='btn btn-circle btn-sm btn-ghost grow-0 shrink-0 text-xl hidden sm:flex'
+          <Button
+            variant='ghost'
+            size='icon'
+            className='grow-0 shrink-0 w-[1.5em] h-[1.5em] text-xl rounded-full hidden sm:flex'
             onClick={handleClose}
             title='Close video player'
           >
             <HiOutlineArrowLeft />
-          </button>
+          </Button>
           <div className='pl-2 font-bold line-clamp-2' title={video.title || ''}>
             {video.title}
           </div>
         </div>
-        <div className='flex gap-x-1.5 whitespace-nowrap'>
+        <div className='flex gap-x-1 whitespace-nowrap'>
           <a
-            className='btn btn-sm btn-circle btn-ghost text-lg'
+            className='flex items-center'
             href={video.url || ''}
             rel='noopener noreferrer'
             target='_blank'
             onClick={handleClickExternalLink}
             title='Open Original Link'
           >
-            <TbExternalLink />
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-[1.5em] h-[1.5em] text-lg rounded-full'
+            >
+              <LinkIcon className='text-base' size='1em' />
+            </Button>
           </a>
-          <button
-            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+          <Button
+            variant='ghost'
+            size='icon'
+            className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
             onClick={handleTopStickyButton}
             title={enableTopSticky ? 'Not fixing on top' : 'Fixing on top'}
           >
             {enableTopSticky ? <TbPinnedOff /> : <TbPin />}
-          </button>
-          <button
-            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+          </Button>
+          <Button
+            variant='ghost'
+            size='icon'
+            className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
             onClick={handleClickWideButton}
           >
             {enableWideScreen ? <TbViewportNarrow /> : <TbViewportWide />}
-          </button>
+          </Button>
           {document && document.fullscreenEnabled && (
-            <button
-              className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
               onClick={handleClickFullScreenButton}
               title='Full screen'
             >
               <AiOutlineFullscreen />
-            </button>
+            </Button>
           )}
-          <button
-            className='btn btn-circle btn-sm btn-ghost shrink-0 text-xl'
+          <Button
+            variant='ghost'
+            size='icon'
+            className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
             onClick={handleClose}
             title='Close player'
           >
             <CgClose />
-          </button>
+          </Button>
         </div>
       </div>
       <div

@@ -1,7 +1,7 @@
 'use client';
 
 import classNames from 'classnames';
-import React, { FormEvent, memo, useLayoutEffect, useState } from 'react';
+import React, { FormEvent, Suspense, memo, useLayoutEffect, useState } from 'react';
 import { mutate } from 'swr';
 import { toast } from 'react-toastify';
 import numeral from 'numeral';
@@ -26,18 +26,28 @@ import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from './CookiesEditor';
 import { shallow } from 'zustand/shallow';
 import { PatternFormat } from 'react-number-format';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardTitle } from './ui/card';
+import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { Loader2 } from 'lucide-react';
+import { Divider } from './Divider';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from './ui/alert-dialog';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const {
-    enabledBestFormat,
+    enableBestFormat,
     url,
     usingCookies,
     setUrl,
-    disableBestFormat,
-    enableBestFormat,
+    setEnableBestFormat,
     setUsingCookies,
     embedChapters,
     // embedMetadata,
@@ -101,17 +111,14 @@ export function DownloadForm() {
   const [isValidating, setValidating] = useState(false);
   const [openMoreOptions, setOpenMoreOptions] = useState(false);
   const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | PlaylistMetadata | null>(null);
+  const [openCookiesEditor, setOpenCookiesEditor] = useState(false);
 
   const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
     setUrl(evt.target.value || '');
   };
 
-  const handleChangeCheckBox = (evt: ChangeEvent<HTMLInputElement>) => {
-    if (evt.target.checked) {
-      enableBestFormat();
-    } else {
-      disableBestFormat();
-    }
+  const handleClickCheckBox = () => {
+    setEnableBestFormat(!enableBestFormat);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -131,7 +138,7 @@ export function DownloadForm() {
     setVideoMetadata(null);
     const { getMetadata, requestDownload } = useDownloadFormStore.getState();
     try {
-      if (enabledBestFormat) {
+      if (enableBestFormat) {
         const result = await requestDownload();
 
         if (result?.error) {
@@ -185,10 +192,11 @@ export function DownloadForm() {
   const handleClickMoreOptionsButton = () => {
     setOpenMoreOptions((prev) => !prev);
   };
-
-  const handleClickEditCookiesButton = (event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    useSiteSettingStore.getState().setOpenCookiesEditor(true);
+  const handleCloseCookiesEditor = () => {
+    setOpenCookiesEditor(false);
+  };
+  const handleChangeCookiesEditor = (open: boolean) => {
+    setOpenCookiesEditor(open);
   };
 
   useLayoutEffect(() => {
@@ -241,114 +249,111 @@ export function DownloadForm() {
   }, []);
 
   return (
-    <div className='px-4 py-2 rounded-lg bg-base-content/5'>
+    <Card className='my-8 px-4 py-2 border-none shadow-md'>
       <form className='flex flex-col py-2 gap-y-2' method='GET' onSubmit={handleSubmit}>
-        <div className='input input-sm flex justify-between h-auto pr-1 focus:outline-none'>
-          <input
+        <div className='flex justify-between rounded-full shadow-sm'>
+          <Input
             name='url'
             type='text'
-            className={classNames(
-              'bg-base-100 flex-auto outline-none',
-              !hydrated && 'input-disabled'
-            )}
+            className='flex-auto rounded-full rounded-r-none border-none'
+            disabled={!hydrated}
             readOnly={!hydrated}
             value={url}
             placeholder='https://...'
             onChange={handleChangeUrl}
           />
           {!hydrated || url || !navigator?.clipboard ? (
-            <button
+            <Button
               key={'delete-url'}
               type='button'
-              className='btn btn-sm btn-circle btn-ghost text-xl text-zinc-400'
+              variant='outline'
+              size='icon'
+              disabled={!hydrated}
+              className='text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
               onClick={handleClickDeleteUrlButton}
             >
               <IoClose />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               key={'paste-url'}
               type='button'
-              className='btn btn-sm btn-circle btn-ghost text-lg text-zinc-400'
+              variant='outline'
+              size='icon'
+              disabled={!hydrated}
+              className='text-lg rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
               onClick={handleClickPasteClipboardButton}
             >
               <MdContentPaste />
-            </button>
+            </Button>
           )}
         </div>
         <div className='flex items-center'>
-          <label
+          <Label
             className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
             title='Download immediately in the best quality'
           >
-            <input
-              className='checkbox checkbox-xs rounded-md'
-              name='enabledBestFormat'
-              type='checkbox'
-              checked={!hydrated ? true : enabledBestFormat}
-              readOnly={!hydrated}
-              onChange={handleChangeCheckBox}
+            <Checkbox
+              name='enableBestFormat'
+              checked={!hydrated ? true : enableBestFormat}
+              disabled={!hydrated}
+              onClick={handleClickCheckBox}
             />
             <span className='text-sm'>Download immediately in the best quality</span>
-          </label>
+          </Label>
         </div>
         <div className='flex items-center'>
-          <label
+          <Label
             className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
             title='Using Cookies'
           >
-            <input
-              className='checkbox checkbox-xs rounded-md'
+            <Checkbox
               name='usingCookies'
-              type='checkbox'
               checked={!hydrated ? false : usingCookies}
-              readOnly={!hydrated}
-              onChange={handleClickUsingCookiesButton}
+              disabled={!hydrated}
+              onClick={handleClickUsingCookiesButton}
             />
             <span className='text-sm'>Using Cookies</span>
-          </label>
-          <button
-            type='button'
-            className='btn btn-xs w-[20px] h-[20px] min-w-[20px] min-h-[20px] btn-circle btn-ghost'
-            onClick={handleClickEditCookiesButton}
-          >
-            <HiOutlinePencil />
-          </button>
+          </Label>
+          <AlertDialog open={openCookiesEditor} onOpenChange={handleChangeCookiesEditor}>
+            <AlertDialogTrigger type='button' className='flex items-center text-sm h-auto p-0.5'>
+              <HiOutlinePencil />
+            </AlertDialogTrigger>
+            <AlertDialogContent className='min-w-[300px] max-w-3xl max-h-full bg-card overflow-auto'>
+              <CookiesEditor open={openCookiesEditor} onClose={handleCloseCookiesEditor} />
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
-        <div className='p-2 bg-base-300/20 dark:bg-base-300/40 rounded-md'>
-          <div className='text-warning text-sm mb-1'>
+        <Card className='p-2 px-4 rounded-md bg-card-nested border-none'>
+          <CardDescription className='text-warning-foreground text-sm mb-1'>
             The options below are excluded for <b>livestreams</b> and <b>playlist</b> downloads.
-          </div>
+          </CardDescription>
           <div className='flex flex-col gap-y-2'>
-            <div className='flex flex-wrap items-center gap-x-1'>
-              <label
+            <div className='flex flex-wrap items-center gap-x-1 leading-[1]'>
+              <Label
                 className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
                 title='Slice by Time'
               >
-                <input
-                  className='checkbox checkbox-xs rounded-md'
+                <Checkbox
                   name='sliceByTime'
-                  type='checkbox'
                   checked={sliceByTime}
-                  onChange={handleClickSliceByTimeCheckbox}
+                  onClick={handleClickSliceByTimeCheckbox}
                 />
                 <span className='text-sm'>Slice by Time</span>{' '}
-              </label>
-              <span
+              </Label>
+              {/* <span
                 className='tooltip align-text-top text-zinc-500 before:max-w-[300px]'
                 data-tip='Set the start and end time.'
               >
                 <AiOutlineInfoCircle />
-              </span>
+              </span> */}
               <PatternFormat
                 displayType='input'
-                className={classNames(
-                  'input input-xs w-full max-w-[100px] shrink rounded-md focus:outline-none',
-                  !sliceByTime && 'input-disabled'
-                )}
+                customInput={Input}
+                className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
                 name='sliceStartTime'
                 value={!sliceByTime || !sliceStartTime ? '' : sliceStartTime}
-                readOnly={!sliceByTime}
+                disabled={!sliceByTime}
                 title='Start Time'
                 onChange={handleChangeSliceStartTime}
                 format='##:##:##.##'
@@ -358,13 +363,11 @@ export function DownloadForm() {
               <span>~</span>
               <PatternFormat
                 displayType='input'
-                className={classNames(
-                  'input input-xs w-full max-w-[100px] shrink rounded-md focus:outline-none',
-                  !sliceByTime && 'input-disabled'
-                )}
+                customInput={Input}
+                className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
                 name='sliceEndTime'
                 value={!sliceByTime || !sliceEndTime ? '' : sliceEndTime}
-                readOnly={!sliceByTime}
+                disabled={!sliceByTime}
                 title='End Time'
                 onChange={handleChangeSliceEndTime}
                 format='##:##:##.##'
@@ -372,114 +375,91 @@ export function DownloadForm() {
                 mask='_'
               />
             </div>
-            <label
+            <Label
               className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
               title='Embed Subs'
             >
-              <input
-                className='checkbox checkbox-xs rounded-md'
+              <Checkbox
                 name='embedSubs'
-                type='checkbox'
                 checked={embedSubs}
-                onChange={handleClickEmbedSubsCheckbox}
+                onClick={handleClickEmbedSubsCheckbox}
               />
               <span className='text-sm'>Embed subtitles</span>
-            </label>
-            <label
+            </Label>
+            <Label
               className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
               title='Embed Chapters'
             >
-              <input
-                className='checkbox checkbox-xs rounded-md'
+              <Checkbox
                 name='embedChapters'
-                type='checkbox'
                 checked={embedChapters}
-                onChange={handleClickEmbedChaptersCheckbox}
+                onClick={handleClickEmbedChaptersCheckbox}
               />
               <span className='text-sm'>Embed chapter markers</span>
-            </label>
-            {/* <label
-              className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
-              title='Embed Metadata'
-            >
-              <input
-                className='checkbox checkbox-xs rounded-md'
-                name='embedMetadata'
-                type='checkbox'
-                checked={embedMetadata}
-                onChange={handleClickEmbedMetadataCheckbox}
-              />
-              <span className='text-sm'>Embed metadata</span>
-            </label> */}
+            </Label>
           </div>
-        </div>
+        </Card>
         <div className='flex items-center'>
-          <label
+          <Label
             className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
             title='Enable Live From Start'
           >
-            <input
-              className='checkbox checkbox-xs rounded-md'
+            <Checkbox
               name='enableLiveFromStart'
-              type='checkbox'
               checked={enableLiveFromStart}
-              onChange={handleClickEnableLiveFromStart}
+              onClick={handleClickEnableLiveFromStart}
             />
             <span className='text-sm'>
               Download livestreams from the start. Only supported for YouTube.(Experimental)
             </span>
-          </label>
+          </Label>
         </div>
         <div className='flex items-center gap-x-1'>
-          <label
+          <Label
             className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
             title='Enable Proxy'
           >
-            <input
-              className='checkbox checkbox-xs rounded-md'
+            <Checkbox
               name='enableProxy'
-              type='checkbox'
               checked={enableProxy}
-              onChange={handleClickEnableProxyCheckbox}
+              onClick={handleClickEnableProxyCheckbox}
             />
             <span className='text-sm'>Enable Proxy</span>
-          </label>
-          <input
-            className={classNames(
-              'input input-xs w-full max-w-[300px] shrink rounded-md focus:outline-none',
-              !enableProxy && 'input-disabled'
-            )}
+          </Label>
+          <Input
+            className='h-auto max-w-[300px] px-1 py-0.5 leading-[1]'
             name='proxyAddress'
             value={!enableProxy ? '' : proxyAddress}
-            readOnly={!enableProxy}
+            disabled={!enableProxy}
             placeholder='Proxy Address HTTP/HTTPS/SOCKS'
             title='Proxy Address HTTP/HTTPS/SOCKS'
             onChange={handleChangeProxyServer}
           />
         </div>
         <div className='flex items-center justify-end'>
-          <button
+          <Button
             type='submit'
-            className={classNames(
-              'btn btn-sm btn-primary px-3 normal-case gap-x-1',
-              !hydrated && 'btn-disabled',
-              isValidating && 'loading'
-            )}
-            disabled={!hydrated}
-            title={!hydrated || enabledBestFormat ? 'Download' : 'Search'}
+            size='sm'
+            className='px-3 gap-x-1'
+            disabled={!hydrated || isValidating}
+            title={!hydrated || enableBestFormat ? 'Download' : 'Search'}
           >
-            {!hydrated || enabledBestFormat ? (
+            {!hydrated || enableBestFormat ? (
               <>
-                <AiOutlineCloudDownload />
+                {isValidating ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <AiOutlineCloudDownload />
+                )}
                 <span>Download</span>
               </>
             ) : (
               <>
-                <AiOutlineSearch />
+                {isValidating ? <Loader2 className='h-4 w-4 animate-spin' /> : <AiOutlineSearch />}
                 <span>Search</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </form>
       {!isValidating && videoMetadata ? (
@@ -507,8 +487,7 @@ export function DownloadForm() {
           </div>
         ) : null
       ) : null}
-      <CookiesEditor />
-    </div>
+    </Card>
   );
 }
 
@@ -519,10 +498,10 @@ const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) =>
 
   return (
     <section>
-      <div className='divider my-4' />
-      <div className='card card-side bg-base-100 shadow-xl rounded-xl flex-col sm:flex-row-reverse sm:h-[220px] overflow-hidden'>
+      <Divider className='mt-4 mb-6' />
+      <Card className='flex flex-col bg-card-nested rounded-xl border-none overflow-hidden sm:flex-row-reverse sm:h-[220px]'>
         <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%]'>
-          {!isImageError && metadata.thumbnail ? (
+          {isImageError && metadata.thumbnail ? (
             <figure className='w-full h-full'>
               <img
                 className='w-full h-full object-cover'
@@ -532,34 +511,29 @@ const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) =>
               />
             </figure>
           ) : (
-            <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl bg-base-content/5 select-none '>
+            <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl select-none bg-neutral-950/10 dark:bg-neutral-950/20'>
               <FcRemoveImage />
             </div>
           )}
         </div>
-        <div className='card-body basis-[60%] grow shrink p-4 overflow-hidden'>
-          <h2 className='card-title line-clamp-2' title={metadata.title}>
+        <CardContent className='flex flex-col basis-[60%] grow shrink p-4 gap-y-1 overflow-hidden'>
+          <CardTitle className='text-lg line-clamp-2' title={metadata.title}>
             {metadata.title}
-          </h2>
+          </CardTitle>
           <p
-            className='line-clamp-3 grow-0 text-sm text-base-content/60'
+            className='line-clamp-3 grow-0 text-sm text-muted-foreground'
             title={metadata.description}
           >
             {metadata.description}
           </p>
-          <div className='mt-auto line-clamp-2 break-all text-base-content/60'>
-            <a
-              className='link link-hover text-sm'
-              href={metadata.originalUrl}
-              rel='noopener noreferrer'
-              target='_blank'
-            >
+          <CardDescription className='mt-auto line-clamp-2 break-all'>
+            <a href={metadata.originalUrl} rel='noopener noreferrer' target='_blank'>
               <AiOutlineLink className='inline' />
               {metadata.originalUrl}
             </a>
-          </div>
-        </div>
-      </div>
+          </CardDescription>
+        </CardContent>
+      </Card>
     </section>
   );
 }, isEquals);
@@ -667,22 +641,24 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
   return (
     <section className='my-6 mb-2'>
       <div className='text-center'>
-        <button
-          className={classNames(
-            'btn btn-sm btn-primary normal-case h-auto',
-            isValidating && 'loading',
+        <Button
+          className={cn(
+            'rounded-full',
             metadata.isLive && 'text-white gradient-background border-0'
           )}
+          size='sm'
           onClick={handleClickBestButton}
           title='Download immediately in the best quality'
+          disabled={isValidating}
         >
+          {isValidating && <Loader2 className='h-4 w-4 animate-spin' />}
           {metadata.isLive && (
             <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
               <PingSvg />
             </div>
           )}
           BEST: {bestVideo} {bestVideo && bestAudio && '+'} {bestAudio}
-        </button>
+        </Button>
         {metadata.isLive && (
           <div className='mt-1 text-center text-xs text-base-content/60'>Live Stream!</div>
         )}
@@ -697,15 +673,17 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 ? {
                     maxHeight: 120,
                     overflow: 'hidden',
-                    background: 'linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.25))'
+                    background: 'linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.15))'
                   }
                 : undefined
             }
           >
-            <div className='mb-6 divider select-none'>
-              <button
+            <Divider className='mb-4 select-none'>
+              <Button
                 type='button'
-                className='btn btn-sm btn-primary btn-outline opacity-80 gap-x-2 text-md normal-case'
+                variant='outline'
+                size='sm'
+                className='border-primary bg-transparent rounded-full opacity-80 gap-x-2'
                 onClick={() => setOpen((prev) => !prev)}
                 title={isOpen ? 'Close format list' : 'Open format list'}
               >
@@ -715,50 +693,58 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 ) : (
                   <HiOutlineBarsArrowDown className='inline' />
                 )}
-              </button>
-            </div>
+              </Button>
+            </Divider>
             <div className={classNames(!isOpen && 'pointer-events-none select-none opacity-60')}>
               <div className='flex flex-wrap gap-2 sm:flex-nowrap'>
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
                   <div>
                     <b>{metadata.isLive ? 'Stream' : 'Video'}</b>
                   </div>
-                  {videoFormat.map((format) => (
-                    <VideoDownloadRadio
-                      key={format.formatId}
-                      type='video'
-                      isBest={false}
-                      format={format}
-                      onClickRadio={handleClickRadio}
-                    />
-                  ))}
+                  {/* grid는 너비 오류가 생김. flex로 변경 */}
+                  <RadioGroup className='flex flex-col gap-0'>
+                    {videoFormat.map((format) => (
+                      <VideoDownloadRadio
+                        key={format.formatId}
+                        type='video'
+                        isBest={false}
+                        format={format}
+                        onClickRadio={handleClickRadio}
+                      />
+                    ))}
+                  </RadioGroup>
                 </div>
-                <div className='hidden divider divider-horizontal shrink-0 sm:flex' />
+                <Divider variant='horizontal' className='hidden sm:flex' />
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
                   <div>
                     <b>Audio</b>
                   </div>
-                  {audioFormat.map((format) => (
-                    <VideoDownloadRadio
-                      key={format.formatId}
-                      type='audio'
-                      isBest={false}
-                      format={format}
-                      onClickRadio={handleClickRadio}
-                    />
-                  ))}
+                  {/* grid는 너비 오류가 생김. flex로 변경 */}
+                  <RadioGroup className='flex flex-col gap-0'>
+                    {audioFormat.map((format) => (
+                      <VideoDownloadRadio
+                        key={format.formatId}
+                        type='audio'
+                        isBest={false}
+                        format={format}
+                        onClickRadio={handleClickRadio}
+                      />
+                    ))}
+                  </RadioGroup>
                 </div>
               </div>
               <div className='my-4 text-center'>
-                <button
-                  className={classNames(
-                    'btn btn-sm btn-primary btn-info px-3 normal-case',
-                    isValidating && 'loading',
+                <Button
+                  className={cn(
+                    'bg-info rounded-full hover:bg-info/90 text-info-foreground px-3',
                     metadata.isLive && 'text-white gradient-background border-0'
                   )}
+                  size='sm'
                   type='submit'
                   title='Download with selected option'
+                  disabled={isValidating}
                 >
+                  {isValidating && <Loader2 className='h-4 w-4 animate-spin' />}
                   {metadata.isLive && (
                     <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
                       <PingSvg />
@@ -770,7 +756,8 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   {!selectedFormats?.video && !selectedFormats?.audio ? (
                     <span> Optional Download</span>
                   ) : null}
-                </button>
+                </Button>
+                <div className='text-xs text-muted-foreground'>Optional Download</div>
               </div>
             </div>
           </form>
@@ -817,17 +804,16 @@ const VideoDownloadRadio = ({
   })();
 
   return (
-    <div className='group form-control my-1 whitespace-nowrap'>
+    <div className='my-0.5 whitespace-nowrap'>
       <label
-        className='flex items-center px-1 gap-x-1 cursor-pointer rounded-md hover:bg-base-content/10'
+        className='flex items-center px-1 gap-x-1 cursor-pointer rounded-md hover:bg-foreground/5'
         onClick={onClickRadio(type, format)}
       >
-        <input
-          type='radio'
-          name={`${type}Id`}
+        <RadioGroupItem
           value={format.formatId}
-          className='radio radio-xs shrink-0'
+          id={format.formatId}
           defaultChecked={false}
+          className='shrink-0'
         />
         <span className='shrink text-sm overflow-hidden text-ellipsis'>{content}</span>
         {format?.filesize && (
@@ -881,15 +867,13 @@ const PlaylistDownload = memo(({ metadata }: PlaylistDownloadProps) => {
       <div className='text-zinc-400 text-sm text-center'>
         <p>This url is a playlist.</p>
         <p>Live is excluded and all are downloaded in the best quality.</p>
-        <button
-          className={classNames(
-            'btn btn-sm btn-primary normal-case my-2',
-            isValidating && 'loading'
-          )}
+        <Button
+          size='sm'
+          className={classNames('rounded-full my-2', isValidating && 'loading')}
           onClick={handleClickDownloadButton}
         >
           Download&nbsp;<b>{metadata?.playlistCount}</b>&nbsp;items from a playlist
-        </button>
+        </Button>
       </div>
     </div>
   );

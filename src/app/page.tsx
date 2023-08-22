@@ -25,15 +25,15 @@ export default async function Home() {
 
   return (
     <main className='mx-auto max-w-3xl pb-5'>
-      <div className='flex justify-end pt-2 px-2'>
+      <div className='flex justify-between p-4'>
+        <h1 className='flex items-center text-2xl'>yt-dlp-web Download Station</h1>
         <ThemeToggle />
       </div>
-      <h1 className='text-center text-2xl mt-14 mb-8'>yt-dlp-web Download Station</h1>
-      <div className='p-4 text-base-content rounded-md'>
+      <div className='p-4 pt-0'>
         <DownloadForm />
         <VideoList videoList={videoList} />
       </div>
-      <p className='mt-10 text-center text-xs text-zinc-500'>
+      <p className='mt-10 text-center text-xs text-muted-foreground'>
         Powered By{' '}
         <a
           className='link link-hover'

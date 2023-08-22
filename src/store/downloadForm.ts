@@ -1,12 +1,13 @@
 import { AxiosResponse, DownloadResponse } from '@/types/types';
 import { VideoInfo, VideoMetadata } from '@/types/video';
 import axios from 'axios';
-import { create } from 'zustand';
+import { createWithEqualityFn } from 'zustand/traditional';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 
 interface State {
   url: string;
-  enabledBestFormat: boolean;
+  enableBestFormat: boolean;
   usingCookies: boolean;
   // embedMetadata: boolean;
   embedChapters: boolean;
@@ -21,8 +22,7 @@ interface State {
 
 interface Store extends State {
   setUrl: (url: string) => void;
-  enableBestFormat: () => void;
-  disableBestFormat: () => void;
+  setEnableBestFormat: (enableBestFormat: boolean) => void;
   requestDownload: (params?: {
     url: string;
     videoId?: string;
@@ -43,7 +43,7 @@ interface Store extends State {
 
 const initialState: State = {
   url: '',
-  enabledBestFormat: true,
+  enableBestFormat: true,
   usingCookies: false,
   // embedMetadata: false,
   embedChapters: false,
@@ -56,7 +56,7 @@ const initialState: State = {
   sliceEndTime: ''
 };
 
-export const useDownloadFormStore = create(
+export const useDownloadFormStore = createWithEqualityFn(
   persist<Store>(
     (set, get) => ({
       ...initialState,
@@ -65,14 +65,9 @@ export const useDownloadFormStore = create(
           url
         });
       },
-      enableBestFormat() {
+      setEnableBestFormat(enableBestFormat: boolean) {
         set({
-          enabledBestFormat: true
-        });
-      },
-      disableBestFormat() {
-        set({
-          enabledBestFormat: false
+          enableBestFormat
         });
       },
       async requestDownload(_params) {
@@ -171,7 +166,8 @@ export const useDownloadFormStore = create(
         Object.fromEntries(
           Object.entries(state).filter(([key]) =>
             [
-              'enabledBestFormat',
+              'url',
+              'enableBestFormat',
               'usingCookies',
               // 'embedMetadata',
               'embedChapters',
@@ -183,5 +179,6 @@ export const useDownloadFormStore = create(
           )
         ) as Store
     }
-  )
+  ),
+  shallow
 );

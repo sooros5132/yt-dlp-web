@@ -1,5 +1,6 @@
-import { create } from 'zustand';
+import { createWithEqualityFn } from 'zustand/traditional';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 
 interface SiteSettingState {
   hydrated: boolean;
@@ -16,7 +17,7 @@ interface SiteSettingStore extends SiteSettingState {
   setOpenCookiesEditor: (openCookiesEditor: boolean) => void;
 }
 
-export const useSiteSettingStore = create(
+export const useSiteSettingStore = createWithEqualityFn(
   persist<SiteSettingStore>(
     (set, get) => ({
       ...defaultState,
@@ -38,5 +39,6 @@ export const useSiteSettingStore = create(
       storage: createJSONStorage(() => localStorage),
       version: 0.1
     }
-  )
+  ),
+  shallow
 );

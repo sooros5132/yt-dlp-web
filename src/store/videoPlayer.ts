@@ -1,6 +1,7 @@
-import { create } from 'zustand';
+import { createWithEqualityFn } from 'zustand/traditional';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { VideoInfo } from '@/types/video';
+import { shallow } from 'zustand/shallow';
 
 interface VideoPlayerState {
   isVideoPlayerOpen: boolean;
@@ -34,7 +35,7 @@ const initialState: VideoPlayerState = {
   volume: 0.75
 };
 
-export const useVideoPlayerStore = create(
+export const useVideoPlayerStore = createWithEqualityFn(
   persist<VideoPlayerStore>(
     (set) => ({
       ...initialState,
@@ -85,5 +86,6 @@ export const useVideoPlayerStore = create(
         ) as VideoPlayerStore,
       version: 0.1
     }
-  )
+  ),
+  shallow
 );
