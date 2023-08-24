@@ -7,9 +7,13 @@
 <br />
 
 # 프리뷰
-| Light | Dark |
+| Light | Dark | 
 |--|--|
-| <img width="976" alt="light" src="https://github.com/sooros5132/yt-dlp-web/assets/74892930/222c497f-fdd4-4ad0-9c10-ebc67ae7ef25"> | <img width="976" alt="dark" src="https://github.com/sooros5132/yt-dlp-web/assets/74892930/2d197285-edab-4c12-8b0e-a40c04b5de0b"> |
+| ![light 0 2 9](https://github.com/sooros5132/yt-dlp-web/assets/74892930/bfb6eeb7-f18c-418c-a341-eab138a92e53) | ![dark 0 2 9](https://github.com/sooros5132/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) |
+
+<p align="center">
+<img src='https://github.com/sooros5132/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d' width='500' />
+</p>
 
 # 설치
 
@@ -45,13 +49,18 @@ docker compose up -d
 # To Do
 - [X] Change to the component library shadcn/ui
 - [X] Add the ability to delete selected videos
-- [ ] Options for setting filename
-- [ ] Choose quality when downloading immediately
-- [ ] Table View
+- [X] Options for Output filename
+- [X] Choose quality when downloading immediately
+- [ ] ~~Table View~~
 - [ ] Code refactoring
 
 # Change Logs
 ```
+Aug 24, 2023 - v0.2.9
+  1. Options for Output filename
+  2. Choose quality when downloading immediately
+  3. Added Desktop Layout
+
 Aug 23, 2023 - v0.2.8
   1. Change to the component library shadcn/ui
   2. Added the ability to delete selected videos
