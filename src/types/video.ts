@@ -37,6 +37,8 @@ export interface VideoMetadata {
   type: 'video' | 'playlist';
 }
 
+export type SelectQuality = '' | 'best' | '4320p' | '2160p' | '1440p' | '1080p' | '720p' | '480p';
+
 export interface VideoInfo {
   uuid: string;
   id: string | null;
@@ -45,7 +47,7 @@ export interface VideoInfo {
   description: string | null;
   thumbnail: string | null;
   localThumbnail: string | null;
-  status: 'standby' | 'failed' | 'downloading' | 'recording' | 'merging' | 'completed';
+  status: 'standby' | 'failed' | 'downloading' | 'recording' | 'merging' | 'completed' | 'already';
   error?: string;
   isLive: boolean;
   format: string;
@@ -59,6 +61,8 @@ export interface VideoInfo {
   sliceByTime: boolean;
   sliceStartTime: string;
   sliceEndTime: string;
+  outputFilename: string;
+  selectQuality: SelectQuality;
   file: Streams & {
     path: string | null;
     name: string | null;

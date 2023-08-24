@@ -24,14 +24,18 @@ export default async function Home() {
   const videoList = await getVideoListData();
 
   return (
-    <main className='mx-auto max-w-3xl pb-5'>
+    <main className='mx-auto max-w-8xl pb-5'>
       <div className='flex justify-between p-4'>
         <h1 className='flex items-center text-2xl'>yt-dlp-web Download Station</h1>
         <ThemeToggle />
       </div>
-      <div className='p-4 pt-0'>
-        <DownloadForm />
-        <VideoList videoList={videoList} />
+      <div className='p-4 pt-0 lg:flex lg:gap-3'>
+        <div className='lg:shrink-0 lg:w-96'>
+          <DownloadForm />
+        </div>
+        <div>
+          <VideoList videoList={videoList} />
+        </div>
       </div>
       <p className='mt-10 text-center text-xs text-muted-foreground'>
         Powered By{' '}

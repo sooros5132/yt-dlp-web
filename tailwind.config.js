@@ -3,18 +3,24 @@ module.exports = {
   darkMode: ['class'],
   content: ['./src/app/**/*.{js,ts,jsx,tsx,mdx}', './src/components/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
+    screens: {
+      sm: '510px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1440px'
+    },
     container: {
       center: true,
-      padding: '2rem',
-      screens: {
-        sm: '510px',
-        md: '768px',
-        lg: '1024px',
-        xl: '1280px',
-        '2xl': '1440px'
-      }
+      padding: '2rem'
     },
     extend: {
+      minWidth: {
+        site: 'var(--site-min-width)'
+      },
+      maxWidth: {
+        '8xl': '1440px'
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',

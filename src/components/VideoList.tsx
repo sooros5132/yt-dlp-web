@@ -50,6 +50,7 @@ import { useSiteSettingStore } from '@/store/siteSetting';
 import { NoSSR } from './NoSSR';
 import { shallow } from 'zustand/shallow';
 import { RiListCheck3 } from 'react-icons/ri';
+import { TbPlaylistX } from 'react-icons/tb';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
@@ -73,7 +74,10 @@ export function VideoList({ videoList }: { videoList: VideoInfo[] }) {
         MAX_INTERVAL_Time
       );
       for (const video of videos) {
-        if (video.download && video.status !== 'failed' && video.status !== 'completed') {
+        if (
+          video.download &&
+          ['downloading', 'recording', 'merging', 'standby'].includes(video.status)
+        ) {
           nextIntervalTime = 3 * 1000;
           break;
         }
@@ -165,6 +169,10 @@ const VideoListHeader = ({
 
   const handleClickSelectMode = () => {
     setSelectMode(!isSelectMode);
+  };
+
+  const handleClickLeaveSelectMode = () => {
+    setSelectMode(false);
   };
 
   const handleClickSelectAll = () => {
@@ -264,6 +272,14 @@ const VideoListHeader = ({
       <div className='flex items-center justify-end ml-auto gap-x-2'>
         {hydrated && isSelectMode && (
           <>
+            <Button
+              variant='outline'
+              size='sm'
+              className='text-lg '
+              onClick={handleClickLeaveSelectMode}
+            >
+              Cancel
+            </Button>
             {isAllSelected ? (
               <Button
                 variant='outline'
@@ -299,7 +315,7 @@ const VideoListHeader = ({
                 <DialogHeader>
                   <DialogTitle>Do you want to delete the selected video and item?</DialogTitle>
                 </DialogHeader>
-                <DialogFooter>
+                <DialogFooter className='flex flex-row justify-end space-x-2'>
                   <Button variant='outline' size='sm' onClick={handleCloseDeleteFile}>
                     Cancel
                   </Button>
@@ -321,14 +337,14 @@ const VideoListHeader = ({
                   className='text-lg text-warning-foreground hover:text-warning-foreground/90'
                   disabled={!Boolean(selectedUuids.size)}
                 >
-                  <MdPlaylistRemove />
+                  <TbPlaylistX />
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Do you want to delete the selected item?</DialogTitle>
                 </DialogHeader>
-                <DialogFooter>
+                <DialogFooter className='flex flex-row justify-end space-x-2'>
                   <Button variant='outline' size='sm' onClick={handleCloseDeleteList}>
                     Cancel
                   </Button>
@@ -354,26 +370,26 @@ const VideoListHeader = ({
             <DropdownMenuItem className='cursor-pointer' onClick={handleClickSelectMode}>
               {hydrated && isSelectMode ? (
                 <span className='flex items-center gap-x-2'>
-                  <MdOutlineKeyboardReturn />
+                  <MdOutlineKeyboardReturn className='text-[1.3em]' />
                   Leave Select Mode
                 </span>
               ) : (
                 <span className='flex items-center gap-x-2'>
-                  <RiListCheck3 />
+                  <RiListCheck3 className='text-[1.3em]' />
                   Switch Select Mode
                 </span>
               )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>
-              <span className='text-error-foreground'>Danger Zone!</span>
+              <span>Danger Zone!!</span>
             </DropdownMenuLabel>
             <DropdownMenuItem
               className='cursor-pointer'
               onClick={() => handleChangeDeleteAllList(true)}
             >
               <span className='flex items-center gap-x-2 text-warning-foreground hover:text-warning-foreground/90'>
-                <MdPlaylistRemove />
+                <MdPlaylistRemove className='text-[1.3em]' />
                 Delete All Item
               </span>
             </DropdownMenuItem>
@@ -382,7 +398,7 @@ const VideoListHeader = ({
               onClick={() => handleChangeDeleteAllFile(true)}
             >
               <span className='flex items-center gap-x-2 text-error-foreground hover:text-error-foreground/90'>
-                <MdOutlineVideocamOff />
+                <MdOutlineVideocamOff className='text-[1.3em]' />
                 Delete All Item and File
               </span>
             </DropdownMenuItem>
@@ -393,7 +409,7 @@ const VideoListHeader = ({
             <DialogHeader>
               <DialogTitle>Do you want to delete the All video and item?</DialogTitle>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className='flex flex-row justify-end space-x-2'>
               <Button variant='outline' size='sm' onClick={handleCloseDeleteAllFile}>
                 Cancel
               </Button>
@@ -412,7 +428,7 @@ const VideoListHeader = ({
             <DialogHeader>
               <DialogTitle>Do you want to delete the All item?</DialogTitle>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className='flex flex-row justify-end space-x-2'>
               <Button variant='outline' size='sm' onClick={handleCloseDeleteAllList}>
                 Cancel
               </Button>
@@ -498,7 +514,7 @@ const VideoListContent = ({ layoutMode, videos }: VideoListContentProps) => {
     // }
     case 'grid': {
       return (
-        <div className='grid gap-x-3 gap-y-6 grid-cols-1 sm:gap-5 sm:grid-cols-2'>
+        <div className='grid gap-x-3 gap-y-6 grid-cols-1 sm:gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3'>
           {videos.map((video) => (
             <VideoGridItem key={video.uuid} video={video} />
           ))}
@@ -592,9 +608,11 @@ const VideoGridItem = memo(({ video }: VideoGridItem) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const prevVideoRef = useRef(video);
   const isCompleted = video.status === 'completed';
+  const isDownloading = video.status === 'downloading';
   const isStandby = video.status === 'standby';
   const isFailed = video.status === 'failed';
   const isRecording = video.status === 'recording';
+  const isAlready = video.status === 'already';
   const [isSelected, setSelected] = useState(false);
 
   const [openDeleteList, setOpenDeleteList] = useState(false);
@@ -825,7 +843,7 @@ const VideoGridItem = memo(({ video }: VideoGridItem) => {
       if (initialProgress === nextProgress && initialUpdatedAt === nextUpdatedAt) {
         setRecommendedDownloadRetry(true);
       }
-    }, 8000);
+    }, 10000);
 
     return () => {
       prevVideoRef.current = video;
@@ -898,10 +916,16 @@ const VideoGridItem = memo(({ video }: VideoGridItem) => {
             </figure>
             {!isCompleted && (
               <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/80 text-2xl text-white dark:text-base-content'>
-                {isStandby ? (
-                  <span className='font-bold'>Standby</span>
-                ) : isFailed ? (
-                  <span className='text-error-foreground font-bold'>Failed</span>
+                {isStandby || isFailed || isAlready ? (
+                  <span
+                    className={cn(
+                      'font-bold capitalize',
+                      isFailed && 'text-error-foreground',
+                      isAlready && 'text-warning-foreground'
+                    )}
+                  >
+                    {video.status}
+                  </span>
                 ) : recommendedDownloadRetry ? (
                   <VscWarning className='text-3xl text-yellow-500' />
                 ) : (
@@ -925,7 +949,9 @@ const VideoGridItem = memo(({ video }: VideoGridItem) => {
                     video.sliceByTime && video.download.ffmpeg && 'whitespace-pre-wrap'
                   )}
                 >
-                  {isFailed && video.error
+                  {isAlready
+                    ? `That filename already exists. Please rename the output filename and try again.`
+                    : isFailed && video.error
                     ? video.error
                     : recommendedDownloadRetry
                     ? "The download doesn't seem to work. Try again with the refresh button below."
@@ -964,7 +990,10 @@ encode speed ${video.download.ffmpeg.speed}`
           )}
         </div>
         <div className='grow-0 shrink p-2 overflow-hidden'>
-          <h2 className='line-clamp-2 text-base min-h-[3em] mb-2' title={video.title || undefined}>
+          <h2
+            className='line-clamp-2 text-base font-bold min-h-[3em] mb-2'
+            title={video.title || undefined}
+          >
             {video.isLive && isRecording && (
               <div className='inline-flex items-center align-text-top text-xl text-error-foreground'>
                 <PingSvg />
@@ -977,8 +1006,8 @@ encode speed ${video.download.ffmpeg.speed}`
           <div className='flex items-center justify-between px-1'>
             <div className={cn(!(isStandby || isFailed || !isCompleted) && 'border-join')}>
               {!(isStandby || isFailed || !isCompleted) && (
-                <Dialog open={openDeleteFile} onOpenChange={handleChangeDeleteFile}>
-                  <DialogTrigger asChild>
+                <DropdownMenu open={openDeleteFile} onOpenChange={handleChangeDeleteFile}>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       variant='outline'
                       size='sm'
@@ -988,28 +1017,31 @@ encode speed ${video.download.ffmpeg.speed}`
                     >
                       <MdOutlineVideocamOff />
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Do you want to delete item and files?</DialogTitle>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button variant='outline' size='sm' onClick={handleCloseDeleteFile}>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='start' className='max-w-xs'>
+                    <DropdownMenuLabel>Do you want to delete item and files?</DropdownMenuLabel>
+                    <DropdownMenuLabel className='flex items-center justify-end gap-x-2'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='grow'
+                        onClick={handleCloseDeleteFile}
+                      >
                         Cancel
                       </Button>
                       <Button
                         size='sm'
-                        className='bg-error hover:bg-error/90 text-foreground'
+                        className='grow bg-error hover:bg-error/90 text-foreground'
                         onClick={handleClickDelete(video, 'deleteFile')}
                       >
                         Delete
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DropdownMenuLabel>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-              <Dialog open={openDeleteList} onOpenChange={handleChangeDeleteList}>
-                <DialogTrigger asChild>
+              <DropdownMenu open={openDeleteList} onOpenChange={handleChangeDeleteList}>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant='outline'
                     size='sm'
@@ -1020,27 +1052,30 @@ encode speed ${video.download.ffmpeg.speed}`
                     )}
                     title='Delete from List'
                   >
-                    <MdPlaylistRemove />
+                    <TbPlaylistX />
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Do you want to delete the item?</DialogTitle>
-                  </DialogHeader>
-                  <DialogFooter>
-                    <Button variant='outline' size='sm' onClick={handleCloseDeleteList}>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='start' className='max-w-xs'>
+                  <DropdownMenuLabel>Do you want to delete the item?</DropdownMenuLabel>
+                  <DropdownMenuLabel className='flex items-center justify-end gap-x-2'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='grow'
+                      onClick={handleCloseDeleteList}
+                    >
                       Cancel
                     </Button>
                     <Button
                       size='sm'
-                      className='bg-yellow-300 hover:bg-yellow-300/90'
+                      className='grow bg-warning hover:bg-warning/90'
                       onClick={handleClickDelete(video, 'deleteList')}
                     >
                       Delete
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DropdownMenuLabel>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             {video.isLive && isRecording && (
               <Button
@@ -1111,18 +1146,18 @@ encode speed ${video.download.ffmpeg.speed}`
             </div>
           </div>
         </div>
-        {isCompleted ? (
-          <div className='h-1'></div>
-        ) : isStandby ? (
+        {isStandby ? (
           <div className='h-1 bg-zinc-500/50' />
         ) : isRecording ? (
           <div className='h-1 gradient-background' />
-        ) : (
+        ) : isDownloading ? (
           <Progress
             className='w-full h-1'
             value={Number(numeral(video.download.progress).format('0.00') || 0) * 100}
             title={video.download.progress ? `${Number(video.download.progress) * 100}%` : ''}
           />
+        ) : (
+          <div className='h-1'></div>
         )}
         <NoSSR>
           {isSelectMode && (

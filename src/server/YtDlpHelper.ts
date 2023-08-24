@@ -2,9 +2,15 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { CACHE_PATH, CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/CacheHelper';
+import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/CacheHelper';
 import { FFmpegHelper } from '@/server/FFmpegHelper';
-import type { PlaylistMetadata, VideoFormat, VideoInfo, VideoMetadata } from '@/types/video';
+import type {
+  PlaylistMetadata,
+  SelectQuality,
+  VideoFormat,
+  VideoInfo,
+  VideoMetadata
+} from '@/types/video';
 import { randomUUID } from 'node:crypto';
 import { COOKIES_FILE } from '@/server/FileHelper';
 
@@ -13,14 +19,14 @@ const downloadProgressRegex =
 const fileRegex = /^\[Merger\]\sMerging\sformats\sinto\s\"(.+)\"$/m;
 const filePathRegex = new RegExp(`^(${DOWNLOAD_PATH}/(.+)\\.(.+))$`, 'm');
 const streamFilePathRegex = new RegExp(`file:(${DOWNLOAD_PATH}/(.+)\\.(.+))'$`, 'm');
-const thumbnailRegex = new RegExp(
-  `^\\[info\\]\\sWriting\\svideo\\sthumbnail\\s.+\\s(${DOWNLOAD_PATH}/.+)$`,
-  'm'
-);
-const moveThumbnailMessageRegex = new RegExp(
-  `^\\[MoveFiles\\] Moving file .+${CACHE_PATH}/thumbnails/(.+)\\"$`,
-  'm'
-);
+// const thumbnailRegex = new RegExp(
+//   `^\\[info\\]\\sWriting\\svideo\\sthumbnail\\s.+\\s(${DOWNLOAD_PATH}/.+)$`,
+//   'm'
+// );
+// const moveThumbnailMessageRegex = new RegExp(
+//   `^\\[MoveFiles\\] Moving file .+${CACHE_PATH}/thumbnails/(.+)\\"$`,
+//   'm'
+// );
 const downloadingItemRegex = /^\[download\]\sDownloading\sitem\s([0-9]+)\sof\s([0-9]+)$/m;
 const finishedDownloadingPlaylistRegex = /^\[download\]\sFinished\sdownloading\splaylist\:(.+)$/m;
 const extractingURLRegex = /^\[.+\]\sExtracting\sURL\:\s(.+)$/m;
@@ -71,6 +77,8 @@ export class YtDlpHelper {
     sliceByTime: false,
     sliceStartTime: '',
     sliceEndTime: '',
+    outputFilename: '',
+    selectQuality: '',
     file: {
       name: null,
       path: null
@@ -105,6 +113,8 @@ export class YtDlpHelper {
     sliceByTime?: boolean;
     sliceStartTime?: string;
     sliceEndTime?: string;
+    outputFilename?: string;
+    selectQuality?: SelectQuality;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -118,6 +128,8 @@ export class YtDlpHelper {
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
+    this.videoInfo.outputFilename = querys.outputFilename || '';
+    this.videoInfo.selectQuality = querys.selectQuality || '';
 
     if (querys.sliceStartTime && sliceTimeRegex.test(querys.sliceStartTime))
       this.videoInfo.sliceStartTime = querys.sliceStartTime;
@@ -202,19 +214,46 @@ export class YtDlpHelper {
 
     switch (metadata.type) {
       case 'video': {
-        options.push('-f', this.videoInfo.format, '--no-playlist');
+        let format = this.videoInfo.format;
+        const height = this.videoInfo.selectQuality || '';
+
+        switch (height) {
+          // case 'best':
+          case '4320p':
+          case '2160p':
+          case '1440p':
+          case '1080p':
+          case '720p':
+          case '480p': {
+            const _height = height.replace('p', '');
+            format = `bv*[height<=${_height}]+ba/b[height<=${_height}]`;
+          }
+        }
+        options.push('-f', format);
+        options.push('--no-playlist');
+
+        if (this.videoInfo?.outputFilename) {
+          options.push('-o', this.videoInfo.outputFilename);
+        } else {
+          if (metadata?.isLive) {
+            options.push('-o', `%(title)s %(epoch-3600>%y-%m-%d %H_%M)s(%(id)s).%(ext)s`);
+          } else {
+            options.push('-o', '%(title)s (%(id)s).%(ext)s');
+          }
+        }
 
         if (metadata?.isLive) {
-          options.push('-o', `%(title)s %(epoch-3600>%y-%m-%d %H_%M)s(%(id)s).%(ext)s`);
           options.push('--no-part');
           if (this.videoInfo?.enableLiveFromStart) {
             options.push('--live-from-start');
           }
         } else {
-          options.push('-o', '%(title)s (%(id)s).%(ext)s');
-          if (this.videoInfo?.embedChapters) options.push('--embed-chapters');
-          // if (this.videoInfo?.embedMetadata) options.push('--embed-metadata');
-          if (this.videoInfo?.embedSubs) options.push('--embed-subs');
+          if (this.videoInfo?.embedChapters) {
+            options.push('--embed-chapters');
+          }
+          if (this.videoInfo?.embedSubs) {
+            options.push('--embed-subs');
+          }
 
           if (this.videoInfo?.sliceByTime) {
             const ffpmegSliceTimeArgs: Array<string> = [];
@@ -496,7 +535,7 @@ export class YtDlpHelper {
         if (text.endsWith('has already been downloaded')) {
           this.isFormatExist = true;
           const error = 'Has already been downloaded';
-          this.videoInfo.status = 'failed';
+          this.videoInfo.status = 'already';
           this.videoInfo.error = error;
           await CacheHelper.set(uuid, this.videoInfo);
           return downloadErrorCallback?.(error);

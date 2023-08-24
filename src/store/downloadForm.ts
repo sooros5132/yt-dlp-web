@@ -1,5 +1,5 @@
 import { AxiosResponse, DownloadResponse } from '@/types/types';
-import { VideoInfo, VideoMetadata } from '@/types/video';
+import { SelectQuality, VideoInfo, VideoMetadata } from '@/types/video';
 import axios from 'axios';
 import { createWithEqualityFn } from 'zustand/traditional';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -7,7 +7,7 @@ import { shallow } from 'zustand/shallow';
 
 interface State {
   url: string;
-  enableBestFormat: boolean;
+  enableDownloadNow: boolean;
   usingCookies: boolean;
   // embedMetadata: boolean;
   embedChapters: boolean;
@@ -18,11 +18,14 @@ interface State {
   sliceByTime: boolean;
   sliceStartTime: string;
   sliceEndTime: string;
+  enableOutputFilename: boolean;
+  outputFilename: string;
+  selectQuality: SelectQuality;
 }
 
 interface Store extends State {
   setUrl: (url: string) => void;
-  setEnableBestFormat: (enableBestFormat: boolean) => void;
+  setEnableDownloadNow: (enableDownloadNow: boolean) => void;
   requestDownload: (params?: {
     url: string;
     videoId?: string;
@@ -39,11 +42,14 @@ interface Store extends State {
   setSliceByTime: (sliceByTime: boolean) => void;
   setSliceStartTime: (sliceStartTime: string) => void;
   setSliceEndTime: (sliceEndTime: string) => void;
+  setEnableOutputFilename: (enableOutputFilename: boolean) => void;
+  setOutputFilename: (outputFilename: string) => void;
+  setSelectQuality: (selectQuality: SelectQuality) => void;
 }
 
 const initialState: State = {
   url: '',
-  enableBestFormat: true,
+  enableDownloadNow: true,
   usingCookies: false,
   // embedMetadata: false,
   embedChapters: false,
@@ -53,7 +59,10 @@ const initialState: State = {
   enableLiveFromStart: false,
   sliceByTime: false,
   sliceStartTime: '',
-  sliceEndTime: ''
+  sliceEndTime: '',
+  enableOutputFilename: false,
+  outputFilename: '%(title)s (%(id)s)',
+  selectQuality: 'best'
 };
 
 export const useDownloadFormStore = createWithEqualityFn(
@@ -65,9 +74,9 @@ export const useDownloadFormStore = createWithEqualityFn(
           url
         });
       },
-      setEnableBestFormat(enableBestFormat: boolean) {
+      setEnableDownloadNow(enableDownloadNow: boolean) {
         set({
-          enableBestFormat
+          enableDownloadNow
         });
       },
       async requestDownload(_params) {
@@ -82,7 +91,11 @@ export const useDownloadFormStore = createWithEqualityFn(
           enableLiveFromStart,
           sliceByTime,
           sliceStartTime,
-          sliceEndTime
+          sliceEndTime,
+          enableOutputFilename,
+          outputFilename,
+          enableDownloadNow,
+          selectQuality
         } = get();
 
         const params: Partial<Record<keyof VideoInfo, any>> = {
@@ -96,6 +109,14 @@ export const useDownloadFormStore = createWithEqualityFn(
           proxyAddress,
           enableLiveFromStart
         };
+
+        if (enableOutputFilename) {
+          params.outputFilename = `${outputFilename}.%(ext)s`;
+        }
+        if (enableDownloadNow) {
+          params.selectQuality = selectQuality;
+        }
+
         if (sliceByTime) {
           params.sliceByTime = sliceByTime;
           params.sliceStartTime = sliceStartTime;
@@ -130,9 +151,6 @@ export const useDownloadFormStore = createWithEqualityFn(
       setUsingCookies(usingCookies) {
         set({ usingCookies });
       },
-      // setEmbedMetadata(embedMetadata) {
-      // set({ embedMetadata });
-      // },
       setEmbedChapters(embedChapters) {
         set({ embedChapters });
       },
@@ -156,28 +174,41 @@ export const useDownloadFormStore = createWithEqualityFn(
       },
       setSliceEndTime(sliceEndTime) {
         set({ sliceEndTime });
+      },
+      setEnableOutputFilename(enableOutputFilename) {
+        set({ enableOutputFilename });
+      },
+      setOutputFilename(outputFilename) {
+        set({ outputFilename });
+      },
+      setSelectQuality(selectQuality: SelectQuality) {
+        set({ selectQuality });
       }
     }),
     {
       name: 'downloadForm',
       storage: createJSONStorage(() => localStorage),
       version: 0.1,
-      partialize: (state) =>
-        Object.fromEntries(
-          Object.entries(state).filter(([key]) =>
-            [
-              // 'url',
-              'enableBestFormat',
-              'usingCookies',
-              // 'embedMetadata',
-              'embedChapters',
-              'embedSubs',
-              'enableProxy',
-              'proxyAddress',
-              'enableLiveFromStart'
-            ].includes(key)
-          )
-        ) as Store
+      partialize: (state) => {
+        const keys = [
+          'enableDownloadNow',
+          'usingCookies',
+          'embedChapters',
+          'embedSubs',
+          'enableProxy',
+          'proxyAddress',
+          'enableLiveFromStart',
+          'enableOutputFilename',
+          'outputFilename',
+          'selectQuality'
+        ];
+        if (process.env.NODE_ENV === 'development') {
+          keys.push('url', 'enableOutputFilename', 'sliceByTime', 'sliceStartTime', 'sliceEndTime');
+        }
+        return Object.fromEntries(
+          Object.entries(state).filter(([key]) => keys.includes(key))
+        ) as Store;
+      }
     }
   ),
   shallow

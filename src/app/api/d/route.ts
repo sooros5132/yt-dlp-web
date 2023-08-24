@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
 import { YtDlpHelper } from '@/server/YtDlpHelper';
 import { randomUUID } from 'crypto';
-import type { VideoInfo } from '@/types/video';
+import type { SelectQuality, VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,8 @@ export async function GET(request: Request) {
   const sliceByTime = searchParams.get('sliceByTime') === 'true';
   const sliceStartTime = searchParams.get('sliceStartTime') || '';
   const sliceEndTime = searchParams.get('sliceEndTime') || '';
+  const outputFilename = searchParams.get('outputFilename') || '';
+  const selectQuality = (searchParams.get('selectQuality') || '') as SelectQuality;
 
   // const url = context?.params?.url;
 
@@ -42,21 +44,21 @@ export async function GET(request: Request) {
     let isAlreadyFormat = false;
 
     //? 중복 확인
-    const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
-    if (Array.isArray(uuids) && uuids.length) {
-      const videoList = await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)));
-      for (const video of videoList) {
-        if (video?.url === url && video.format === format && !video?.isLive) {
-          isAlreadyFormat = true;
-          // throw 'You are already downloading in the same format.';
-        }
-      }
-    }
+    // const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
+    // if (Array.isArray(uuids) && uuids.length) {
+    //   const videoList = await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)));
+    //   for (const video of videoList) {
+    //     if (video?.url === url && video.format === format && !video?.isLive) {
+    //       isAlreadyFormat = true;
+    //       // throw 'You are already downloading in the same format.';
+    //     }
+    //   }
+    // }
 
-    //? 중복 확인
-    if (isAlreadyFormat) {
-      throw 'You are already downloading in the same format.';
-    }
+    // //? 중복 확인
+    // if (isAlreadyFormat) {
+    //   throw 'You are already downloading in the same format.';
+    // }
 
     const uuid = randomUUID();
     const ytdlp = new YtDlpHelper({
@@ -72,7 +74,9 @@ export async function GET(request: Request) {
       sliceByTime,
       sliceStartTime,
       sliceEndTime,
-      proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : ''
+      proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : '',
+      outputFilename,
+      selectQuality
     });
     const videoInfo = ytdlp.getVideoInfo();
 

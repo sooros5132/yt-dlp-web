@@ -15,7 +15,7 @@ import { MdContentPaste } from 'react-icons/md';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import queryString from 'query-string';
 import type { ChangeEvent } from 'react';
-import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video';
+import type { PlaylistMetadata, SelectQuality, VideoFormat, VideoMetadata } from '@/types/video';
 import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from './CookiesEditor';
 import { shallow } from 'zustand/shallow';
@@ -31,17 +31,27 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogContent, AlertDialogTrigger } from './ui/alert-dialog';
 import { BsLink45Deg } from 'react-icons/bs';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from './ui/select';
+import { RiArrowUpSLine } from 'react-icons/ri';
 
 export function DownloadForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const {
-    enableBestFormat,
+    enableDownloadNow,
     url,
     usingCookies,
     setUrl,
-    setEnableBestFormat,
+    setEnableDownloadNow,
     setUsingCookies,
     embedChapters,
     // embedMetadata,
@@ -60,12 +70,14 @@ export function DownloadForm() {
     setSliceStartTime,
     sliceStartTime,
     setSliceEndTime,
-    sliceEndTime
+    sliceEndTime,
+    enableOutputFilename,
+    outputFilename,
+    setOutputFilename,
+    setEnableOutputFilename,
+    selectQuality,
+    setSelectQuality
   } = useDownloadFormStore((state) => state, shallow);
-
-  // const handleClickEmbedMetadataCheckbox = () => {
-  //   setEmbedMetadata(!embedMetadata);
-  // };
 
   const handleClickEmbedChaptersCheckbox = () => {
     setEmbedChapters(!embedChapters);
@@ -101,6 +113,19 @@ export function DownloadForm() {
     setSliceEndTime(value);
   };
 
+  const handleClickEnableOutputFilenameCheckbox = () => {
+    setEnableOutputFilename(!enableOutputFilename);
+  };
+
+  const handleChangeOutputFilename = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value || '';
+    setOutputFilename(value);
+  };
+
+  const handleChangeSelectQuality = (quality: SelectQuality) => {
+    setSelectQuality(quality);
+  };
+
   const { hydrated } = useSiteSettingStore();
   const [isValidating, setValidating] = useState(false);
   const [openMoreOptions, setOpenMoreOptions] = useState(false);
@@ -112,7 +137,7 @@ export function DownloadForm() {
   };
 
   const handleClickCheckBox = () => {
-    setEnableBestFormat(!enableBestFormat);
+    setEnableDownloadNow(!enableDownloadNow);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -132,7 +157,7 @@ export function DownloadForm() {
     setVideoMetadata(null);
     const { getMetadata, requestDownload } = useDownloadFormStore.getState();
     try {
-      if (enableBestFormat) {
+      if (enableDownloadNow) {
         const result = await requestDownload();
 
         if (result?.error) {
@@ -193,6 +218,10 @@ export function DownloadForm() {
     setOpenCookiesEditor(open);
   };
 
+  const handleClickCloseSearchResultButton = () => {
+    setVideoMetadata(null);
+  };
+
   useLayoutEffect(() => {
     const initUrl = searchParams.get('url');
     if (initUrl) {
@@ -245,42 +274,73 @@ export function DownloadForm() {
   return (
     <Card className='my-8 px-4 py-2 border-none shadow-md'>
       <form className='flex flex-col py-2 gap-y-2' method='GET' onSubmit={handleSubmit}>
-        <div className='flex justify-between rounded-full shadow-sm'>
-          <Input
-            name='url'
-            type='text'
-            className='flex-auto rounded-full rounded-r-none border-none'
-            disabled={!hydrated}
-            readOnly={!hydrated}
-            value={url}
-            placeholder='https://...'
-            onChange={handleChangeUrl}
-          />
-          {!hydrated || url || !navigator?.clipboard ? (
-            <Button
-              key={'delete-url'}
-              type='button'
-              variant='outline'
-              size='icon'
+        <div className='flex justify-between gap-x-2'>
+          <div className='flex items-center justify-between rounded-full shadow-sm flex-auto'>
+            <Input
+              name='url'
+              type='text'
+              className='flex-auto rounded-full rounded-r-none border-none'
               disabled={!hydrated}
-              className='text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
-              onClick={handleClickDeleteUrlButton}
-            >
-              <IoClose />
-            </Button>
-          ) : (
+              readOnly={!hydrated}
+              value={url}
+              placeholder='https://...'
+              onChange={handleChangeUrl}
+            />
+            {!hydrated || url || !navigator?.clipboard ? (
+              <Button
+                key={'delete-url'}
+                type='button'
+                variant='outline'
+                size='icon'
+                disabled={!hydrated}
+                className='text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+                onClick={handleClickDeleteUrlButton}
+              >
+                <IoClose />
+              </Button>
+            ) : (
+              <Button
+                key={'paste-url'}
+                type='button'
+                variant='outline'
+                size='icon'
+                disabled={!hydrated}
+                className='text-lg rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+                onClick={handleClickPasteClipboardButton}
+              >
+                <MdContentPaste />
+              </Button>
+            )}
+          </div>
+          <div className='flex items-center justify-end'>
             <Button
-              key={'paste-url'}
-              type='button'
-              variant='outline'
-              size='icon'
-              disabled={!hydrated}
-              className='text-lg rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
-              onClick={handleClickPasteClipboardButton}
+              type='submit'
+              size='sm'
+              className='px-3 gap-x-1'
+              disabled={!hydrated || isValidating}
+              title={!hydrated || enableDownloadNow ? 'Download' : 'Search'}
             >
-              <MdContentPaste />
+              {!hydrated || enableDownloadNow ? (
+                <>
+                  {isValidating ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : (
+                    <AiOutlineCloudDownload />
+                  )}
+                  <span>Download</span>
+                </>
+              ) : (
+                <>
+                  {isValidating ? (
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                  ) : (
+                    <AiOutlineSearch />
+                  )}
+                  <span>Search</span>
+                </>
+              )}
             </Button>
-          )}
+          </div>
         </div>
         <div className='flex items-center'>
           <Label
@@ -288,12 +348,30 @@ export function DownloadForm() {
             title='Download immediately in the best quality'
           >
             <Checkbox
-              name='enableBestFormat'
-              checked={!hydrated ? true : enableBestFormat}
+              name='enableDownloadNow'
+              checked={!hydrated ? true : enableDownloadNow}
               disabled={!hydrated}
               onClick={handleClickCheckBox}
             />
-            <span className='text-sm'>Download immediately in the best quality</span>
+            <span className='text-sm'>Download now in </span>
+            <Select value={selectQuality} onValueChange={handleChangeSelectQuality}>
+              <SelectTrigger className='w-auto h-auto py-1 px-2'>
+                <SelectValue placeholder='Select a fruit' />
+              </SelectTrigger>
+              <SelectContent align='end'>
+                <SelectGroup>
+                  <SelectLabel>Quality</SelectLabel>
+                  <SelectItem value='best'>best</SelectItem>
+                  <SelectItem value='4320p'>4320p</SelectItem>
+                  <SelectItem value='2160p'>2160p</SelectItem>
+                  <SelectItem value='1440p'>1440p</SelectItem>
+                  <SelectItem value='1080p'>1080p</SelectItem>
+                  <SelectItem value='720p'>720p</SelectItem>
+                  <SelectItem value='480p'>480p</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            quality
           </Label>
         </div>
         <div className='flex items-center'>
@@ -318,11 +396,45 @@ export function DownloadForm() {
             </AlertDialogContent>
           </AlertDialog>
         </div>
-        <Card className='p-2 px-4 rounded-md bg-card-nested border-none'>
+        <Card className='p-2 rounded-md bg-card-nested border-none'>
           <CardDescription className='text-warning-foreground text-sm mb-1'>
             The options below are excluded for <b>livestreams</b> and <b>playlist</b> downloads.
           </CardDescription>
           <div className='flex flex-col gap-y-2'>
+            <div className='flex items-center gap-x-1 flex-wrap'>
+              <Label
+                className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+                title='Enable Output Filename'
+              >
+                <Checkbox
+                  name='enableOutputFilename'
+                  checked={hydrated ? enableOutputFilename : false}
+                  disabled={!hydrated}
+                  onClick={handleClickEnableOutputFilenameCheckbox}
+                />
+                <span className='text-sm'>Output file name</span>
+              </Label>
+              <div className='flex items-center ml-auto sm:ml-0'>
+                <Input
+                  className='h-auto max-w-[160px] px-1 py-0.5 leading-[1]'
+                  name='outputFileName'
+                  value={!hydrated || !enableOutputFilename ? '' : outputFilename}
+                  disabled={hydrated ? !enableOutputFilename : false}
+                  placeholder='%(title)s (%(id)s)'
+                  title='Output file name'
+                  onChange={handleChangeOutputFilename}
+                />
+                <Input
+                  className='h-auto max-w-[70px] px-1 py-0.5 leading-[1] text-muted-foreground'
+                  defaultValue={'.%(ext)s'}
+                  readOnly
+                  onChange={handleChangeOutputFilename}
+                  onClick={() => {
+                    toast.info("You can't change the extension.");
+                  }}
+                />
+              </div>
+            </div>
             <div className='flex flex-wrap items-center gap-x-1 leading-[1]'>
               <Label
                 className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
@@ -330,44 +442,41 @@ export function DownloadForm() {
               >
                 <Checkbox
                   name='sliceByTime'
-                  checked={sliceByTime}
+                  checked={hydrated ? sliceByTime : false}
+                  disabled={!hydrated}
                   onClick={handleClickSliceByTimeCheckbox}
                 />
                 <span className='text-sm'>Slice by Time</span>{' '}
               </Label>
-              {/* <span
-                className='tooltip align-text-top text-zinc-500 before:max-w-[300px]'
-                data-tip='Set the start and end time.'
-              >
-                <AiOutlineInfoCircle />
-              </span> */}
-              <PatternFormat
-                displayType='input'
-                customInput={Input}
-                className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
-                name='sliceStartTime'
-                value={!sliceByTime || !sliceStartTime ? '' : sliceStartTime}
-                disabled={!sliceByTime}
-                title='Start Time'
-                onChange={handleChangeSliceStartTime}
-                format='##:##:##.##'
-                placeholder='00:00:00.00'
-                mask='_'
-              />
-              <span>~</span>
-              <PatternFormat
-                displayType='input'
-                customInput={Input}
-                className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
-                name='sliceEndTime'
-                value={!sliceByTime || !sliceEndTime ? '' : sliceEndTime}
-                disabled={!sliceByTime}
-                title='End Time'
-                onChange={handleChangeSliceEndTime}
-                format='##:##:##.##'
-                placeholder='00:00:00.00'
-                mask='_'
-              />
+              <div className='flex items-center ml-auto sm:ml-0'>
+                <PatternFormat
+                  displayType='input'
+                  customInput={Input}
+                  className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
+                  name='sliceStartTime'
+                  value={!hydrated || !sliceByTime ? '' : sliceStartTime}
+                  disabled={hydrated ? !sliceByTime : false}
+                  title='Start Time'
+                  onChange={handleChangeSliceStartTime}
+                  format='##:##:##.##'
+                  placeholder='00:00:00.00'
+                  mask='_'
+                />
+                <span>~</span>
+                <PatternFormat
+                  displayType='input'
+                  customInput={Input}
+                  className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
+                  name='sliceEndTime'
+                  value={!hydrated || !sliceByTime ? '' : sliceEndTime}
+                  disabled={hydrated ? !sliceByTime : false}
+                  title='End Time'
+                  onChange={handleChangeSliceEndTime}
+                  format='##:##:##.##'
+                  placeholder='00:00:00.00'
+                  mask='_'
+                />
+              </div>
             </div>
             <Label
               className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
@@ -376,6 +485,7 @@ export function DownloadForm() {
               <Checkbox
                 name='embedSubs'
                 checked={embedSubs}
+                disabled={!hydrated}
                 onClick={handleClickEmbedSubsCheckbox}
               />
               <span className='text-sm'>Embed subtitles</span>
@@ -387,6 +497,7 @@ export function DownloadForm() {
               <Checkbox
                 name='embedChapters'
                 checked={embedChapters}
+                disabled={!hydrated}
                 onClick={handleClickEmbedChaptersCheckbox}
               />
               <span className='text-sm'>Embed chapter markers</span>
@@ -401,6 +512,7 @@ export function DownloadForm() {
             <Checkbox
               name='enableLiveFromStart'
               checked={enableLiveFromStart}
+              disabled={!hydrated}
               onClick={handleClickEnableLiveFromStart}
             />
             <span className='text-sm'>
@@ -416,6 +528,7 @@ export function DownloadForm() {
             <Checkbox
               name='enableProxy'
               checked={enableProxy}
+              disabled={!hydrated}
               onClick={handleClickEnableProxyCheckbox}
             />
             <span className='text-sm'>Enable Proxy</span>
@@ -430,31 +543,6 @@ export function DownloadForm() {
             onChange={handleChangeProxyServer}
           />
         </div>
-        <div className='flex items-center justify-end'>
-          <Button
-            type='submit'
-            size='sm'
-            className='px-3 gap-x-1'
-            disabled={!hydrated || isValidating}
-            title={!hydrated || enableBestFormat ? 'Download' : 'Search'}
-          >
-            {!hydrated || enableBestFormat ? (
-              <>
-                {isValidating ? (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                ) : (
-                  <AiOutlineCloudDownload />
-                )}
-                <span>Download</span>
-              </>
-            ) : (
-              <>
-                {isValidating ? <Loader2 className='h-4 w-4 animate-spin' /> : <AiOutlineSearch />}
-                <span>Search</span>
-              </>
-            )}
-          </Button>
-        </div>
       </form>
       {!isValidating && videoMetadata ? (
         videoMetadata?.type === 'video' ? (
@@ -462,6 +550,7 @@ export function DownloadForm() {
             <SearchedVideoMetadata
               key={`${videoMetadata?.id || Date.now()}-video-metadata`}
               metadata={videoMetadata}
+              onClickCloseSearchResultButton={handleClickCloseSearchResultButton}
             />
             <VideoDownload
               key={`${videoMetadata?.id || Date.now()}-video-download`}
@@ -473,6 +562,7 @@ export function DownloadForm() {
             <SearchedVideoMetadata
               key={`${videoMetadata?.id || Date.now()}-playlist-metadata`}
               metadata={videoMetadata as unknown as VideoMetadata}
+              onClickCloseSearchResultButton={handleClickCloseSearchResultButton}
             />
             <PlaylistDownload
               key={`${videoMetadata?.id || Date.now()}-playlist-download`}
@@ -485,52 +575,69 @@ export function DownloadForm() {
   );
 }
 
-type SearchedVideoMetadataProps = { metadata: VideoMetadata };
+type SearchedVideoMetadataProps = {
+  metadata: VideoMetadata;
+  onClickCloseSearchResultButton: () => void;
+};
 
-const SearchedVideoMetadata = memo(({ metadata }: SearchedVideoMetadataProps) => {
-  const [isImageError, setImageError] = useState(false);
+const SearchedVideoMetadata = memo(
+  ({ metadata, onClickCloseSearchResultButton }: SearchedVideoMetadataProps) => {
+    const [isImageError, setImageError] = useState(false);
 
-  return (
-    <section>
-      <Divider className='mt-4 mb-6' />
-      <Card className='flex flex-col bg-card-nested rounded-xl border-none overflow-hidden sm:flex-row-reverse sm:h-[220px]'>
-        <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%]'>
-          {!isImageError && metadata.thumbnail ? (
-            <figure className='w-full h-full'>
-              <img
-                className='w-full h-full object-cover'
-                src={metadata.thumbnail}
-                alt={'thumbnail'}
-                onError={() => setImageError(true)}
-              />
-            </figure>
-          ) : (
-            <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl select-none bg-neutral-950/10 dark:bg-neutral-950/20'>
-              <FcRemoveImage />
-            </div>
-          )}
-        </div>
-        <CardContent className='flex flex-col basis-[60%] grow shrink p-4 gap-y-1 overflow-hidden'>
-          <CardTitle className='text-lg line-clamp-2' title={metadata.title}>
-            {metadata.title}
-          </CardTitle>
-          <p
-            className='line-clamp-3 grow-0 text-sm text-muted-foreground'
-            title={metadata.description}
+    return (
+      <section>
+        <Divider className='mt-4 mb-6'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='border-primary bg-transparent rounded-full opacity-80 gap-x-1'
+            onClick={onClickCloseSearchResultButton}
           >
-            {metadata.description}
-          </p>
-          <CardDescription className='mt-auto line-clamp-2 break-all'>
-            <a href={metadata.originalUrl} rel='noopener noreferrer' target='_blank'>
-              <AiOutlineLink className='inline' />
-              {metadata.originalUrl}
-            </a>
-          </CardDescription>
-        </CardContent>
-      </Card>
-    </section>
-  );
-}, isEquals);
+            <RiArrowUpSLine />
+            Close
+          </Button>
+        </Divider>
+        <Card className='flex flex-col bg-card-nested rounded-xl border-none overflow-hidden sm:flex-row-reverse sm:h-[220px] lg:flex-col lg:h-auto'>
+          <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%] lg:max-w-none'>
+            {!isImageError && metadata.thumbnail ? (
+              <figure className='w-full h-full'>
+                <img
+                  className='w-full h-full object-cover'
+                  src={metadata.thumbnail}
+                  alt={'thumbnail'}
+                  onError={() => setImageError(true)}
+                />
+              </figure>
+            ) : (
+              <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl select-none bg-neutral-950/10 dark:bg-neutral-950/20'>
+                <FcRemoveImage />
+              </div>
+            )}
+          </div>
+          <CardContent className='flex flex-col basis-[60%] grow shrink p-4 gap-y-1 overflow-hidden'>
+            <CardTitle className='text-lg line-clamp-2' title={metadata.title}>
+              {metadata.title}
+            </CardTitle>
+            <p
+              className='line-clamp-3 grow-0 text-sm text-muted-foreground'
+              title={metadata.description}
+            >
+              {metadata.description}
+            </p>
+            <CardDescription className='mt-auto line-clamp-2 break-all'>
+              <a href={metadata.originalUrl} rel='noopener noreferrer' target='_blank'>
+                <AiOutlineLink className='inline' />
+                {metadata.originalUrl}
+              </a>
+            </CardDescription>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  },
+  isEquals
+);
 
 SearchedVideoMetadata.displayName = 'SearchedVideoMetadata';
 
@@ -677,21 +784,21 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                 type='button'
                 variant='outline'
                 size='sm'
-                className='border-primary bg-transparent rounded-full opacity-80 gap-x-2'
+                className='border-primary bg-transparent rounded-full opacity-80 gap-x-1'
                 onClick={() => setOpen((prev) => !prev)}
                 title={isOpen ? 'Close format list' : 'Open format list'}
               >
-                Optional
                 {isOpen ? (
                   <HiOutlineBarsArrowUp className='inline' />
                 ) : (
                   <HiOutlineBarsArrowDown className='inline' />
                 )}
+                Optional
               </Button>
             </Divider>
             <div className={cn(!isOpen && 'pointer-events-none select-none opacity-60')}>
-              <div className='flex flex-wrap gap-2 sm:flex-nowrap'>
-                <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
+              <div className='flex flex-wrap gap-2 sm:flex-nowrap lg:flex-wrap'>
+                <div className='basis-full shrink overflow-hidden sm:basis-1/2 lg:basis-full'>
                   <div>
                     <b>{metadata.isLive ? 'Stream' : 'Video'}</b>
                   </div>
@@ -709,7 +816,7 @@ const VideoDownload = memo(({ metadata }: VideoDownloadProps) => {
                   </RadioGroup>
                 </div>
                 <Divider variant='horizontal' className='hidden sm:flex' />
-                <div className='basis-full shrink overflow-hidden sm:basis-1/2'>
+                <div className='basis-full shrink overflow-hidden sm:basis-1/2 lg:basis-full'>
                   <div>
                     <b>Audio</b>
                   </div>

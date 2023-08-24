@@ -43,7 +43,9 @@ export async function GET(request: Request) {
     enableLiveFromStart: videoInfo?.enableLiveFromStart || false,
     sliceByTime: videoInfo?.sliceByTime || false,
     sliceStartTime: videoInfo?.sliceStartTime || '',
-    sliceEndTime: videoInfo?.sliceEndTime || ''
+    sliceEndTime: videoInfo?.sliceEndTime || '',
+    outputFilename: videoInfo?.outputFilename || '',
+    selectQuality: videoInfo?.selectQuality || ''
   });
 
   const stream = new ReadableStream({

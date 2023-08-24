@@ -46,6 +46,16 @@ export const VideoPlayer = () => {
       }
     })();
 
+    const handlePlayingVideo = () => {
+      setTimeout(() => {
+        const { isNotSupportedCodec, setNotSupportedCodec } = useVideoPlayerStore.getState();
+
+        if (isNotSupportedCodec) {
+          setNotSupportedCodec(false);
+        }
+      }, 100);
+    };
+
     const handleKeyPress = (event: globalThis.KeyboardEvent) => {
       if (event.key == 'Escape') {
         handleClose();
@@ -53,8 +63,10 @@ export const VideoPlayer = () => {
     };
 
     window.addEventListener('keydown', handleKeyPress);
+    videoEl.addEventListener('playing', handlePlayingVideo);
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
+      videoEl?.removeEventListener('playing', handlePlayingVideo);
     };
   }, [isVideoPlayerOpen, video]);
 
