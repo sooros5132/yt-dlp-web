@@ -56,6 +56,8 @@ docker compose up -d
 
 # Change Logs
 ```
+Aug 25, 2023 - v0.2.10 - Optimizing Docker image size (424.69MB -> 134.53MB)
+
 Aug 24, 2023 - v0.2.9
   1. Options for Output filename
   2. Choose quality when downloading immediately
