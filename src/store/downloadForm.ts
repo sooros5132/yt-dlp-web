@@ -7,6 +7,8 @@ import { shallow } from 'zustand/shallow';
 import { isDevelopment } from '@/lib/utils';
 
 interface State {
+  hydrated: boolean;
+  isFetching: boolean;
   url: string;
   enableDownloadNow: boolean;
   usingCookies: boolean;
@@ -25,6 +27,8 @@ interface State {
 }
 
 interface Store extends State {
+  setHydrated: () => void;
+  setFetching: (isFetching: boolean) => void;
   setUrl: (url: string) => void;
   setEnableDownloadNow: (enableDownloadNow: boolean) => void;
   requestDownload: (params?: {
@@ -48,6 +52,8 @@ interface Store extends State {
 }
 
 const initialState: State = {
+  hydrated: false,
+  isFetching: false,
   url: '',
   enableDownloadNow: true,
   usingCookies: false,
@@ -68,16 +74,6 @@ export const useDownloadFormStore = createWithEqualityFn(
   persist<Store>(
     (set, get) => ({
       ...initialState,
-      setUrl(url) {
-        set({
-          url
-        });
-      },
-      setEnableDownloadNow(enableDownloadNow: boolean) {
-        set({
-          enableDownloadNow
-        });
-      },
       async requestDownload(_params) {
         const {
           url,
@@ -147,6 +143,22 @@ export const useDownloadFormStore = createWithEqualityFn(
 
         return metadata as AxiosResponse<VideoMetadata>;
       },
+      setHydrated() {
+        set({ hydrated: true });
+      },
+      setFetching(isFetching) {
+        set({ isFetching });
+      },
+      setUrl(url) {
+        set({
+          url
+        });
+      },
+      setEnableDownloadNow(enableDownloadNow: boolean) {
+        set({
+          enableDownloadNow
+        });
+      },
       setUsingCookies(usingCookies) {
         set({ usingCookies });
       },
@@ -208,7 +220,14 @@ export const useDownloadFormStore = createWithEqualityFn(
           Object.entries(state).filter(([key]) => keys.includes(key))
         ) as Store;
       },
-      skipHydration: true
+      skipHydration: true,
+      onRehydrateStorage() {
+        return (state, error) => {
+          if (!error && typeof state?.hydrated !== 'undefined' && !state?.hydrated) {
+            state?.setHydrated?.();
+          }
+        };
+      }
     }
   ),
   shallow

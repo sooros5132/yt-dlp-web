@@ -1,4 +1,4 @@
-import { DownloadForm } from '@/components/containers/DownloadForm';
+import { DownloadContainer } from '@/components/containers/DownloadContainer';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { VideoList } from '@/components/containers/VideoList';
 import { getYtDlpVersion } from '@/server/yt-dlp-web';
@@ -17,7 +17,7 @@ export default async function Home() {
       </div>
       <div className='p-4 pt-0 lg:flex lg:gap-3'>
         <div className='lg:shrink-0 lg:w-96'>
-          <DownloadForm />
+          <DownloadContainer />
         </div>
         <div>
           <VideoList {...videoList} />
