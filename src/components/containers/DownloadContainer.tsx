@@ -187,7 +187,7 @@ const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
         </CardDescription>
         <div className='flex flex-col gap-y-2'>
           <FileNameOption />
-          <SliceByTimeOption />
+          <CutVideoOption />
           <EmbedSubtitlesOption />
           <EmbedChapterMarkersOption />
         </div>
@@ -321,42 +321,40 @@ const DownloadNowOption = () => {
   };
 
   return (
-    <div className='flex items-center'>
-      <Label
-        className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-        title='Download immediately in the best quality'
+    <Label
+      className='flex items-center pl-1 gap-x-1 cursor-pointer'
+      title='Download immediately in the best quality'
+    >
+      <Checkbox
+        name='enableDownloadNow'
+        checked={enableDownloadNow}
+        disabled={isNotHydrated}
+        onClick={handleClickCheckBox}
+      />
+      <span className='text-sm'>Download now in </span>
+      <Select
+        value={isNotHydrated ? 'best' : selectQuality}
+        disabled={isNotHydrated}
+        onValueChange={handleChangeSelectQuality}
       >
-        <Checkbox
-          name='enableDownloadNow'
-          checked={enableDownloadNow}
-          disabled={isNotHydrated}
-          onClick={handleClickCheckBox}
-        />
-        <span className='text-sm'>Download now in </span>
-        <Select
-          value={isNotHydrated ? 'best' : selectQuality}
-          disabled={isNotHydrated}
-          onValueChange={handleChangeSelectQuality}
-        >
-          <SelectTrigger className='w-auto h-auto py-1 px-2'>
-            <SelectValue placeholder='Select a quality' />
-          </SelectTrigger>
-          <SelectContent align='end'>
-            <SelectGroup>
-              <SelectLabel>Quality</SelectLabel>
-              <SelectItem value='best'>best</SelectItem>
-              <SelectItem value='4320p'>4320p</SelectItem>
-              <SelectItem value='2160p'>2160p</SelectItem>
-              <SelectItem value='1440p'>1440p</SelectItem>
-              <SelectItem value='1080p'>1080p</SelectItem>
-              <SelectItem value='720p'>720p</SelectItem>
-              <SelectItem value='480p'>480p</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        quality
-      </Label>
-    </div>
+        <SelectTrigger className='w-auto h-auto py-1 px-2'>
+          <SelectValue placeholder='Select a quality' />
+        </SelectTrigger>
+        <SelectContent align='end'>
+          <SelectGroup>
+            <SelectLabel>Quality</SelectLabel>
+            <SelectItem value='best'>best</SelectItem>
+            <SelectItem value='4320p'>4320p</SelectItem>
+            <SelectItem value='2160p'>2160p</SelectItem>
+            <SelectItem value='1440p'>1440p</SelectItem>
+            <SelectItem value='1080p'>1080p</SelectItem>
+            <SelectItem value='720p'>720p</SelectItem>
+            <SelectItem value='480p'>480p</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      quality
+    </Label>
   );
 };
 
@@ -385,7 +383,7 @@ const CookieOption = () => {
 
   return (
     <div className='flex items-center'>
-      <Label className='inline-flex items-center pl-1 gap-x-1 cursor-pointer' title='Using Cookies'>
+      <Label className='flex items-center pl-1 gap-x-1 cursor-pointer' title='Using Cookies'>
         <Checkbox
           name='usingCookies'
           checked={usingCookies}
@@ -446,9 +444,8 @@ const FileNameOption = () => {
 
   return (
     <div className='flex items-center gap-x-1 flex-wrap'>
-      {' '}
       <Label
-        className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+        className='flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
         title='Enable Output Filename'
       >
         <Checkbox
@@ -457,9 +454,9 @@ const FileNameOption = () => {
           disabled={isNotHydrated}
           onClick={handleClickEnableOutputFilenameCheckbox}
         />
-        <span className='text-sm'>Output file name</span>
+        <span className='text-sm'>Output filename</span>
       </Label>
-      <div className='flex items-center ml-auto sm:ml-0'>
+      <div className='flex items-center ml-auto sm:ml-0 lg:ml-auto'>
         <Input
           className='h-auto max-w-[160px] px-1 py-0.5 leading-[1]'
           name='outputFileName'
@@ -483,94 +480,124 @@ const FileNameOption = () => {
   );
 };
 
-const SliceByTimeOption = () => {
+const CutVideoOption = () => {
   const {
     hydrated,
-    sliceByTime,
-    sliceStartTime,
-    sliceEndTime,
-    setSliceByTime,
-    setSliceStartTime,
-    setSliceEndTime
+    cutVideo,
+    cutStartTime,
+    cutEndTime,
+    enableForceKeyFramesAtCuts,
+    setCutVideo,
+    setCutStartTime,
+    setCutEndTime,
+    setForceKeyFramesAtCuts
   } = useDownloadFormStore(
     ({
       hydrated,
-      sliceByTime,
-      sliceStartTime,
-      sliceEndTime,
-      setSliceByTime,
-      setSliceStartTime,
-      setSliceEndTime
+      cutVideo,
+      cutStartTime,
+      cutEndTime,
+      setCutVideo,
+      setCutStartTime,
+      setCutEndTime,
+      enableForceKeyFramesAtCuts,
+      setForceKeyFramesAtCuts
     }) => ({
       hydrated,
-      sliceByTime,
-      sliceStartTime,
-      sliceEndTime,
-      setSliceByTime,
-      setSliceStartTime,
-      setSliceEndTime
+      cutVideo,
+      cutStartTime,
+      cutEndTime,
+      setCutVideo,
+      setCutStartTime,
+      setCutEndTime,
+      enableForceKeyFramesAtCuts,
+      setForceKeyFramesAtCuts
     }),
     shallow
   );
   const isNotHydrated = !hydrated;
 
-  const handleClickSliceByTimeCheckbox = () => {
-    setSliceByTime(!sliceByTime);
+  const handleClickCutsByTimeCheckbox = () => {
+    setCutVideo(!cutVideo);
   };
 
-  const handleChangeSliceStartTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeCutsStartTime = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value || '';
-    setSliceStartTime(value);
+    setCutStartTime(value);
   };
 
-  const handleChangeSliceEndTime = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeCutsEndTime = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value || '';
-    setSliceEndTime(value);
+    setCutEndTime(value);
+  };
+
+  const handleClickForceKeyFramesAtCutsCheckbox = () => {
+    setForceKeyFramesAtCuts(!enableForceKeyFramesAtCuts);
   };
 
   return (
-    <div className='flex flex-wrap items-center gap-x-1 leading-[1]'>
-      <Label
-        className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
-        title='Slice by Time'
-      >
-        <Checkbox
-          name='sliceByTime'
-          checked={sliceByTime}
-          disabled={isNotHydrated}
-          onClick={handleClickSliceByTimeCheckbox}
-        />
-        <span className='text-sm'>Slice by Time</span>{' '}
-      </Label>
-      <div className='flex items-center ml-auto sm:ml-0'>
-        <PatternFormat
-          displayType='input'
-          customInput={Input}
-          className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
-          name='sliceStartTime'
-          value={!sliceByTime ? '' : sliceStartTime}
-          disabled={!sliceByTime}
-          title='Start Time'
-          onChange={handleChangeSliceStartTime}
-          format='##:##:##.##'
-          placeholder='00:00:00.00'
-          mask='_'
-        />
-        <span>~</span>
-        <PatternFormat
-          displayType='input'
-          customInput={Input}
-          className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
-          name='sliceEndTime'
-          value={!sliceByTime ? '' : sliceEndTime}
-          disabled={!sliceByTime}
-          title='End Time'
-          onChange={handleChangeSliceEndTime}
-          format='##:##:##.##'
-          placeholder='00:00:00.00'
-          mask='_'
-        />
+    <div>
+      <div className='flex flex-wrap items-center gap-x-1'>
+        <Label className='flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer' title='Cut video'>
+          <Checkbox
+            name='cutVideo'
+            checked={cutVideo}
+            disabled={isNotHydrated}
+            onClick={handleClickCutsByTimeCheckbox}
+          />
+          <span className='text-sm'>Cut video</span>{' '}
+        </Label>
+        <div className='flex items-center ml-auto sm:ml-0 lg:ml-auto'>
+          <PatternFormat
+            displayType='input'
+            customInput={Input}
+            className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
+            name='cutStartTime'
+            value={!cutVideo ? '' : cutStartTime}
+            disabled={!cutVideo}
+            title='Start Time'
+            onChange={handleChangeCutsStartTime}
+            format='##:##:##.##'
+            placeholder='00:00:00.00'
+            mask='_'
+          />
+          <span>~</span>
+          <PatternFormat
+            displayType='input'
+            customInput={Input}
+            className='h-auto max-w-[100px] px-1 py-0.5 leading-[1]'
+            name='cutEndTime'
+            value={!cutVideo ? '' : cutEndTime}
+            disabled={!cutVideo}
+            title='End Time'
+            onChange={handleChangeCutsEndTime}
+            format='##:##:##.##'
+            placeholder='00:00:00.00'
+            mask='_'
+          />
+        </div>
       </div>
+      {hydrated && cutVideo && (
+        <div className='flex flex-col pl-5 gap-y-1 text-sm'>
+          <div className='text-warning-foreground'>
+            You chose the cut video option! This can cause the video and audio to be{' '}
+            <b>out of sync</b>. Enabling the &quot;Force key frames at cuts&quot; option can bring
+            them into sync, but <b>this is very slow.</b>
+          </div>
+          <Label
+            className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
+            title='Force key frames at cuts'
+          >
+            <Checkbox
+              name='enableForceKeyFramesAtCuts'
+              checked={enableForceKeyFramesAtCuts}
+              disabled={isNotHydrated}
+              onClick={handleClickForceKeyFramesAtCutsCheckbox}
+            />
+            <span>Force key frames at cuts</span>
+          </Label>
+        </div>
+      )}
     </div>
   );
 };
@@ -653,22 +680,20 @@ const LiveFromStartOption = () => {
   };
 
   return (
-    <div className='flex items-center'>
-      <Label
-        className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-        title='Enable Live From Start'
-      >
-        <Checkbox
-          name='enableLiveFromStart'
-          checked={enableLiveFromStart}
-          disabled={isNotHydrated}
-          onClick={handleClickEnableLiveFromStart}
-        />
-        <span className='text-sm'>
-          Download livestreams from the start. Only supported for YouTube.(Experimental)
-        </span>
-      </Label>
-    </div>
+    <Label
+      className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
+      title='Enable Live From Start'
+    >
+      <Checkbox
+        name='enableLiveFromStart'
+        checked={enableLiveFromStart}
+        disabled={isNotHydrated}
+        onClick={handleClickEnableLiveFromStart}
+      />
+      <span className='text-sm'>
+        Download livestreams from the start. Only supported for YouTube.(Experimental)
+      </span>
+    </Label>
   );
 };
 

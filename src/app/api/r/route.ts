@@ -41,11 +41,12 @@ export async function GET(request: Request) {
     enableProxy: videoInfo?.enableProxy || false,
     proxyAddress: videoInfo?.proxyAddress || '',
     enableLiveFromStart: videoInfo?.enableLiveFromStart || false,
-    sliceByTime: videoInfo?.sliceByTime || false,
-    sliceStartTime: videoInfo?.sliceStartTime || '',
-    sliceEndTime: videoInfo?.sliceEndTime || '',
+    cutVideo: videoInfo?.cutVideo || false,
+    cutStartTime: videoInfo?.cutStartTime || '',
+    cutEndTime: videoInfo?.cutEndTime || '',
     outputFilename: videoInfo?.outputFilename || '',
-    selectQuality: videoInfo?.selectQuality || ''
+    selectQuality: videoInfo?.selectQuality || '',
+    enableForceKeyFramesAtCuts: videoInfo?.enableForceKeyFramesAtCuts || false
   });
 
   const stream = new ReadableStream({

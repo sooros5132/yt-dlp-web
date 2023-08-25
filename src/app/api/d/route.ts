@@ -17,11 +17,12 @@ export async function GET(request: Request) {
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
   const enableLiveFromStart = searchParams.get('enableLiveFromStart') === 'true';
-  const sliceByTime = searchParams.get('sliceByTime') === 'true';
-  const sliceStartTime = searchParams.get('sliceStartTime') || '';
-  const sliceEndTime = searchParams.get('sliceEndTime') || '';
+  const cutVideo = searchParams.get('cutVideo') === 'true';
+  const cutStartTime = searchParams.get('cutStartTime') || '';
+  const cutEndTime = searchParams.get('cutEndTime') || '';
   const outputFilename = searchParams.get('outputFilename') || '';
   const selectQuality = (searchParams.get('selectQuality') || '') as SelectQuality;
+  const enableForceKeyFramesAtCuts = searchParams.get('enableForceKeyFramesAtCuts') === 'true';
 
   // const url = context?.params?.url;
 
@@ -71,12 +72,13 @@ export async function GET(request: Request) {
       embedSubs,
       enableProxy,
       enableLiveFromStart,
-      sliceByTime,
-      sliceStartTime,
-      sliceEndTime,
+      cutVideo,
+      cutStartTime,
+      cutEndTime,
       proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : '',
       outputFilename,
-      selectQuality
+      selectQuality,
+      enableForceKeyFramesAtCuts
     });
     const videoInfo = ytdlp.getVideoInfo();
 

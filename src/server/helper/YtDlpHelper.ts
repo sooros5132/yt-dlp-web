@@ -36,7 +36,7 @@ const downloadDestinationRegex = /^\[download\]\sDestination\:\s(.+)$/m;
 const playlistFolderPrefix = '[Playlist]';
 const ffmpegProgressTrackingRegex =
   /^frame=([0-9 ]+)\s+fps=([0-9. ]+)\s+q=([-0-9. ]+)\s+(L?size)=([0-9a-zA-Z. ]+)\s+time=([0-9:. -]+)\s+bitrate=([0-9a-zA-Z./ ]+)\s+speed=([0-9a-zA-Z./ ]+)$/;
-const sliceTimeRegex = /^[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{2}$/;
+const cutsTimeRegex = /^[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{2}$/;
 
 /**
  *
@@ -75,11 +75,12 @@ export class YtDlpHelper {
     enableProxy: false,
     proxyAddress: '',
     enableLiveFromStart: false,
-    sliceByTime: false,
-    sliceStartTime: '',
-    sliceEndTime: '',
+    cutVideo: false,
+    cutStartTime: '',
+    cutEndTime: '',
     outputFilename: '',
     selectQuality: '',
+    enableForceKeyFramesAtCuts: false,
     file: {
       name: null,
       path: null
@@ -111,11 +112,12 @@ export class YtDlpHelper {
     enableProxy?: boolean;
     proxyAddress?: string;
     enableLiveFromStart?: boolean;
-    sliceByTime?: boolean;
-    sliceStartTime?: string;
-    sliceEndTime?: string;
+    cutVideo?: boolean;
+    cutStartTime?: string;
+    cutEndTime?: string;
     outputFilename?: string;
     selectQuality?: SelectQuality;
+    enableForceKeyFramesAtCuts?: boolean;
   }) {
     this.url = querys.url;
     this.pid = querys.pid;
@@ -124,25 +126,26 @@ export class YtDlpHelper {
     this.videoInfo.format = querys.format || 'bv+ba/b';
     this.videoInfo.usingCookies = querys.usingCookies;
     this.videoInfo.embedChapters = querys.embedChapters || false;
-    // this.videoInfo.embedMetadata = querys.embedMetadata || false;
     this.videoInfo.embedSubs = querys.embedSubs || false;
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
     this.videoInfo.outputFilename = querys.outputFilename || '';
     this.videoInfo.selectQuality = querys.selectQuality || '';
+    this.videoInfo.enableForceKeyFramesAtCuts = querys.enableForceKeyFramesAtCuts || false;
 
-    if (querys.sliceStartTime && sliceTimeRegex.test(querys.sliceStartTime))
-      this.videoInfo.sliceStartTime = querys.sliceStartTime;
-    if (querys.sliceEndTime && sliceTimeRegex.test(querys.sliceEndTime))
-      this.videoInfo.sliceEndTime = querys.sliceEndTime;
+    if (querys.cutStartTime && cutsTimeRegex.test(querys.cutStartTime))
+      this.videoInfo.cutStartTime = querys.cutStartTime;
+    if (querys.cutEndTime && cutsTimeRegex.test(querys.cutEndTime))
+      this.videoInfo.cutEndTime = querys.cutEndTime;
 
-    if (this.videoInfo.sliceStartTime || this.videoInfo.sliceEndTime) {
-      this.videoInfo.sliceByTime = true;
+    if (this.videoInfo.cutStartTime || this.videoInfo.cutEndTime) {
+      this.videoInfo.cutVideo = true;
     } else {
-      this.videoInfo.sliceByTime = false;
-      this.videoInfo.sliceStartTime = '';
-      this.videoInfo.sliceEndTime = '';
+      this.videoInfo.cutVideo = false;
+      this.videoInfo.cutStartTime = '';
+      this.videoInfo.cutEndTime = '';
+      this.videoInfo.enableForceKeyFramesAtCuts = false;
     }
 
     if (querys.uuid) this.videoInfo.uuid = querys.uuid;
@@ -197,7 +200,7 @@ export class YtDlpHelper {
       DOWNLOAD_PATH
     ];
 
-    if (!this.videoInfo.sliceByTime) {
+    if (!this.videoInfo.cutVideo) {
       options.push('--print', 'after_move:filepath');
     }
 
@@ -256,17 +259,29 @@ export class YtDlpHelper {
             options.push('--embed-subs');
           }
 
-          if (this.videoInfo?.sliceByTime) {
-            const ffpmegSliceTimeArgs: Array<string> = [];
+          if (this.videoInfo?.cutVideo) {
+            const ffpmegSliceTimeArgs: Array<string> = ['*'];
 
-            if (this.videoInfo?.sliceStartTime)
-              ffpmegSliceTimeArgs.push('-ss', this.videoInfo.sliceStartTime);
-            if (this.videoInfo?.sliceEndTime)
-              ffpmegSliceTimeArgs.push('-to', this.videoInfo.sliceEndTime);
+            // if (this.videoInfo?.cutStartTime)
+            //   ffpmegSliceTimeArgs.push('-ss', this.videoInfo.cutStartTime);
+            // if (this.videoInfo?.cutEndTime)
+            //   ffpmegSliceTimeArgs.push('-to', this.videoInfo.cutEndTime);
 
-            if (ffpmegSliceTimeArgs.length) {
-              const downloaderArgs = `ffmpeg_i:${ffpmegSliceTimeArgs.join(' ')}`;
-              options.push('--downloader', 'ffmpeg', '--downloader-args', downloaderArgs);
+            // if (ffpmegSliceTimeArgs.length) {
+            //   const downloaderArgs = `ffmpeg_i:${ffpmegSliceTimeArgs.join(' ')}`;
+            //   options.push('--downloader', 'ffmpeg', '--downloader-args', downloaderArgs);
+            // }
+
+            // options.push('--force-keyframes-at-cuts', '--download-sections', '*00:01:30.00-00:01:51.00');
+            options.push(
+              '--download-sections',
+              `*${this.videoInfo.cutStartTime || '00:00:00.00'}-${
+                this.videoInfo.cutEndTime || 'inf'
+              }`
+            );
+
+            if (this.videoInfo.enableForceKeyFramesAtCuts) {
+              options.push('--force-keyframes-at-cuts');
             }
           }
         }
@@ -293,6 +308,12 @@ export class YtDlpHelper {
       });
 
       console.log(`new process, \`${ytdlp.pid}\``);
+
+      if (ytdlp.pid) {
+        this.videoInfo.download.pid = ytdlp.pid;
+      }
+      await CacheHelper.set(uuid, this.videoInfo);
+
       this.ytdlp = ytdlp;
 
       ytdlp.stdout.setEncoding('utf-8');
@@ -551,7 +572,7 @@ export class YtDlpHelper {
         }
 
         let fileDestination = '';
-        if (this.videoInfo.sliceByTime) {
+        if (this.videoInfo.cutVideo) {
           fileDestination = downloadDestinationRegex.exec(text)?.[1] || '';
         } else {
           fileDestination =
@@ -645,7 +666,7 @@ export class YtDlpHelper {
           videoInfo.status = 'completed';
         }
 
-        if (this.videoInfo.sliceByTime) {
+        if (this.videoInfo.cutVideo) {
           const progress = ffmpegProgressTrackingRegex.exec(message);
           if (progress) {
             const [, frame, fps, q, sizeType, size, time, bitrate, speed] = progress;

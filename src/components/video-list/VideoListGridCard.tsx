@@ -386,7 +386,7 @@ export const VideoListGridCard = memo(({ video }: VideoListGridCard) => {
                   className={cn(
                     'text-sm text-center animate-pulse',
                     isFailed && 'overflow-y-auto',
-                    video.sliceByTime && video.download.ffmpeg && 'whitespace-pre-wrap'
+                    video.cutVideo && video.download.ffmpeg && 'whitespace-pre-wrap'
                   )}
                 >
                   {isAlready
@@ -395,7 +395,7 @@ export const VideoListGridCard = memo(({ video }: VideoListGridCard) => {
                     ? video.error
                     : recommendedDownloadRetry
                     ? "The download doesn't seem to work. Try again with the refresh button below."
-                    : video.status === 'downloading' && video.sliceByTime && video.download.ffmpeg
+                    : video.status === 'downloading' && video.cutVideo && video.download.ffmpeg
                     ? `${video.download.ffmpeg.time} downloaded...
 encode speed ${video.download.ffmpeg.speed}`
                     : `${video.status}...`}

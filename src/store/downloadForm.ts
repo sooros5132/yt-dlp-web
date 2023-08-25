@@ -18,12 +18,13 @@ interface State {
   enableProxy: boolean;
   proxyAddress: string;
   enableLiveFromStart: boolean;
-  sliceByTime: boolean;
-  sliceStartTime: string;
-  sliceEndTime: string;
+  cutVideo: boolean;
+  cutStartTime: string;
+  cutEndTime: string;
   enableOutputFilename: boolean;
   outputFilename: string;
   selectQuality: SelectQuality;
+  enableForceKeyFramesAtCuts: boolean;
 }
 
 interface Store extends State {
@@ -43,12 +44,13 @@ interface Store extends State {
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
   setEnableLiveFromStart: (enableLiveFromStart: boolean) => void;
-  setSliceByTime: (sliceByTime: boolean) => void;
-  setSliceStartTime: (sliceStartTime: string) => void;
-  setSliceEndTime: (sliceEndTime: string) => void;
+  setCutVideo: (cutVideo: boolean) => void;
+  setCutStartTime: (cutStartTime: string) => void;
+  setCutEndTime: (cutEndTime: string) => void;
   setEnableOutputFilename: (enableOutputFilename: boolean) => void;
   setOutputFilename: (outputFilename: string) => void;
   setSelectQuality: (selectQuality: SelectQuality) => void;
+  setForceKeyFramesAtCuts: (enableForceKeyFramesAtCuts: boolean) => void;
 }
 
 const initialState: State = {
@@ -62,12 +64,13 @@ const initialState: State = {
   enableProxy: false,
   proxyAddress: '',
   enableLiveFromStart: false,
-  sliceByTime: false,
-  sliceStartTime: '',
-  sliceEndTime: '',
+  cutVideo: false,
+  cutStartTime: '',
+  cutEndTime: '',
   enableOutputFilename: false,
   outputFilename: '%(title)s (%(id)s)',
-  selectQuality: 'best'
+  selectQuality: 'best',
+  enableForceKeyFramesAtCuts: false
 };
 
 export const useDownloadFormStore = createWithEqualityFn(
@@ -84,13 +87,14 @@ export const useDownloadFormStore = createWithEqualityFn(
           enableProxy,
           proxyAddress,
           enableLiveFromStart,
-          sliceByTime,
-          sliceStartTime,
-          sliceEndTime,
+          cutVideo,
+          cutStartTime,
+          cutEndTime,
           enableOutputFilename,
           outputFilename,
           enableDownloadNow,
-          selectQuality
+          selectQuality,
+          enableForceKeyFramesAtCuts
         } = get();
 
         const params: Partial<Record<keyof VideoInfo, any>> = {
@@ -98,11 +102,9 @@ export const useDownloadFormStore = createWithEqualityFn(
           url: _params?.url || url,
           usingCookies,
           embedChapters,
-          // embedMetadata,
           embedSubs,
-          enableProxy,
-          proxyAddress,
-          enableLiveFromStart
+          enableLiveFromStart,
+          enableForceKeyFramesAtCuts
         };
 
         if (enableOutputFilename) {
@@ -111,11 +113,15 @@ export const useDownloadFormStore = createWithEqualityFn(
         if (enableDownloadNow) {
           params.selectQuality = selectQuality;
         }
-
-        if (sliceByTime) {
-          params.sliceByTime = sliceByTime;
-          params.sliceStartTime = sliceStartTime;
-          params.sliceEndTime = sliceEndTime;
+        if (enableProxy) {
+          params.enableProxy = enableProxy;
+          params.proxyAddress = proxyAddress;
+        }
+        if (cutVideo) {
+          params.cutVideo = cutVideo;
+          params.cutStartTime = cutStartTime;
+          params.cutEndTime = cutEndTime;
+          params.enableForceKeyFramesAtCuts = enableForceKeyFramesAtCuts;
         }
 
         const result = await axios
@@ -177,14 +183,14 @@ export const useDownloadFormStore = createWithEqualityFn(
       setEnableLiveFromStart(enableLiveFromStart) {
         set({ enableLiveFromStart });
       },
-      setSliceByTime(sliceByTime) {
-        set({ sliceByTime });
+      setCutVideo(cutVideo) {
+        set({ cutVideo });
       },
-      setSliceStartTime(sliceStartTime) {
-        set({ sliceStartTime });
+      setCutStartTime(cutStartTime) {
+        set({ cutStartTime });
       },
-      setSliceEndTime(sliceEndTime) {
-        set({ sliceEndTime });
+      setCutEndTime(cutEndTime) {
+        set({ cutEndTime });
       },
       setEnableOutputFilename(enableOutputFilename) {
         set({ enableOutputFilename });
@@ -194,6 +200,9 @@ export const useDownloadFormStore = createWithEqualityFn(
       },
       setSelectQuality(selectQuality: SelectQuality) {
         set({ selectQuality });
+      },
+      setForceKeyFramesAtCuts(enableForceKeyFramesAtCuts) {
+        set({ enableForceKeyFramesAtCuts });
       }
     }),
     {
@@ -211,10 +220,14 @@ export const useDownloadFormStore = createWithEqualityFn(
           'enableLiveFromStart',
           'enableOutputFilename',
           'outputFilename',
-          'selectQuality'
+          'selectQuality',
+          // 'cutVideo',
+          // 'cutStartTime',
+          // 'cutEndTime',
+          'enableForceKeyFramesAtCuts'
         ];
         if (isDevelopment) {
-          keys.push('url', 'enableOutputFilename', 'sliceByTime', 'sliceStartTime', 'sliceEndTime');
+          keys.push('url', 'enableOutputFilename', 'cutVideo', 'cutStartTime', 'cutEndTime');
         }
         return Object.fromEntries(
           Object.entries(state).filter(([key]) => keys.includes(key))

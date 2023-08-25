@@ -58,11 +58,12 @@ export interface VideoInfo {
   enableProxy: boolean;
   enableLiveFromStart: boolean;
   proxyAddress: string;
-  sliceByTime: boolean;
-  sliceStartTime: string;
-  sliceEndTime: string;
+  cutVideo: boolean;
+  cutStartTime: string;
+  cutEndTime: string;
   outputFilename: string;
   selectQuality: SelectQuality;
+  enableForceKeyFramesAtCuts: boolean;
   file: Streams & {
     path: string | null;
     name: string | null;
