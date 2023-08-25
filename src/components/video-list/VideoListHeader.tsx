@@ -153,6 +153,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
 
           if (result?.success) {
             clearUuids();
+            handleClickLeaveSelectMode();
             toast.success('Selected video has been deleted.');
             setTimeout(() => {
               onClickReloadButton();
