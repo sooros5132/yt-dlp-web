@@ -9,7 +9,8 @@ const nextConfig = {
       transform: 'lodash/{{member}}'
     }
   },
-  reactStrictMode: true
+  reactStrictMode: true,
+  output: 'standalone'
 };
 
 module.exports = nextConfig;
