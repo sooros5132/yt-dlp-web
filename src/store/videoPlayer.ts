@@ -4,7 +4,7 @@ import type { VideoInfo } from '@/types/video';
 import { shallow } from 'zustand/shallow';
 
 interface VideoPlayerState {
-  isVideoPlayerOpen: boolean;
+  openVideoPlayer: boolean;
   isNotSupportedCodec: boolean;
   enableWideScreen: boolean;
   enableTopSticky: boolean;
@@ -25,7 +25,7 @@ interface VideoPlayerStore extends VideoPlayerState {
 }
 
 const initialState: VideoPlayerState = {
-  isVideoPlayerOpen: false,
+  openVideoPlayer: false,
   isNotSupportedCodec: false,
   enableWideScreen: false,
   enableTopSticky: false,
@@ -44,7 +44,7 @@ export const useVideoPlayerStore = createWithEqualityFn(
           const nextCurrentTime = video && prev?.videoUuid === video?.uuid ? prev.currentTime : 0;
 
           return {
-            isVideoPlayerOpen: true,
+            openVideoPlayer: true,
             isNotSupportedCodec: false,
             video,
             videoUuid: video?.uuid || '',
@@ -54,7 +54,7 @@ export const useVideoPlayerStore = createWithEqualityFn(
       },
       close() {
         set({
-          isVideoPlayerOpen: false,
+          openVideoPlayer: false,
           isNotSupportedCodec: false,
           video: null
         });
@@ -81,10 +81,11 @@ export const useVideoPlayerStore = createWithEqualityFn(
       partialize: (state) =>
         Object.fromEntries(
           Object.entries(state).filter(
-            ([key]) => !['isVideoPlayerOpen', 'isNotSupportedCodec'].includes(key)
+            ([key]) => !['openVideoPlayer', 'isNotSupportedCodec'].includes(key)
           )
         ) as VideoPlayerStore,
-      version: 0.1
+      version: 0.1,
+      skipHydration: true
     }
   ),
   shallow

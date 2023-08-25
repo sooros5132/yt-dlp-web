@@ -4,6 +4,7 @@ import axios from 'axios';
 import { createWithEqualityFn } from 'zustand/traditional';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
+import { isDevelopment } from '@/lib/utils';
 
 interface State {
   url: string;
@@ -34,7 +35,6 @@ interface Store extends State {
   getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
   setUsingCookies: (usingCookies: boolean) => void;
   setEmbedSubs: (embedSubs: boolean) => void;
-  // setEmbedMetadata: (embedMetadata: boolean) => void;
   setEmbedChapters: (embedChapters: boolean) => void;
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
@@ -51,7 +51,6 @@ const initialState: State = {
   url: '',
   enableDownloadNow: true,
   usingCookies: false,
-  // embedMetadata: false,
   embedChapters: false,
   embedSubs: false,
   enableProxy: false,
@@ -202,13 +201,14 @@ export const useDownloadFormStore = createWithEqualityFn(
           'outputFilename',
           'selectQuality'
         ];
-        if (process.env.NODE_ENV === 'development') {
+        if (isDevelopment) {
           keys.push('url', 'enableOutputFilename', 'sliceByTime', 'sliceStartTime', 'sliceEndTime');
         }
         return Object.fromEntries(
           Object.entries(state).filter(([key]) => keys.includes(key))
         ) as Store;
-      }
+      },
+      skipHydration: true
     }
   ),
   shallow

@@ -4,17 +4,14 @@ import { shallow } from 'zustand/shallow';
 
 interface SiteSettingState {
   hydrated: boolean;
-  openCookiesEditor: boolean;
 }
 
 const defaultState: SiteSettingState = {
-  hydrated: false,
-  openCookiesEditor: false
+  hydrated: false
 };
 
 interface SiteSettingStore extends SiteSettingState {
   setHydrated: () => void;
-  setOpenCookiesEditor: (openCookiesEditor: boolean) => void;
 }
 
 export const useSiteSettingStore = createWithEqualityFn(
@@ -25,9 +22,6 @@ export const useSiteSettingStore = createWithEqualityFn(
         set({
           hydrated: true
         });
-      },
-      setOpenCookiesEditor(openCookiesEditor) {
-        set({ openCookiesEditor });
       }
     }),
     {
@@ -37,7 +31,15 @@ export const useSiteSettingStore = createWithEqualityFn(
           Object.entries(state).filter(([key]) => !['hydrated', 'openCookiesEditor'].includes(key))
         ) as SiteSettingStore,
       storage: createJSONStorage(() => localStorage),
-      version: 0.1
+      version: 0.1,
+      skipHydration: true,
+      onRehydrateStorage() {
+        return (state, error) => {
+          if (!error && typeof state?.hydrated !== 'undefined' && !state?.hydrated) {
+            state?.setHydrated?.();
+          }
+        };
+      }
     }
   ),
   shallow

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { YtDlpHelper } from '@/server/YtDlpHelper';
+import { YtDlpHelper } from '@/server/helper/YtDlpHelper';
 
 const encoder = new TextEncoder();
 

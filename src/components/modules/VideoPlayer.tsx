@@ -1,35 +1,23 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { shallow } from 'zustand/shallow';
-import { useSiteSettingStore } from '@/store/siteSetting';
 import { useVideoPlayerStore } from '@/store/videoPlayer';
 import { TbPin, TbPinnedOff, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { AiOutlineFullscreen } from 'react-icons/ai';
 import { CgClose } from 'react-icons/cg';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const VideoPlayer = () => {
-  const { video, isVideoPlayerOpen, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
-    useVideoPlayerStore(
-      (state) => ({
-        video: state.video,
-        isVideoPlayerOpen: state.isVideoPlayerOpen,
-        isNotSupportedCodec: state.isNotSupportedCodec,
-        enableWideScreen: state.enableWideScreen,
-        enableTopSticky: state.enableTopSticky
-      }),
-      shallow
-    );
-  const hydrated = useSiteSettingStore((state) => state.hydrated, shallow);
+  const { video, openVideoPlayer, isNotSupportedCodec, enableWideScreen, enableTopSticky } =
+    useVideoPlayerStore();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const videoEl = videoRef.current;
-    if (!isVideoPlayerOpen || !video || !videoEl) {
+    if (!openVideoPlayer || !video || !videoEl) {
       return;
     }
     (async function () {
@@ -68,9 +56,9 @@ export const VideoPlayer = () => {
       window.removeEventListener('keydown', handleKeyPress);
       videoEl?.removeEventListener('playing', handlePlayingVideo);
     };
-  }, [isVideoPlayerOpen, video]);
+  }, [openVideoPlayer, video]);
 
-  if (!hydrated || !isVideoPlayerOpen || !video) {
+  if (!openVideoPlayer || !video) {
     return null;
   }
 

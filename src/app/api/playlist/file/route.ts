@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helper/CacheHelper';
 import { lookup } from 'mime-types';
-import { ProcessHelper } from '@/server/ProcessHelper';
+import { ProcessHelper } from '@/server/helper/ProcessHelper';
 import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';

@@ -2,11 +2,11 @@ import './globals.css';
 import type { PropsWithChildren } from 'react';
 import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
-import { ToastContainerWrapper } from '@/components/ToastContainerWrapper';
-import { ClientWorks } from '@/components/ClientWorks';
-import { VideoPlayer } from '@/components/VideoPlayer';
-import { ClientBodyScrollResolver } from '@/components/ClientBodyScrollResolver';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { ToastContainerProvider } from '@/components/provider/ToastContainerProvider';
+import { RehydrateProvider } from '@/components/RehydrateProvider';
+import { VideoPlayer } from '@/components/modules/VideoPlayer';
+import { BodyScrollControl } from '@/components/BodyScrollControl';
+import { ThemeProvider } from '@/components/provider/ThemeProvider';
 import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,9 +20,9 @@ export default function RootLayout({ children }: PropsWithChildren) {
         <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
           {children}
         </ThemeProvider>
-        <ToastContainerWrapper />
-        <ClientWorks />
-        <ClientBodyScrollResolver />
+        <ToastContainerProvider />
+        <RehydrateProvider />
+        <BodyScrollControl />
       </body>
     </html>
   );
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   referrer: 'origin-when-cross-origin',
   keywords: ['Next.js', 'React', 'JavaScript', 'TypeScript', 'yt-dlp', 'yt-dlp-web'],
   // colorScheme: 'dark',
-  authors: [{ name: 'sooros5132', url: 'https://github.com/sooros5132' }],
+  authors: [{ url: 'https://github.com/sooros5132/yt-dlp-web' }],
   creator: 'sooros5132',
   formatDetection: {
     email: false,
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   },
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#171212' }
+    { media: '(prefers-color-scheme: dark)', color: '#141211' }
   ],
   viewport: {
     width: 'device-width',

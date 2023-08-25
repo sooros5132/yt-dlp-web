@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { CacheHelper } from '@/server/CacheHelper';
+import { CacheHelper } from '@/server/helper/CacheHelper';
 import { Cookie } from '@/types/types';
-import { compareSecretkey, encryptSecretkey } from '@/server/CryptoHelper';
-import { COOKIES_FILE, getYtDlpCookies, setYtDlpCookies } from '@/server/FileHelper';
+import { compareSecretkey, encryptSecretkey } from '@/server/helper/CryptoHelper';
+import { COOKIES_FILE, getYtDlpCookies, setYtDlpCookies } from '@/server/helper/FileHelper';
 
 export const dynamic = 'force-dynamic';
 

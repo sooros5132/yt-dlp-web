@@ -1,10 +1,18 @@
 import { createWithEqualityFn } from 'zustand/traditional';
 import { shallow } from 'zustand/shallow';
 
+export type LayoutMode = 'table' | 'grid';
 interface VideoListState {
   isSelectMode: boolean;
   selectedUuids: Set<string>;
+  layoutMode: LayoutMode;
 }
+
+const initialState: VideoListState = {
+  isSelectMode: false,
+  selectedUuids: new Set(),
+  layoutMode: 'grid'
+};
 
 interface VideoListStore extends VideoListState {
   setSelectMode: (isSelectMode: boolean) => void;
@@ -12,12 +20,8 @@ interface VideoListStore extends VideoListState {
   addUuids: (uuid: Array<string>) => void;
   deleteUuid: (uuid: string) => void;
   clearUuids: () => void;
+  setLayoutMode: (layoutMode: LayoutMode) => void;
 }
-
-const initialState: VideoListState = {
-  isSelectMode: false,
-  selectedUuids: new Set()
-};
 
 export const useVideoListStore = createWithEqualityFn<VideoListStore>(
   (set, get) => ({
@@ -55,6 +59,9 @@ export const useVideoListStore = createWithEqualityFn<VideoListStore>(
       set({
         selectedUuids: new Set()
       });
+    },
+    setLayoutMode(layoutMode: LayoutMode) {
+      set({ layoutMode });
     }
   }),
   shallow

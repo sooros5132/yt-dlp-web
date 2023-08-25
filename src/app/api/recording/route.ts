@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { CacheHelper } from '@/server/CacheHelper';
-import { ProcessHelper } from '@/server/ProcessHelper';
-import { FFmpegHelper } from '@/server/FFmpegHelper';
+import { CacheHelper } from '@/server/helper/CacheHelper';
+import { ProcessHelper } from '@/server/helper/ProcessHelper';
+import { FFmpegHelper } from '@/server/helper/FFmpegHelper';
 import { promises as fs } from 'fs';
 import type { VideoInfo } from '@/types/video';
 

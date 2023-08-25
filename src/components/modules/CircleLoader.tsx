@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { SVGProps } from 'react';
 
-export const LoadingSvg = ({
+export const CircleLoader = ({
   className: _className,
   width,
   height,

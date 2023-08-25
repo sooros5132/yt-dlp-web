@@ -2,8 +2,8 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/CacheHelper';
-import { FFmpegHelper } from '@/server/FFmpegHelper';
+import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/helper/CacheHelper';
+import { FFmpegHelper } from '@/server/helper/FFmpegHelper';
 import type {
   PlaylistMetadata,
   SelectQuality,
@@ -12,7 +12,8 @@ import type {
   VideoMetadata
 } from '@/types/video';
 import { randomUUID } from 'node:crypto';
-import { COOKIES_FILE } from '@/server/FileHelper';
+import { COOKIES_FILE } from '@/server/helper/FileHelper';
+import { isDevelopment } from '@/lib/utils';
 
 const downloadProgressRegex =
   /^\[download\]\s+([0-9.]+%)\s+of[ ~]+([0-9.a-zA-Z/]+)\s+at\s+([0-9a-zA-Z./ ]+)\s+ETA\s+([0-9a-zA-Z./: ]+)/im;
@@ -296,7 +297,7 @@ export class YtDlpHelper {
 
       ytdlp.stdout.setEncoding('utf-8');
       ytdlp.stderr.setEncoding('utf-8');
-      if (process.env.NODE_ENV === 'development') {
+      if (isDevelopment) {
         ytdlp.stdout.on('data', (data) => {
           console.log('[stdout]', data?.trim?.());
         });

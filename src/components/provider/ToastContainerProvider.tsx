@@ -4,7 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // `use client` Warpper
-export function ToastContainerWrapper() {
+export function ToastContainerProvider() {
   return (
     <ToastContainer
       position='bottom-right'

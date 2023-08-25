@@ -1,27 +1,13 @@
-import { DownloadForm } from '@/components/DownloadForm';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { VideoList } from '@/components/VideoList';
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/CacheHelper';
-import type { VideoInfo } from '@/types/video';
+import { DownloadForm } from '@/components/containers/DownloadForm';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { VideoList } from '@/components/containers/VideoList';
+import { getYtDlpVersion } from '@/server/yt-dlp-web';
+import { getVideoList } from '@/server/yt-dlp-web';
 
 export const dynamic = 'force-dynamic';
 
-async function getVideoListData(): Promise<VideoInfo[]> {
-  const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
-
-  if (!Array.isArray(uuids) || !uuids.length) {
-    return [];
-  }
-
-  const videoList = (
-    await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)))
-  ).filter((video) => video) as VideoInfo[];
-
-  return videoList;
-}
-
 export default async function Home() {
-  const videoList = await getVideoListData();
+  const [videoList, ytDlpVersion] = await Promise.all([getVideoList(), getYtDlpVersion()]);
 
   return (
     <main className='mx-auto max-w-8xl pb-5'>
@@ -34,20 +20,35 @@ export default async function Home() {
           <DownloadForm />
         </div>
         <div>
-          <VideoList videoList={videoList} />
+          <VideoList {...videoList} />
         </div>
       </div>
-      <p className='mt-10 text-center text-xs text-muted-foreground'>
-        Powered By{' '}
-        <a
-          className='link link-hover'
-          href='https://github.com/sooros5132/yt-dlp-web'
-          rel='noopener noreferrer'
-          target='_blank'
-        >
-          yt-dlp-web
-        </a>
-      </p>
+      <div className='mt-10 text-center text-xs text-muted-foreground/70 space-y-2'>
+        <p>
+          Powered By{' '}
+          <a
+            className='hover:underline'
+            href='https://github.com/sooros5132/yt-dlp-web'
+            rel='noopener noreferrer'
+            target='_blank'
+          >
+            yt-dlp-web
+          </a>
+        </p>
+        {ytDlpVersion && (
+          <p>
+            <span>yt-dlp version </span>
+            <a
+              className='hover:underline'
+              href={`https://github.com/yt-dlp/yt-dlp/releases/tag/${ytDlpVersion}`}
+              rel='noopener noreferrer'
+              target='_blank'
+            >
+              v{ytDlpVersion}
+            </a>
+          </p>
+        )}
+      </div>
     </main>
   );
 }

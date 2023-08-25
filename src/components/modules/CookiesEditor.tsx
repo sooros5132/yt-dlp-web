@@ -1,14 +1,13 @@
 'use client';
 
 import { useCookiesEditorStore } from '@/store/cookiesEditor';
-import { useSiteSettingStore } from '@/store/siteSetting';
 import { AxiosResponse } from '@/types/types';
 import axios from 'axios';
 import { memo, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import isEqual from 'react-fast-compare';
 import { cn } from '@/lib/utils';
 
@@ -17,18 +16,7 @@ export type CookiesEditorProps = {
   onClose: () => void;
 };
 
-export const CookiesEditor = memo((props: CookiesEditorProps) => {
-  const hydrated = useSiteSettingStore(({ hydrated }) => hydrated);
-  if (!hydrated) {
-    return null;
-  }
-
-  return <CookiesEditorInner open={props.open} onClose={props.onClose} />;
-}, isEqual);
-
-CookiesEditor.displayName = 'CookiesEditor';
-
-const CookiesEditorInner = ({ open, onClose }: CookiesEditorProps) => {
+export const CookiesEditor = memo(({ onClose }: CookiesEditorProps) => {
   const _initSecretKey = useCookiesEditorStore.getState().secretKey;
   const [cookies, setCookies] = useState('');
   const [isLoading, setLoading] = useState(false);
@@ -212,4 +200,6 @@ Example)
       </div>
     </div>
   );
-};
+}, isEqual);
+
+CookiesEditor.displayName = 'CookiesEditor';

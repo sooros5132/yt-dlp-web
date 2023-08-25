@@ -15,11 +15,8 @@ export function NoSSR({ defaultComponent, children }: PropsWithChildren<NoSSRPro
   }, []);
 
   if (!hydrated) {
-    if (defaultComponent) {
-      return <>{defaultComponent}</>;
-    }
-    return <></>;
+    return defaultComponent ? defaultComponent : null;
   }
 
-  return <>{children}</>;
+  return children;
 }
