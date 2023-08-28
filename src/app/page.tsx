@@ -1,13 +1,13 @@
 import { DownloadContainer } from '@/components/containers/DownloadContainer';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { VideoList } from '@/components/containers/VideoList';
-import { getYtDlpVersion } from '@/server/yt-dlp-web';
 import { getVideoList } from '@/server/yt-dlp-web';
+import { YtDlpVersion } from '@/components/YtDlpVersion';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const [videoList, ytDlpVersion] = await Promise.all([getVideoList(), getYtDlpVersion()]);
+  const videoList = await getVideoList();
 
   return (
     <main className='mx-auto max-w-8xl pb-5'>
@@ -19,7 +19,7 @@ export default async function Home() {
         <div className='lg:shrink-0 lg:w-96'>
           <DownloadContainer />
         </div>
-        <div>
+        <div className='lg:grow'>
           <VideoList {...videoList} />
         </div>
       </div>
@@ -35,19 +35,7 @@ export default async function Home() {
             yt-dlp-web
           </a>
         </p>
-        {ytDlpVersion && (
-          <p>
-            <span>yt-dlp version </span>
-            <a
-              className='hover:underline'
-              href={`https://github.com/yt-dlp/yt-dlp/releases/tag/${ytDlpVersion}`}
-              rel='noopener noreferrer'
-              target='_blank'
-            >
-              v{ytDlpVersion}
-            </a>
-          </p>
-        )}
+        <YtDlpVersion />
       </div>
     </main>
   );
