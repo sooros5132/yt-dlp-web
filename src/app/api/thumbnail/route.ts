@@ -1,4 +1,4 @@
-import { CACHE_FILE_PREFIX, CACHE_PATH, CacheHelper } from '@/server/helper/CacheHelper';
+import { CACHE_FILE_PREFIX, CACHE_PATH, CacheHelper } from '@/server/helpers/CacheHelper';
 import { promises as fs } from 'fs';
 
 export const dynamic = 'force-dynamic';

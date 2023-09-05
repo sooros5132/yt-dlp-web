@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { CacheHelper } from '@/server/helper/CacheHelper';
-import { ProcessHelper } from '@/server/helper/ProcessHelper';
-import { FFmpegHelper } from '@/server/helper/FFmpegHelper';
+import { CacheHelper } from '@/server/helpers/CacheHelper';
+import { ProcessHelper } from '@/server/helpers/ProcessHelper';
+import { FFmpegHelper } from '@/server/helpers/FFmpegHelper';
 import { promises as fs } from 'fs';
 import type { VideoInfo } from '@/types/video';
 
@@ -38,14 +38,11 @@ export async function PATCH(request: Request, context: any) {
 
     try {
       if (videoInfo?.download?.pid && videoInfo?.url) {
-        const processHelper = new ProcessHelper({ pid: videoInfo.download.pid });
-        const isRunning = await processHelper.isYtDlpProcessRunning(
-          videoInfo.url,
-          videoInfo.format
-        );
+        const process = new ProcessHelper({ pid: videoInfo.download.pid });
+        const isRunning = await process.isRunningAsYtdlpProcess(videoInfo.url, videoInfo.format);
         if (isRunning) {
           // 프로세스가 실행중이니 SIGINT 전송으로 저장 요청
-          processHelper.kill(2);
+          process.kill(2);
           videoInfo.download.pid = null;
           videoInfo.updatedAt = Date.now();
           await CacheHelper.set(uuid, videoInfo);
@@ -63,14 +60,14 @@ export async function PATCH(request: Request, context: any) {
       }
 
       (async function () {
-        const ffmpegHelper = new FFmpegHelper({
+        const ffmpeg = new FFmpegHelper({
           filePath
         });
 
         videoInfo.status = 'merging';
         videoInfo.updatedAt = Date.now();
         await CacheHelper.set(uuid, videoInfo);
-        await ffmpegHelper.repair();
+        await ffmpeg.repair();
         videoInfo.status = 'completed';
         videoInfo.download.pid = null;
         videoInfo.download.progress = '1';

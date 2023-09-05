@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import {
-  CACHE_PATH,
-  CacheHelper,
-  DOWNLOAD_PATH,
-  VIDEO_LIST_FILE
-} from '@/server/helper/CacheHelper';
-import { ProcessHelper } from '@/server/helper/ProcessHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helpers/CacheHelper';
+import { ProcessHelper } from '@/server/helpers/ProcessHelper';
 import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
@@ -36,10 +31,10 @@ export async function DELETE(request: Request) {
         }
 
         if (videoInfo?.download?.pid) {
-          const helper = new ProcessHelper({
+          const process = new ProcessHelper({
             pid: videoInfo.download.pid
           });
-          helper.kill();
+          process.kill();
         }
 
         videoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);

@@ -5,9 +5,9 @@ import {
   CacheHelper,
   DOWNLOAD_PATH,
   VIDEO_LIST_FILE
-} from '@/server/helper/CacheHelper';
+} from '@/server/helpers/CacheHelper';
 import { lookup } from 'mime-types';
-import { ProcessHelper } from '@/server/helper/ProcessHelper';
+import { ProcessHelper } from '@/server/helpers/ProcessHelper';
 import type { VideoInfo } from '@/types/video';
 
 export const dynamic = 'force-dynamic';
@@ -130,10 +130,10 @@ export async function DELETE(request: Request) {
       }
 
       if (videoInfo?.download?.pid) {
-        const helper = new ProcessHelper({
+        const process = new ProcessHelper({
           pid: videoInfo.download.pid
         });
-        helper.kill();
+        process.kill();
       }
 
       const newVideoList = videoList.filter((_uuid) => _uuid !== videoInfo.uuid);

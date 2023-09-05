@@ -1,9 +1,9 @@
-import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/helper/CacheHelper';
-import { FFmpegHelper } from '@/server/helper/FFmpegHelper';
+import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/helpers/CacheHelper';
+import { FFmpegHelper } from '@/server/helpers/FFmpegHelper';
 import type {
   PlaylistMetadata,
   SelectQuality,
@@ -11,8 +11,8 @@ import type {
   VideoInfo,
   VideoMetadata
 } from '@/types/video';
-import { randomUUID } from 'node:crypto';
-import { COOKIES_FILE } from '@/server/helper/FileHelper';
+import { randomUUID } from 'crypto';
+import { COOKIES_FILE } from '@/server/helpers/CookieFileHelper';
 import { isDevelopment } from '@/lib/utils';
 
 const downloadProgressRegex =
@@ -761,10 +761,10 @@ export class YtDlpHelper {
         await CacheHelper.set(uuid, videoInfo);
 
         try {
-          const ffmpegHelper = new FFmpegHelper({
+          const ffmpeg = new FFmpegHelper({
             filePath: videoInfo.file.path
           });
-          const streams = await ffmpegHelper.getVideoStreams();
+          const streams = await ffmpeg.getVideoStreams();
           videoInfo.file = {
             ...videoInfo.file,
             ...streams
@@ -787,10 +787,10 @@ export class YtDlpHelper {
             videoInfo.status = 'completed';
             videoInfo.file.size = stat.size;
 
-            const ffmpegHelper = new FFmpegHelper({
+            const ffmpeg = new FFmpegHelper({
               filePath: videoInfo.file.path
             });
-            const streams = await ffmpegHelper.getVideoStreams();
+            const streams = await ffmpeg.getVideoStreams();
             videoInfo.file = {
               ...videoInfo.file,
               ...streams

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helper/CacheHelper';
-import { YtDlpHelper } from '@/server/helper/YtDlpHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helpers/CacheHelper';
+import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { randomUUID } from 'crypto';
 import type { SelectQuality, VideoInfo } from '@/types/video';
 

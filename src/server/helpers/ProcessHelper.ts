@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn } from 'child_process';
 
 export class ProcessHelper {
   private readonly pid;
@@ -34,7 +34,7 @@ export class ProcessHelper {
     });
   }
 
-  async isYtDlpProcessRunning(url: string, format: string) {
+  async isRunningAsYtdlpProcess(url: string, format: string) {
     try {
       const executedCommand = await this.getCommandLine();
       if (

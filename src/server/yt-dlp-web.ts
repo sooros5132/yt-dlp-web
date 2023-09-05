@@ -1,6 +1,6 @@
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helper/CacheHelper';
+import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helpers/CacheHelper';
 import { VideoInfo } from '@/types/video';
-import { spawn } from 'node:child_process';
+import { spawn } from 'child_process';
 
 export type VideoListOrderType = 'title' | 'age' | '';
 export type VideoListOrderSort = 'asc' | 'desc';
@@ -50,49 +50,60 @@ export async function getVideoList(_order?: OrderType): Promise<GetVideoList> {
 }
 
 export function getYtDlpVersion(): Promise<string> {
-  const ytdlp = spawn('yt-dlp', ['--version']);
-
-  let stdoutChunks = [] as Array<any>;
-
-  ytdlp.stdout.on('data', (data) => {
-    stdoutChunks.push(data);
-  });
-
   return new Promise((resolve) => {
-    ytdlp.on('exit', () => {
-      try {
-        const buffer = Buffer.concat(stdoutChunks);
+    try {
+      const ytdlp = spawn('yt-dlp', ['--version'], {
+        shell: true
+      });
 
-        const version = buffer.toString().trim();
+      let stdoutChunks = [] as Array<any>;
 
-        resolve(version);
-      } catch (e) {
-        resolve('');
-      }
-    });
+      ytdlp.stdout.on('data', (data) => {
+        stdoutChunks.push(data);
+      });
+
+      ytdlp.on('exit', () => {
+        if (stdoutChunks.length) {
+          const buffer = Buffer.concat(stdoutChunks);
+
+          const version = buffer.toString().trim();
+
+          resolve(version);
+        } else {
+          resolve('');
+        }
+      });
+    } catch (e) {
+      return Promise.resolve('');
+    }
   });
 }
 
-export function getFfmpegVersion() {
-  const ytdlp = spawn('ffmpeg', ['-version']);
+export function getFfmpegVersion(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const ytdlp = spawn('ffmpeg', ['-version'], {
+        shell: true
+      });
+      let stdoutChunks = [] as Array<any>;
 
-  let stdoutChunks = [] as Array<any>;
+      ytdlp.stdout.on('data', (data) => {
+        stdoutChunks.push(data);
+      });
 
-  ytdlp.stdout.on('data', (data) => {
-    stdoutChunks.push(data);
-  });
+      ytdlp.on('exit', () => {
+        if (stdoutChunks.length) {
+          const buffer = Buffer.concat(stdoutChunks);
 
-  return new Promise((resolve, reject) => {
-    ytdlp.on('exit', () => {
-      try {
-        const buffer = Buffer.concat(stdoutChunks);
+          const version = buffer.toString().trim();
 
-        const version = buffer.toString().trim();
-
-        resolve(version);
-      } catch (e) {
-        resolve('');
-      }
-    });
+          resolve(version);
+        } else {
+          resolve('');
+        }
+      });
+    } catch (e) {
+      return Promise.resolve('');
+    }
   });
 }

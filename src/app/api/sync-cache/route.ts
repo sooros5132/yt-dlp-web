@@ -6,8 +6,8 @@ import {
   CACHE_PATH,
   CacheHelper,
   VIDEO_LIST_FILE
-} from '@/server/helper/CacheHelper';
-import { FFmpegHelper } from '@/server/helper/FFmpegHelper';
+} from '@/server/helpers/CacheHelper';
+import { FFmpegHelper } from '@/server/helpers/FFmpegHelper';
 import type { Stats } from 'fs';
 import type { VideoInfo } from '@/types/video';
 
@@ -90,10 +90,10 @@ export async function POST() {
             data.updatedAt = Date.now();
 
             try {
-              const ffmpegHelper = new FFmpegHelper({
+              const ffmpeg = new FFmpegHelper({
                 filePath
               });
-              const streams = await ffmpegHelper.getVideoStreams();
+              const streams = await ffmpeg.getVideoStreams();
               data.file = {
                 ...data.file,
                 ...streams

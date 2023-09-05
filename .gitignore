@@ -36,3 +36,4 @@ next-env.d.ts
 
 docker-compose.dev.yml
 Dockerfile.dev
+.dockerignore

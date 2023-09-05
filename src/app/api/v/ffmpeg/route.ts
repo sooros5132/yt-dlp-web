@@ -1,5 +1,4 @@
 import { getFfmpegVersion } from '@/server/yt-dlp-web';
-import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 

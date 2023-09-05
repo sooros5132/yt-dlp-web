@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { CACHE_PATH, getCacheFilePath } from '@/server/helper/CacheHelper';
+import { CACHE_PATH, getCacheFilePath } from '@/server/helpers/CacheHelper';
 
 export const COOKIES_FILE = 'cookies';
 

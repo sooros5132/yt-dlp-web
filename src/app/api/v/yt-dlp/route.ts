@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { getYtDlpVersion } from '@/server/yt-dlp-web';
 
 export const dynamic = 'force-dynamic';

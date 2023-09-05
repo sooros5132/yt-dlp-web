@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { VideoInfo } from '@/types/video';
-import { YtDlpHelper } from '@/server/helper/YtDlpHelper';
-import { CacheHelper } from '@/server/helper/CacheHelper';
-import { ProcessHelper } from '@/server/helper/ProcessHelper';
+import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
+import { CacheHelper } from '@/server/helpers/CacheHelper';
+import { ProcessHelper } from '@/server/helpers/ProcessHelper';
 
 export const dynamic = 'force-dynamic';
 
