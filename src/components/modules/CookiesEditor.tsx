@@ -52,6 +52,7 @@ export const CookiesEditor = memo(({ onClose }: CookiesEditorProps) => {
       setCookies(response.content);
       useCookiesEditorStore.getState().setSecretKey(secretKey);
     } else {
+      setCookies('');
       if (response?.error) {
         setExisted(response?.existed || false);
         setErrorMessage(response.error);

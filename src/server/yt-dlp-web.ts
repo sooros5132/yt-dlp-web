@@ -75,7 +75,7 @@ export function getYtDlpVersion(): Promise<string> {
         }
       });
     } catch (e) {
-      return Promise.resolve('');
+      return resolve('');
     }
   });
 }
@@ -104,7 +104,7 @@ export function getFfmpegVersion(): Promise<string> {
         }
       });
     } catch (e) {
-      return Promise.resolve('');
+      return resolve('');
     }
   });
 }

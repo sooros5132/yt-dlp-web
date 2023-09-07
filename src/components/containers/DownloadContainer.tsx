@@ -400,7 +400,7 @@ const CookieOption = () => {
         >
           <HiOutlinePencil />
         </AlertDialogTrigger>
-        <AlertDialogContent className='min-w-[300px] max-w-3xl max-h-full bg-card overflow-auto'>
+        <AlertDialogContent className='min-w-[300px] max-w-3xl max-h-full bg-card overflow-auto outline-none'>
           <CookiesEditor open={openCookiesEditor} onClose={handleCloseCookiesEditor} />
         </AlertDialogContent>
       </AlertDialog>
