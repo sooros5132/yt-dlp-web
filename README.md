@@ -1,19 +1,15 @@
 # yt-dlp-web
+![docker image size](https://img.shields.io/docker/image-size/sooros5132/yt-dlp-web.svg) ![docker latest version](https://img.shields.io/docker/v/sooros5132/yt-dlp-web.svg)
+
 웹으로 간편하게 [yt-dlp](https://github.com/yt-dlp/yt-dlp)를 이용해보세요.
 
-[yt-dlp-web Docker](https://hub.docker.com/r/sooros5132/yt-dlp-web)
-
-[Supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
+[Docker Hub](https://hub.docker.com/r/sooros5132/yt-dlp-web) | [Supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 <br />
 
 # 프리뷰
-| Light | Dark | 
+| Mobile | Desktop | 
 |--|--|
-| ![light 0 2 9](https://github.com/sooros5132/yt-dlp-web/assets/74892930/bfb6eeb7-f18c-418c-a341-eab138a92e53) | ![dark 0 2 9](https://github.com/sooros5132/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) |
-
-<p align="center">
-<img src='https://github.com/sooros5132/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d' width='500' />
-</p>
+| ![DarkMode View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) | ![Desktop View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d) |
 
 # 설치
 
