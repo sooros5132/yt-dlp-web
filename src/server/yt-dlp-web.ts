@@ -1,6 +1,7 @@
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helpers/CacheHelper';
+import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { VideoInfo } from '@/types/video';
 import { spawn } from 'child_process';
+import { VIDEO_LIST_FILE } from '@/server/constants';
 
 export type VideoListOrderType = 'title' | 'age' | '';
 export type VideoListOrderSort = 'asc' | 'desc';

@@ -2,7 +2,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Stats, promises as fs } from 'fs';
 import numeral from 'numeral';
 import { throttle } from 'lodash';
-import { CacheHelper, DOWNLOAD_PATH, getCacheFilePath } from '@/server/helpers/CacheHelper';
+import { CacheHelper, getCacheFilePath } from '@/server/helpers/CacheHelper';
 import { FFmpegHelper } from '@/server/helpers/FFmpegHelper';
 import type {
   PlaylistMetadata,
@@ -12,8 +12,8 @@ import type {
   VideoMetadata
 } from '@/types/video';
 import { randomUUID } from 'crypto';
-import { COOKIES_FILE } from '@/server/helpers/CookieFileHelper';
 import { isDevelopment } from '@/lib/utils';
+import { COOKIES_FILE, DOWNLOAD_PATH } from '@/server/constants';
 
 const downloadProgressRegex =
   /^\[download\]\s+([0-9.]+%)\s+of[ ~]+([0-9.a-zA-Z/]+)\s+at\s+([0-9a-zA-Z./ ]+)\s+ETA\s+([0-9a-zA-Z./: ]+)/im;

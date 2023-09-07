@@ -1,12 +1,7 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import { lruCache } from '@/server/lruCache';
-
-export const DOWNLOAD_PATH = path.join('/', 'downloads');
-export const CACHE_PATH = path.join('/', 'cache');
-export const VIDEO_LIST_FILE = 'video-list';
-
-export const CACHE_FILE_PREFIX = 'yt-dlp-cache-';
+import { CACHE_PATH, CACHE_FILE_PREFIX } from '@/server/constants';
 
 export function getCacheFilePath(uuid: string, extention = 'json') {
   return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.${extention}`);
@@ -22,6 +17,7 @@ export class CacheHelper {
 
     try {
       const filePath = getCacheFilePath(uuid);
+
       const content = await fs.readFile(filePath, 'utf-8');
       const parsedData = JSON.parse(content);
 

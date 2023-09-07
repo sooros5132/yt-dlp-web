@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
-import {
-  CACHE_PATH,
-  CacheHelper,
-  DOWNLOAD_PATH,
-  VIDEO_LIST_FILE
-} from '@/server/helpers/CacheHelper';
+import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { lookup } from 'mime-types';
 import { ProcessHelper } from '@/server/helpers/ProcessHelper';
 import type { VideoInfo } from '@/types/video';
+import { VIDEO_LIST_FILE, DOWNLOAD_PATH, CACHE_PATH } from '@/server/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +33,7 @@ export async function GET(request: Request) {
     if (!videoPath) {
       throw 'videoPath is not found';
     }
+    console.log(videoPath);
 
     const stat = await fs.stat(videoPath);
 
