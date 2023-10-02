@@ -7,20 +7,22 @@ import { Card } from '@/components/ui/card';
 import { VideoListHeader } from '@/components/video-list/VideoListHeader';
 import { VideoListBody } from '@/components/video-list/VideoListBody';
 import { GetVideoList } from '@/server/yt-dlp-web';
+import { Skeleton } from '../ui/skeleton';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
 
-export type VideoListProps = GetVideoList;
+export type VideoListProps = Partial<GetVideoList>;
 
-export function VideoList(props: VideoListProps) {
+export function VideoList() {
   const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
 
-  const handleClickReloadButton = () => {
-    mutate();
-  };
-
-  const { data, isValidating, mutate } = useSWR<GetVideoList>(
+  const {
+    data: newData,
+    isValidating,
+    isLoading,
+    mutate
+  } = useSWR<GetVideoList>(
     '/api/list',
     async () => {
       const data = await axios.get<GetVideoList>('/api/list').then((res) => res.data);
@@ -52,24 +54,20 @@ export function VideoList(props: VideoListProps) {
     },
     {
       refreshInterval: refreshIntervalTimeRef.current,
-      errorRetryCount: 1,
-      fallbackData: props
+      errorRetryCount: 1
     }
   );
 
-  if (!data) {
-    return null;
-  }
-  const { items, orders } = data;
+  const handleClickReloadButton = mutate;
 
   return (
     <Card className='my-8 p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
-        orders={orders}
+        orders={newData?.orders}
         isValidating={isValidating}
         onClickReloadButton={handleClickReloadButton}
       />
-      <VideoListBody orders={orders} items={items} />
+      <VideoListBody orders={newData?.orders} items={newData?.items} isLoading={isLoading} />
     </Card>
   );
 }

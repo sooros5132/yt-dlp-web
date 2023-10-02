@@ -30,11 +30,11 @@ import { shallow } from 'zustand/shallow';
 import { TbPlaylistX } from 'react-icons/tb';
 import { PlaylistViewer } from './PlaylistViewer';
 
-export type VideoListGridCard = {
+export type VideoGridItemProps = {
   video: VideoInfo;
 };
 
-export const VideoListGridCard = memo(({ video }: VideoListGridCard) => {
+export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
@@ -623,4 +623,4 @@ encode speed ${video.download.ffmpeg.speed}`
   );
 }, isPropsEquals);
 
-VideoListGridCard.displayName = 'VideoListGridCard';
+VideoGridItem.displayName = 'VideoGridItem';

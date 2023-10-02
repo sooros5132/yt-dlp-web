@@ -58,7 +58,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
   const [openDeleteAllList, setOpenDeleteAllList] = useState(false);
   const [openDeleteAllFile, setOpenDeleteAllFile] = useState(false);
 
-  const itemLength = orders.length;
+  const itemLength = orders?.length || 0;
   const isAllSelected = itemLength && selectedUuids.size === itemLength;
 
   const handleCloseDeleteList = () => {
@@ -110,7 +110,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
   };
 
   const handleClickSelectAll = () => {
-    if (!itemLength) {
+    if (!itemLength || !orders) {
       return;
     }
     const uuids = [...orders];
@@ -122,7 +122,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
 
   const handleClickDelete =
     (deleteType: 'deleteFile' | 'deleteList' | 'deleteAllFile' | 'deleteAllList') => async () => {
-      if (!deleteType) {
+      if (!deleteType || !orders) {
         return;
       }
       const { clearUuids, selectedUuids } = useVideoListStore.getState();

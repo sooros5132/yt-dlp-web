@@ -34,7 +34,7 @@ export const PlaylistViewer = memo(({ open, video, onClose }: PlaylistViewerProp
               title='Open Original Link'
             >
               <LinkIcon className='inline shrink-0 text-base' size='1em' />
-              <span className='font-bold line-clamp-2'>{video.title} </span>
+              <span className='font-bold line-clamp-2'>{video.title || video.url} </span>
               <span className='text-sm shrink-0'>
                 {video.download.playlist?.count && `(${video.download.playlist?.count})`}
               </span>

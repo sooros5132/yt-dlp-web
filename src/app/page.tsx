@@ -1,14 +1,9 @@
 import { DownloadContainer } from '@/components/containers/DownloadContainer';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { VideoList } from '@/components/containers/VideoList';
-import { getVideoList } from '@/server/yt-dlp-web';
 import { YtDlpVersion } from '@/components/YtDlpVersion';
 
-export const dynamic = 'force-dynamic';
-
-export default async function Home() {
-  const videoList = await getVideoList();
-
+export default function Home() {
   return (
     <main className='mx-auto max-w-8xl pb-5'>
       <div className='flex justify-between p-4'>
@@ -20,7 +15,7 @@ export default async function Home() {
           <DownloadContainer />
         </div>
         <div className='lg:grow'>
-          <VideoList {...videoList} />
+          <VideoList />
         </div>
       </div>
       <div className='mt-10 text-center text-xs text-muted-foreground/70 space-y-2'>
