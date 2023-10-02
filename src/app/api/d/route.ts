@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { CacheHelper, VIDEO_LIST_FILE } from '@/server/helpers/CacheHelper';
+import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { randomUUID } from 'crypto';
-import type { SelectQuality, VideoInfo } from '@/types/video';
+import type { SelectQuality } from '@/types/video';
+import { VIDEO_LIST_FILE } from '@/server/constants';
 
 export const dynamic = 'force-dynamic';
 
