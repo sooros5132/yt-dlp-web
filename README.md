@@ -52,6 +52,8 @@ docker compose up -d
 
 # Change Logs
 ```
+Oct 02, 2023 - v0.2.12 - Improving first-screen loading speed, Update Next js 13.5.3, Update yt-dlp v2023.09.24
+
 Aug 26, 2023 - v0.2.11 - Added option to sync video/audio when cut video
 
 Aug 25, 2023 - v0.2.10 - Optimizing Docker image size (424.69MB -> 134.53MB)
@@ -90,12 +92,12 @@ Apr 23, 2023 - Create Repository
 
 # 테스트한 환경
 - Ubuntu 22.4 LTS
-- macOS Ventura v13.2.1
+- macOS Ventura v13.5.2
 
 # 사용한 기술스택
-- [yt-dlp v2023.07.06](https://github.com/yt-dlp/yt-dlp)
+- [yt-dlp v2023.09.24](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
-- [Next.js v13.3](https://nextjs.org/)
+- [Next.js v13.5](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
 - [Typescript v5](https://www.typescriptlang.org/)
 - [Docker](https://www.docker.com/)
