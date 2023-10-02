@@ -33,7 +33,6 @@ export async function GET(request: Request) {
     if (!videoPath) {
       throw 'videoPath is not found';
     }
-    console.log(videoPath);
 
     const stat = await fs.stat(videoPath);
 
