@@ -41,7 +41,9 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN apk update && \
-  apk add ffmpeg yt-dlp
+  apk add ffmpeg python3
+RUN wget https://github.com/yt-dlp/yt-dlp/releases/download/2023.09.24/yt-dlp -O /usr/local/bin/yt-dlp && \
+  chmod a+rx /usr/local/bin/yt-dlp
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
