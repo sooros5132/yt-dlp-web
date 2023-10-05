@@ -14,10 +14,18 @@ const inter = Inter({ subsets: ['latin'] });
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang='en' suppressHydrationWarning>
+      <head>
+        <meta property='og:image' content='/api/og' />
+      </head>
       <body className={cn(inter.className, 'min-w-[var(--site-min-width)]')}>
         <VideoPlayer />
         {/* <Header /> */}
-        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='system'
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
         </ThemeProvider>
         <ToastContainerProvider />
@@ -34,10 +42,7 @@ export const metadata: Metadata = {
   generator: 'yt-dlp-web',
   applicationName: 'yt-dlp-web',
   referrer: 'origin-when-cross-origin',
-  keywords: ['Next.js', 'React', 'JavaScript', 'TypeScript', 'yt-dlp', 'yt-dlp-web'],
-  // colorScheme: 'dark',
-  authors: [{ url: 'https://github.com/sooros5132/yt-dlp-web' }],
-  creator: 'sooros5132',
+  keywords: ['yt-dlp', 'yt-dlp-web', 'Next.js', 'React'],
   formatDetection: {
     email: false,
     address: false,
@@ -49,7 +54,7 @@ export const metadata: Metadata = {
     nocache: false
   },
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: light)', color: '#e4e4e7' },
     { media: '(prefers-color-scheme: dark)', color: '#141211' }
   ],
   viewport: {
@@ -57,8 +62,5 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 1,
     userScalable: false
-  },
-  openGraph: {
-    images: '/api/og'
   }
 };
