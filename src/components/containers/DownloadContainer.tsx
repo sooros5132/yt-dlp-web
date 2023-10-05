@@ -1,14 +1,12 @@
 'use client';
 
-import React, { memo, useLayoutEffect, useState, type ChangeEvent, FormEvent } from 'react';
+import React, { memo, useState, type ChangeEvent, FormEvent } from 'react';
 import { mutate } from 'swr';
 import { toast } from 'react-toastify';
 import { IoClose } from 'react-icons/io5';
 import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
 import { HiOutlinePencil } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import queryString from 'query-string';
 import type { PlaylistMetadata, SelectQuality, VideoMetadata } from '@/types/video';
 import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from '@/components/modules/CookiesEditor';
@@ -42,9 +40,6 @@ import { isPropsEquals } from '@/lib/utils';
 type AllMetadata = VideoMetadata | PlaylistMetadata | null;
 
 export function DownloadContainer() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
   const [videoMetadata, setVideoMetadata] = useState<AllMetadata>(null);
 
   const { enableDownloadNow, isFetching, setFetching, url, setUrl } = useDownloadFormStore(
@@ -113,53 +108,6 @@ export function DownloadContainer() {
       setFetching(false);
     }
   };
-
-  useLayoutEffect(() => {
-    const initUrl = searchParams.get('url');
-    if (initUrl) {
-      setUrl(initUrl);
-    }
-
-    setTimeout(async () => {
-      if (isFetching) {
-        return;
-      }
-      const isDownload = searchParams.get('download') === 'true';
-      if (isDownload) {
-        if (!initUrl || !/^https?:\/?\/?/i.test(initUrl)) {
-          return;
-        }
-
-        try {
-          const { url, download, ..._newQueryString } = queryString.parse(searchParams.toString());
-          const newQueryString = queryString.stringify(_newQueryString);
-
-          setFetching(true);
-          router.replace(`${pathname}?${newQueryString}`);
-          const result = await useDownloadFormStore.getState().requestDownload();
-
-          if (result?.error) {
-            toast.error(result?.error || 'Download Failed');
-          } else if (result?.success) {
-            if (result?.status === 'already') {
-              toast.info('Already been downloaded');
-              return;
-            }
-            if (['downloading', 'standby'].includes(result?.status)) {
-              toast.success('Download Requested!');
-            } else if (result?.status === 'restart') {
-              toast.success('Download Restart');
-            }
-
-            mutate('/api/list');
-          }
-        } finally {
-          setFetching(false);
-        }
-      }
-    }, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <Card className='my-8 px-4 py-2 border-none shadow-md'>
@@ -241,7 +189,7 @@ const UrlFieldOption = () => {
           placeholder='https://...'
           onChange={handleChangeUrl}
         />
-        {typeof window !== 'undefined' && (url || !navigator?.clipboard) ? (
+        {hydrated && (url || !navigator?.clipboard) ? (
           <Button
             key={'delete-url'}
             type='button'
@@ -340,7 +288,7 @@ const DownloadNowOption = () => {
         <SelectTrigger className='w-auto h-auto py-1 px-2'>
           <SelectValue placeholder='Select a quality' />
         </SelectTrigger>
-        <SelectContent align='end'>
+        <SelectContent align='start'>
           <SelectGroup>
             <SelectLabel>Quality</SelectLabel>
             <SelectItem value='best'>best</SelectItem>

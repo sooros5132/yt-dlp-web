@@ -2,10 +2,12 @@ import { DownloadContainer } from '@/components/containers/DownloadContainer';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { VideoList } from '@/components/containers/VideoList';
 import { YtDlpVersion } from '@/components/YtDlpVersion';
+import { UrlParameterWatcher } from '@/components/UrlParameterWatcher';
 
 export default function Home() {
   return (
     <main className='mx-auto max-w-8xl pb-5'>
+      <UrlParameterWatcher />
       <div className='flex justify-between p-4'>
         <h1 className='flex items-center text-2xl'>yt-dlp-web Download Station</h1>
         <ThemeToggle />
