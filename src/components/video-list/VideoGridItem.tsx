@@ -8,7 +8,7 @@ import { CircleLoader } from '@/components/modules/CircleLoader';
 import { PingSvg } from '@/components/modules/PingSvg';
 import { isMobile } from '@/client/utils';
 import { FcRemoveImage } from 'react-icons/fc';
-import { AiOutlineCloudDownload } from 'react-icons/ai';
+import { AiOutlineCloudDownload, AiOutlineInfoCircle } from 'react-icons/ai';
 import { VscRefresh, VscWarning } from 'react-icons/vsc';
 import { MdOutlineVideocamOff, MdStop } from 'react-icons/md';
 import { CgPlayListSearch } from 'react-icons/cg';
@@ -29,6 +29,7 @@ import {
 import { shallow } from 'zustand/shallow';
 import { TbPlaylistX } from 'react-icons/tb';
 import { PlaylistViewer } from './PlaylistViewer';
+import { DownloadOptionsInfoDialog } from './DownloadOptionsInfoDialog';
 
 export type VideoGridItemProps = {
   video: VideoInfo;
@@ -248,6 +249,17 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
     action(uuid);
   };
 
+  const [openDownloadOptionsInfo, setOpenDownloadOptionsInfo] = useState(false);
+
+  const handleClickDownloadOptionsInfo = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setOpenDownloadOptionsInfo(true);
+  };
+
+  const handleCloseDownloadOptionsInfo = () => {
+    setOpenDownloadOptionsInfo(false);
+  };
+
   useEffect(() => {
     const unsubscribe = useVideoListStore.subscribe((state) => {
       if (video?.uuid) {
@@ -317,6 +329,7 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
                 src={`/api/file?uuid=${video.uuid}`}
                 muted
                 playsInline
+                loop
                 preload='none'
               />
             )}
@@ -406,6 +419,18 @@ encode speed ${video.download.ffmpeg.speed}`
           {isCompleted && video?.type === 'playlist' && (
             <div className='absolute top-1.5 left-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
               Playlist {video.download.playlist?.count && `(${video.download.playlist?.count})`}
+            </div>
+          )}
+          {video?.type === 'video' && (
+            <div className='absolute top-1 right-1'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='w-[1.75em] h-[1.75em] bg-black/20 text-white text-sm rounded-full sm:text-base'
+                onClick={handleClickDownloadOptionsInfo}
+              >
+                <AiOutlineInfoCircle />
+              </Button>
             </div>
           )}
           {!isMouseEntered && typeof video.file.height === 'number' && video.file.height > 0 && (
@@ -618,6 +643,13 @@ encode speed ${video.download.ffmpeg.speed}`
       </Card>
       {video.type === 'playlist' && video.playlist && video.playlist.length && (
         <PlaylistViewer open={openPlaylistView} video={video} onClose={handleClosePlaylistView} />
+      )}
+      {video.type === 'video' && (
+        <DownloadOptionsInfoDialog
+          open={openDownloadOptionsInfo}
+          video={video}
+          onClose={handleCloseDownloadOptionsInfo}
+        />
       )}
     </div>
   );

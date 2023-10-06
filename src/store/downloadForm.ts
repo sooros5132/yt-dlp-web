@@ -10,6 +10,7 @@ interface State {
   hydrated: boolean;
   isFetching: boolean;
   url: string;
+  format: string;
   enableDownloadNow: boolean;
   usingCookies: boolean;
   // embedMetadata: boolean;
@@ -31,6 +32,7 @@ interface Store extends State {
   setHydrated: () => void;
   setFetching: (isFetching: boolean) => void;
   setUrl: (url: string) => void;
+  setFormat: (format: string) => void;
   setEnableDownloadNow: (enableDownloadNow: boolean) => void;
   requestDownload: (params?: {
     url: string;
@@ -51,12 +53,14 @@ interface Store extends State {
   setOutputFilename: (outputFilename: string) => void;
   setSelectQuality: (selectQuality: SelectQuality) => void;
   setForceKeyFramesAtCuts: (enableForceKeyFramesAtCuts: boolean) => void;
+  loadDownloadedOptions: (video: VideoInfo) => void;
 }
 
 const initialState: State = {
   hydrated: false,
   isFetching: false,
   url: '',
+  format: '',
   enableDownloadNow: true,
   usingCookies: false,
   embedChapters: false,
@@ -72,6 +76,8 @@ const initialState: State = {
   selectQuality: 'best',
   enableForceKeyFramesAtCuts: false
 };
+
+export const initialDownloadFormState = { ...initialState };
 
 export const useDownloadFormStore = createWithEqualityFn(
   persist<Store>(
@@ -156,14 +162,13 @@ export const useDownloadFormStore = createWithEqualityFn(
         set({ isFetching });
       },
       setUrl(url) {
-        set({
-          url
-        });
+        set({ url });
+      },
+      setFormat(format) {
+        set({ format });
       },
       setEnableDownloadNow(enableDownloadNow: boolean) {
-        set({
-          enableDownloadNow
-        });
+        set({ enableDownloadNow });
       },
       setUsingCookies(usingCookies) {
         set({ usingCookies });
@@ -203,6 +208,35 @@ export const useDownloadFormStore = createWithEqualityFn(
       },
       setForceKeyFramesAtCuts(enableForceKeyFramesAtCuts) {
         set({ enableForceKeyFramesAtCuts });
+      },
+      loadDownloadedOptions(video) {
+        const newOutputFilename =
+          video.outputFilename?.replace?.(/\.\%\(ext\)s$/, '') || '%(title)s (%(id)s)';
+        const newOptions: Partial<State> = {
+          url: video.url,
+          enableDownloadNow: !video.format || video.format === 'bv+ba/b',
+          selectQuality: video.selectQuality || 'best',
+          enableOutputFilename: Boolean(
+            video.outputFilename && video.outputFilename !== '%(title)s (%(id)s).%(ext)s'
+          ),
+          outputFilename: newOutputFilename,
+          usingCookies: video.usingCookies ?? initialState.usingCookies,
+          cutVideo: video.cutVideo ?? initialState.cutVideo,
+          cutStartTime: video.cutStartTime ?? initialState.cutStartTime,
+          cutEndTime: video.cutEndTime ?? initialState.cutEndTime,
+          enableForceKeyFramesAtCuts:
+            video.enableForceKeyFramesAtCuts ?? initialState.enableForceKeyFramesAtCuts,
+          embedSubs: video.embedSubs ?? initialState.embedSubs,
+          embedChapters: video.embedChapters ?? initialState.embedChapters,
+          enableLiveFromStart: video.enableLiveFromStart ?? initialState.enableLiveFromStart,
+          enableProxy: video.enableProxy ?? initialState.enableProxy,
+          proxyAddress: video.enableProxy
+            ? video.proxyAddress ?? initialState.proxyAddress
+            : initialState.proxyAddress
+        };
+        set({
+          ...newOptions
+        });
       }
     }),
     {
