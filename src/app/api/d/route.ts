@@ -36,16 +36,15 @@ export async function GET(request: Request) {
     }
 
     const videoId =
-      typeof searchParams.get('videoId') === 'string' ? searchParams.get('videoId') : '';
+      typeof searchParams.get('videoId') === 'string' ? searchParams.get('videoId') || '' : '';
     const audioId =
-      typeof searchParams.get('audioId') === 'string' ? searchParams.get('audioId') : '';
+      typeof searchParams.get('audioId') === 'string' ? searchParams.get('audioId') || '' : '';
 
     const _format = `${videoId}${videoId && audioId ? '+' : ''}${audioId}`;
     const format = _format || 'bv+ba/b';
 
-    let isAlreadyFormat = false;
-
     //? 중복 확인
+    // let isAlreadyFormat = false;
     // const uuids = (await CacheHelper.get<string[]>(VIDEO_LIST_FILE)) || [];
     // if (Array.isArray(uuids) && uuids.length) {
     //   const videoList = await Promise.all(uuids.map((uuid) => CacheHelper.get<VideoInfo>(uuid)));
@@ -56,15 +55,16 @@ export async function GET(request: Request) {
     //     }
     //   }
     // }
-
-    // //? 중복 확인
     // if (isAlreadyFormat) {
     //   throw 'You are already downloading in the same format.';
     // }
+    //? 중복 확인
 
     const uuid = randomUUID();
     const ytdlp = new YtDlpHelper({
       url,
+      videoId,
+      audioId,
       format,
       uuid,
       usingCookies,

@@ -50,6 +50,8 @@ export interface VideoInfo {
   status: 'standby' | 'failed' | 'downloading' | 'recording' | 'merging' | 'completed' | 'already';
   error?: string;
   isLive: boolean;
+  videoId?: string;
+  audioId?: string;
   format: string;
   usingCookies: boolean;
   embedChapters: boolean;

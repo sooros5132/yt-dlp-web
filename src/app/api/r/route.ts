@@ -32,6 +32,8 @@ export async function GET(request: Request) {
 
   const ytdlp = new YtDlpHelper({
     url,
+    videoId: videoInfo.videoId || '',
+    audioId: videoInfo.audioId || '',
     format: videoInfo.format,
     uuid: videoInfo.uuid,
     usingCookies: videoInfo?.usingCookies || false,

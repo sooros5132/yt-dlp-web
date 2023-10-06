@@ -67,6 +67,8 @@ export class YtDlpHelper {
     thumbnail: '',
     localThumbnail: null,
     isLive: false,
+    videoId: '',
+    audioId: '',
     format: 'bv+ba/b',
     usingCookies: false,
     embedChapters: false,
@@ -103,6 +105,8 @@ export class YtDlpHelper {
   constructor(querys: {
     url: string;
     uuid?: string;
+    videoId?: string;
+    audioId?: string;
     format?: string;
     pid?: number;
     usingCookies: boolean;
@@ -123,6 +127,8 @@ export class YtDlpHelper {
     this.pid = querys.pid;
     this.metadata = undefined;
     this.videoInfo.url = querys.url;
+    this.videoInfo.videoId = querys.videoId;
+    this.videoInfo.audioId = querys.audioId;
     this.videoInfo.format = querys.format || 'bv+ba/b';
     this.videoInfo.usingCookies = querys.usingCookies;
     this.videoInfo.embedChapters = querys.embedChapters || false;
