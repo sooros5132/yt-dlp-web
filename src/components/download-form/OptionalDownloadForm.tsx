@@ -15,6 +15,11 @@ import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video
 
 type VideoDownloadFormProps = { metadata: VideoMetadata };
 
+type SelectedFormats = {
+  audio: VideoFormat | null;
+  video: VideoFormat | null;
+};
+
 export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => {
   const audioFormat: Array<VideoFormat> = [];
   const videoFormat: Array<VideoFormat> = [];
@@ -27,22 +32,22 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
   }
   const [isOpen, setOpen] = useState(false);
   const [isValidating, setValidating] = useState(false);
-  const [selectedFormats, setSelectedFormats] = useState<any>({
+  const [selectedFormats, setSelectedFormats] = useState<SelectedFormats>({
     audio: null,
     video: null
   });
 
-  const handleClickRadio = (type: 'audio' | 'video', format: any) => () => {
+  const handleClickRadio = (type: 'audio' | 'video', format: VideoFormat) => () => {
     if (!['audio', 'video'].includes(type) || !format) {
       return;
     }
     if (selectedFormats[type] === format) {
       return;
     }
-    setSelectedFormats((prev: any) => ({
-      ...prev,
+    setSelectedFormats({
+      ...selectedFormats,
       [type]: format
-    }));
+    });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -65,6 +70,17 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
   const handleClickBestButton = async () => {
     await requestDownload({
       url: metadata.originalUrl
+    });
+  };
+
+  const handleClickUncheck = (type: 'audio' | 'video') => () => {
+    if (!type) {
+      return;
+    }
+
+    setSelectedFormats({
+      ...selectedFormats,
+      [type]: null
     });
   };
 
@@ -96,20 +112,15 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
     } catch (e) {}
     setValidating(false);
   };
+
   let bestVideo = metadata.best?.height ? metadata.best?.height + 'p' : metadata.best?.resolution;
+  let bestAudio = metadata.best?.acodec;
+  const selectVideo = selectedFormats.video;
+  const selectAudio = selectedFormats.video;
+
   if (metadata.best?.fps) bestVideo += ' ' + metadata.best?.fps + 'fps';
   if (metadata.best?.dynamicRange) bestVideo += ' ' + metadata.best?.dynamicRange;
   if (metadata.best?.vcodec) bestVideo += ' ' + metadata.best?.vcodec;
-
-  let bestAudio = metadata.best?.acodec;
-
-  let selectVideo = selectedFormats?.video?.height
-    ? selectedFormats?.video?.height + 'p'
-    : selectedFormats?.video?.resolution;
-  if (selectedFormats?.video?.dynamicRange)
-    selectVideo += ' ' + selectedFormats?.video?.dynamicRange;
-  if (selectedFormats?.video?.fps) selectVideo += ' ' + selectedFormats?.video?.fps + 'fps';
-  if (selectedFormats?.video?.vcodec) selectVideo += ' ' + selectedFormats?.video?.vcodec;
 
   return (
     <section className='my-6 mb-2'>
@@ -171,36 +182,59 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
             <div className={cn(!isOpen && 'pointer-events-none select-none opacity-60')}>
               <div className='flex flex-wrap gap-2 sm:flex-nowrap lg:flex-wrap'>
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2 lg:basis-full'>
-                  <div>
-                    <b>{metadata.isLive ? 'Stream' : 'Video'}</b>
+                  <div className='flex items-center justify-between'>
+                    <b className='shrink-0'>{metadata.isLive ? 'Stream' : 'Video'}</b>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-[1.75em] py-1 px-2'
+                      onClick={handleClickUncheck('video')}
+                    >
+                      Uncheck
+                    </Button>
                   </div>
                   {/* grid는 너비 오류가 생김. flex로 변경 */}
-                  <RadioGroup className='flex flex-col gap-0'>
+                  <RadioGroup
+                    className='flex flex-col gap-0'
+                    key={selectedFormats.video?.formatId || 'uncheked'}
+                  >
                     {videoFormat.map((format) => (
                       <VideoDownloadRadio
                         key={format.formatId}
                         type='video'
-                        isBest={false}
                         format={format}
-                        onClickRadio={handleClickRadio}
+                        onClickRadio={handleClickRadio('video', format)}
                       />
                     ))}
                   </RadioGroup>
                 </div>
                 <Divider variant='horizontal' className='hidden sm:flex' />
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2 lg:basis-full'>
-                  <div>
-                    <b>Audio</b>
+                  <div className='flex items-center justify-between'>
+                    <b className='shrink-0'>Audio</b>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='h-[1.75em] py-1 px-2'
+                      onClick={handleClickUncheck('audio')}
+                    >
+                      Uncheck
+                    </Button>
                   </div>
                   {/* grid는 너비 오류가 생김. flex로 변경 */}
-                  <RadioGroup className='flex flex-col gap-0'>
+                  <RadioGroup
+                    className='flex flex-col gap-0'
+                    value={selectedFormats.audio?.formatId || ''}
+                    key={selectedFormats.audio?.formatId || 'uncheked'}
+                  >
                     {audioFormat.map((format) => (
                       <VideoDownloadRadio
                         key={format.formatId}
                         type='audio'
-                        isBest={false}
                         format={format}
-                        onClickRadio={handleClickRadio}
+                        onClickRadio={handleClickRadio('audio', format)}
                       />
                     ))}
                   </RadioGroup>
@@ -223,9 +257,9 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                       <PingSvg />
                     </div>
                   )}
-                  {selectVideo}
-                  {selectVideo && selectedFormats?.audio ? '+' : null}
-                  {selectedFormats?.audio?.formatId && selectedFormats?.audio?.acodec}
+                  {selectVideo && formatToFormatName('video', selectVideo)}
+                  {selectVideo && selectAudio ? '+' : null}
+                  {selectAudio && formatToFormatName('audio', selectAudio)}
                   {!selectedFormats?.video && !selectedFormats?.audio ? (
                     <span> Optional Download</span>
                   ) : null}
@@ -243,52 +277,41 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
 VideoDownloadForm.displayName = 'VideoDownloadForm';
 
 type VideoDownloadRadioProps = {
-  isBest: boolean;
   type: 'audio' | 'video';
   format: VideoFormat;
-  content?: string;
-  onClickRadio: (type: 'audio' | 'video', format: any) => () => void;
+  onClickRadio: () => void;
 };
 
-const VideoDownloadRadio = ({
-  type,
-  isBest,
-  content: _content,
-  format,
-  onClickRadio
-}: VideoDownloadRadioProps) => {
-  const content = (function () {
-    if (isBest) {
-      return _content;
+function formatToFormatName(type: 'audio' | 'video', format: VideoFormat) {
+  switch (type) {
+    case 'audio': {
+      return `${format.formatNote || format.formatId} ${format.acodec}`;
     }
+    case 'video': {
+      let text = format.height ? format.height + 'p' : format.resolution;
+      if (format.fps) text += ' ' + format.fps + 'fps';
+      if (format.dynamicRange) text += ' ' + format.dynamicRange;
+      if (format.vcodec) text += ' ' + format.vcodec;
 
-    switch (type) {
-      case 'audio': {
-        return `${format.formatNote || format.formatId} ${format.acodec}`;
-      }
-      case 'video': {
-        let text = format.height ? format.height + 'p' : format.resolution;
-        if (format.fps) text += ' ' + format.fps + 'fps';
-        if (format.dynamicRange) text += ' ' + format.dynamicRange;
-        if (format.vcodec) text += ' ' + format.vcodec;
-
-        return text;
-      }
+      return text;
     }
-  })();
+    default: {
+      return '';
+    }
+  }
+}
+
+const VideoDownloadRadio = ({ type, format, onClickRadio }: VideoDownloadRadioProps) => {
+  const content = formatToFormatName(type, format);
+
+  const handleEventStopPropagation = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+  };
 
   return (
-    <div className='my-0.5 whitespace-nowrap'>
-      <label
-        className='flex items-center px-1 gap-x-1 cursor-pointer rounded-md hover:bg-foreground/5'
-        onClick={onClickRadio(type, format)}
-      >
-        <RadioGroupItem
-          value={format.formatId}
-          id={format.formatId}
-          defaultChecked={false}
-          className='shrink-0'
-        />
+    <div className='my-0.5 whitespace-nowrap' onClick={onClickRadio}>
+      <label className='flex items-center px-1 gap-x-1 cursor-pointer rounded-md hover:bg-foreground/5'>
+        <RadioGroupItem value={format.formatId} defaultChecked={false} className='shrink-0' />
         <span className='grow shrink text-sm overflow-hidden text-ellipsis'>{content}</span>
         {format?.filesize && (
           <span className='shrink-0 text-sm overflow-hidden'>
@@ -302,6 +325,7 @@ const VideoDownloadRadio = ({
             rel='noopener noreferrer'
             target='_blank'
             title='Open Original Media Url'
+            onClick={handleEventStopPropagation}
           >
             <BsLink45Deg />
           </a>
