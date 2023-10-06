@@ -116,7 +116,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
   let bestVideo = metadata.best?.height ? metadata.best?.height + 'p' : metadata.best?.resolution;
   let bestAudio = metadata.best?.acodec;
   const selectVideo = selectedFormats.video;
-  const selectAudio = selectedFormats.video;
+  const selectAudio = selectedFormats.audio;
 
   if (metadata.best?.fps) bestVideo += ' ' + metadata.best?.fps + 'fps';
   if (metadata.best?.dynamicRange) bestVideo += ' ' + metadata.best?.dynamicRange;
@@ -204,6 +204,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                         key={format.formatId}
                         type='video'
                         format={format}
+                        checked={format.formatId === selectVideo?.formatId}
                         onClickRadio={handleClickRadio('video', format)}
                       />
                     ))}
@@ -234,6 +235,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                         key={format.formatId}
                         type='audio'
                         format={format}
+                        checked={format.formatId === selectAudio?.formatId}
                         onClickRadio={handleClickRadio('audio', format)}
                       />
                     ))}
@@ -257,14 +259,21 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                       <PingSvg />
                     </div>
                   )}
-                  {selectVideo && formatToFormatName('video', selectVideo)}
-                  {selectVideo && selectAudio ? '+' : null}
-                  {selectAudio && formatToFormatName('audio', selectAudio)}
-                  {!selectedFormats?.video && !selectedFormats?.audio ? (
-                    <span> Optional Download</span>
-                  ) : null}
+                  {selectVideo && formatToFormatDescription('video', selectVideo)}
+                  {selectVideo && selectAudio && ' + '}
+                  {selectAudio && formatToFormatDescription('audio', selectAudio)}
+                  {!selectVideo && !selectAudio ? <span>Optional Download</span> : null}
                 </Button>
-                <div className='text-xs text-muted-foreground'>Optional Download</div>
+                <div className='text-xs text-muted-foreground'></div>
+                <div className='text-xs text-muted-foreground'>
+                  {selectVideo && !selectAudio
+                    ? 'Video only'
+                    : !selectVideo && selectAudio
+                    ? 'Audio only'
+                    : selectVideo && selectAudio
+                    ? 'Video + Audio Download'
+                    : ''}
+                </div>
               </div>
             </div>
           </form>
@@ -279,30 +288,12 @@ VideoDownloadForm.displayName = 'VideoDownloadForm';
 type VideoDownloadRadioProps = {
   type: 'audio' | 'video';
   format: VideoFormat;
+  checked: boolean;
   onClickRadio: () => void;
 };
 
-function formatToFormatName(type: 'audio' | 'video', format: VideoFormat) {
-  switch (type) {
-    case 'audio': {
-      return `${format.formatNote || format.formatId} ${format.acodec}`;
-    }
-    case 'video': {
-      let text = format.height ? format.height + 'p' : format.resolution;
-      if (format.fps) text += ' ' + format.fps + 'fps';
-      if (format.dynamicRange) text += ' ' + format.dynamicRange;
-      if (format.vcodec) text += ' ' + format.vcodec;
-
-      return text;
-    }
-    default: {
-      return '';
-    }
-  }
-}
-
-const VideoDownloadRadio = ({ type, format, onClickRadio }: VideoDownloadRadioProps) => {
-  const content = formatToFormatName(type, format);
+const VideoDownloadRadio = ({ type, format, checked, onClickRadio }: VideoDownloadRadioProps) => {
+  const content = formatToFormatDescription(type, format);
 
   const handleEventStopPropagation = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -311,7 +302,7 @@ const VideoDownloadRadio = ({ type, format, onClickRadio }: VideoDownloadRadioPr
   return (
     <div className='my-0.5 whitespace-nowrap' onClick={onClickRadio}>
       <label className='flex items-center px-1 gap-x-1 cursor-pointer rounded-md hover:bg-foreground/5'>
-        <RadioGroupItem value={format.formatId} defaultChecked={false} className='shrink-0' />
+        <RadioGroupItem value={format.formatId} checked={checked} className='shrink-0' />
         <span className='grow shrink text-sm overflow-hidden text-ellipsis'>{content}</span>
         {format?.filesize && (
           <span className='shrink-0 text-sm overflow-hidden'>
@@ -381,7 +372,7 @@ export const PlaylistDownloadForm = memo(({ metadata }: PlaylistDownloadFormProp
           className={cn('rounded-full my-2', isValidating && 'loading')}
           onClick={handleClickDownloadButton}
         >
-          Download&nbsp;<b>{metadata?.playlistCount}</b>&nbsp;items from a playlist
+          Download&nbsp;<b>{metadata?.playlistCount || 'Unknown'}</b>&nbsp;items from a playlist
         </Button>
       </div>
     </div>
@@ -389,3 +380,22 @@ export const PlaylistDownloadForm = memo(({ metadata }: PlaylistDownloadFormProp
 }, isPropsEquals);
 
 PlaylistDownloadForm.displayName = 'PlaylistDownloadForm';
+
+function formatToFormatDescription(type: 'audio' | 'video', format: VideoFormat) {
+  switch (type) {
+    case 'audio': {
+      return `${format.formatNote || format.formatId} ${format.acodec}`;
+    }
+    case 'video': {
+      let text = format.height ? format.height + 'p' : format.resolution;
+      if (format.fps) text += ' ' + format.fps + 'fps';
+      if (format.dynamicRange) text += ' ' + format.dynamicRange;
+      if (format.vcodec) text += ' ' + format.vcodec;
+
+      return text;
+    }
+    default: {
+      return '';
+    }
+  }
+}
