@@ -1,6 +1,5 @@
 import type { VideoInfo } from '@/types/video';
-import { AlertDialog, AlertDialogContent, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Divider } from '@/components/Divider';
 import { initialDownloadFormState, useDownloadFormStore } from '@/store/downloadForm';
@@ -105,6 +104,12 @@ export function DownloadOptionsInfoDialog({
           <div className='opacity-60 mt-2'>
             The cookie is used as the value currently stored on the server.
           </div>
+          {isDevelopment && (
+            <div className='bg-black/80 text-white font-mono'>
+              Only visible in development mode.
+              <pre className='whitespace-break-spaces'>{jsonStringifyPrettier(video)}</pre>
+            </div>
+          )}
         </div>
         <Divider />
         <div className='flex flex-shrink-0 justify-end items-center gap-x-3'>

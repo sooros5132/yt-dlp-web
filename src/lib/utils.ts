@@ -11,3 +11,7 @@ export const isPropsEquals = isEquals;
 export const isDevelopment = process.env.NODE_ENV === 'development';
 export const isProduction = process.env.NODE_ENV === 'production';
 export const isTest = process.env.NODE_ENV === 'test';
+
+export function jsonStringifyPrettier(object: {}) {
+  return JSON.stringify(object, null, '\t');
+}
