@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Divider } from '@/components/Divider';
 import { initialDownloadFormState, useDownloadFormStore } from '@/store/downloadForm';
+import { isDevelopment, jsonStringifyPrettier } from '@/lib/utils';
 
 export type DownloadOptionsInfoDialogProps = {
   open: boolean;
@@ -49,7 +50,7 @@ export function DownloadOptionsInfoDialog({
           <div>
             Up to quality:{' '}
             {video?.selectQuality ? (
-              <b>{initialDownloadFormState.selectQuality}</b>
+              <b>{video.selectQuality}</b>
             ) : video?.format === 'bv+ba/b' ? (
               <b>{initialDownloadFormState.selectQuality}</b>
             ) : (
@@ -113,7 +114,7 @@ export function DownloadOptionsInfoDialog({
             size='sm'
             onClick={handleClickApplyOptionsToDownloadFormStore}
           >
-            Apply options to the Download Form
+            Use these options
           </Button>
           <Button type='button' size='sm' onClick={onClose}>
             Close
