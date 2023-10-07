@@ -39,7 +39,11 @@ export async function PATCH(request: Request, context: any) {
     try {
       if (videoInfo?.download?.pid && videoInfo?.url) {
         const process = new ProcessHelper({ pid: videoInfo.download.pid });
-        const isRunning = await process.isRunningAsYtdlpProcess(videoInfo.url, videoInfo.format);
+        const isRunning = await process.isRunningAsYtdlpProcess(
+          videoInfo.url,
+          videoInfo.format,
+          videoInfo.selectQuality
+        );
         if (isRunning) {
           // 프로세스가 실행중이니 SIGINT 전송으로 저장 요청
           process.kill(2);

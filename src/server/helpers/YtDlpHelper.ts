@@ -55,6 +55,24 @@ const convertToMinutes = function (_timeString: string) {
   );
 };
 
+export function qualityToYtDlpFormat(heightQuality: SelectQuality) {
+  switch (heightQuality) {
+    // case 'best':
+    case '4320p':
+    case '2160p':
+    case '1440p':
+    case '1080p':
+    case '720p':
+    case '480p': {
+      const height = heightQuality.replace('p', '');
+      return `bv*[height<=${height}]+ba/b[height<=${height}]`;
+    }
+    default: {
+      return 'bv+ba/b';
+    }
+  }
+}
+
 export class YtDlpHelper {
   public readonly url: string;
   private readonly videoInfo: VideoInfo = {
@@ -224,21 +242,10 @@ export class YtDlpHelper {
 
     switch (metadata.type) {
       case 'video': {
-        let format = this.videoInfo.format;
-        const height = this.videoInfo.selectQuality || '';
+        const format = this.videoInfo.selectQuality
+          ? qualityToYtDlpFormat(this.videoInfo.selectQuality) || this.videoInfo.format
+          : this.videoInfo.format;
 
-        switch (height) {
-          // case 'best':
-          case '4320p':
-          case '2160p':
-          case '1440p':
-          case '1080p':
-          case '720p':
-          case '480p': {
-            const _height = height.replace('p', '');
-            format = `bv*[height<=${_height}]+ba/b[height<=${_height}]`;
-          }
-        }
         options.push('-f', format);
         options.push('--no-playlist');
 

@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       cutEndTime,
       proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : '',
       outputFilename,
-      selectQuality,
+      selectQuality: !videoId && !audioId ? selectQuality : '',
       enableForceKeyFramesAtCuts
     });
     const videoInfo = ytdlp.getVideoInfo();

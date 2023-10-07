@@ -116,7 +116,7 @@ export const useDownloadFormStore = createWithEqualityFn(
         if (enableOutputFilename) {
           params.outputFilename = `${outputFilename}.%(ext)s`;
         }
-        if (enableDownloadNow) {
+        if (enableDownloadNow && !params.audioId && !params.videoId) {
           params.selectQuality = selectQuality;
         }
         if (enableProxy) {
