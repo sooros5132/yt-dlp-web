@@ -468,7 +468,7 @@ encode speed ${video.download.ffmpeg.speed}`
               {video.title || video.url}
             </span>
           </h2>
-          <div className='flex items-center justify-between px-1'>
+          <div className='flex items-center justify-between px-1 select-none'>
             <div className={cn(!(isStandby || isFailed || !isCompleted) && 'border-join')}>
               {!(isStandby || isFailed || !isCompleted) && (
                 <DropdownMenu open={openDeleteFile} onOpenChange={handleChangeDeleteFile}>
