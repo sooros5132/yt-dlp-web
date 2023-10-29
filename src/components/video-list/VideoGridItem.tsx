@@ -456,7 +456,7 @@ encode speed ${video.download.ffmpeg.speed}`
         </div>
         <div className='grow-0 shrink p-2 overflow-hidden'>
           <h2
-            className='line-clamp-2 text-base font-bold min-h-[3em] mb-2'
+            className='line-clamp-2 text-base font-bold min-h-[3em] mb-2 break-all'
             title={video.title || undefined}
           >
             {video.isLive && isRecording && (
