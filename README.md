@@ -52,14 +52,13 @@ You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it,
 - [X] Options for Output filename
 - [X] Choose quality when downloading immediately
 - [ ] ~~Table View~~ _canceld_
-- [ ] Code refactoring
 
 # Tested
 - Ubuntu 22.4 LTS
 - macOS Ventura v13.5.2
 
 # Used stack
-- [yt-dlp v2023.10.07](https://github.com/yt-dlp/yt-dlp)
+- [yt-dlp v2023.10.13](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
 - [Next.js v13.5](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
