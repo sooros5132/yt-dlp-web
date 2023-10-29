@@ -144,22 +144,18 @@ export const VideoPlayer = () => {
           </div>
         </div>
         <div className='flex gap-x-1 whitespace-nowrap'>
-          <a
-            className='flex items-center'
-            href={video.url || ''}
-            rel='noopener noreferrer'
-            target='_blank'
-            onClick={handleClickExternalLink}
-            title='Open Original Link'
-          >
-            <Button
-              variant='ghost'
-              size='icon'
-              className='w-[1.5em] h-[1.5em] text-lg rounded-full'
+          <Button variant='ghost' size='icon' className='w-[1.5em] h-[1.5em] text-lg rounded-full'>
+            <a
+              className='flex w-full h-full justify-center items-center'
+              href={video.url || ''}
+              rel='noopener noreferrer'
+              target='_blank'
+              onClick={handleClickExternalLink}
+              title='Open Original Link'
             >
               <LinkIcon className='text-base' size='1em' />
-            </Button>
-          </a>
+            </a>
+          </Button>
           <Button
             variant='ghost'
             size='icon'

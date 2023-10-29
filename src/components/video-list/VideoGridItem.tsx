@@ -555,19 +555,20 @@ encode speed ${video.download.ffmpeg.speed}`
               </Button>
             )}
             <div className='flex items-center'>
-              <a
-                href={video.url || ''}
-                rel='noopener noreferrer'
-                target='_blank'
-                title='Open Original Link'
+              <Button
+                size='sm'
+                className='p-0 h-[1.7em] text-lg bg-info hover:bg-info/90 rounded-xl rounded-r-none'
               >
-                <Button
-                  size='sm'
-                  className='h-[1.7em] text-lg bg-info hover:bg-info/90 rounded-xl rounded-r-none'
+                <a
+                  className='flex items-center w-full h-full px-3'
+                  href={video.url || ''}
+                  rel='noopener noreferrer'
+                  target='_blank'
+                  title='Open Original Link'
                 >
                   <LinkIcon className='text-base' size='1em' />
-                </Button>
-              </a>
+                </a>
+              </Button>
               {isCompleted ? (
                 video.type === 'playlist' ? (
                   <Button
@@ -579,17 +580,18 @@ encode speed ${video.download.ffmpeg.speed}`
                     <CgPlayListSearch />
                   </Button>
                 ) : (
-                  <a
-                    href={isCompleted ? `/api/file?uuid=${video.uuid}&download=true` : ''}
-                    rel='noopener noreferrer'
-                    target='_blank'
-                    download={video?.status === 'completed' ? video.file.name : false}
-                    title='Download Video'
-                  >
-                    <Button size='sm' className='h-[1.7em] text-lg rounded-xl rounded-l-none'>
+                  <Button size='sm' className='p-0 h-[1.7em] text-lg rounded-xl rounded-l-none'>
+                    <a
+                      className='flex items-center w-full h-full px-3'
+                      href={isCompleted ? `/api/file?uuid=${video.uuid}&download=true` : ''}
+                      rel='noopener noreferrer'
+                      target='_blank'
+                      download={video?.status === 'completed' ? video.file.name : false}
+                      title='Download Video'
+                    >
                       <AiOutlineCloudDownload />
-                    </Button>
-                  </a>
+                    </a>
+                  </Button>
                 )
               ) : (
                 <div className={cn(recommendedDownloadRetry && 'animate-pulse')}>

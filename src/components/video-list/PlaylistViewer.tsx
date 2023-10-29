@@ -86,35 +86,45 @@ export const PlaylistViewer = memo(({ open, video, onClose }: PlaylistViewerProp
                     </span>
                   </div>
                   <div className='flex items-center shrink-0 leading-4'>
-                    <a
-                      href={item.url || ''}
-                      className={cn(!item.url && 'pointer-events-none')}
-                      rel='noopener noreferrer'
-                      target='_blank'
-                      title='Open Item Link'
+                    <Button
+                      size='sm'
+                      className='p-0 h-[1.5em] text-lg bg-info hover:bg-info/90 rounded-xl rounded-r-none'
                     >
-                      <Button
-                        size='sm'
-                        className='h-[1.5em] text-lg bg-info hover:bg-info/90 rounded-xl rounded-r-none'
+                      <a
+                        href={item.url || ''}
+                        className={cn(
+                          'flex items-center w-full h-full px-3',
+                          !item.url && 'pointer-events-none'
+                        )}
+                        rel='noopener noreferrer'
+                        target='_blank'
+                        title='Open Item Link'
                       >
                         <LinkIcon className='text-base' size='1em' />
-                      </Button>
-                    </a>
-                    <a
-                      className={cn(
-                        (item?.error || !item.uuid || !item.path || !item.size || item.isLive) &&
-                          'opacity-30 pointer-events-none'
+                      </a>
+                    </Button>
+                    <Button
+                      size='sm'
+                      className='p-0 h-[1.5em] text-lg rounded-xl rounded-l-none'
+                      disabled={Boolean(
+                        item?.error || !item.uuid || !item.path || !item.size || item.isLive
                       )}
-                      href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
-                      rel='noopener noreferrer'
-                      target='_blank'
-                      download={item.name}
-                      title='Download Video'
                     >
-                      <Button size='sm' className='h-[1.5em] text-lg rounded-xl rounded-l-none'>
+                      <a
+                        className={cn(
+                          'flex items-center w-full h-full px-3',
+                          (item?.error || !item.uuid || !item.path || !item.size || item.isLive) &&
+                            'pointer-events-none'
+                        )}
+                        href={`/api/playlist/file?uuid=${video.uuid}&itemUuid=${item.uuid}&itemIndex=${i}&download=true`}
+                        rel='noopener noreferrer'
+                        target='_blank'
+                        download={item.name}
+                        title='Download Video'
+                      >
                         <AiOutlineCloudDownload />
-                      </Button>
-                    </a>
+                      </a>
+                    </Button>
                   </div>
                 </div>
               );
