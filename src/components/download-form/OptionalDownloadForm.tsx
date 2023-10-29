@@ -179,6 +179,16 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                 Optional
               </Button>
             </Divider>
+            {isOpen && (
+              <div className='my-4 text-center'>
+                <OptionalDownloadButton
+                  selectVideo={selectVideo}
+                  selectAudio={selectAudio}
+                  isLive={metadata.isLive}
+                  isValidating={isValidating}
+                />
+              </div>
+            )}
             <div className={cn(!isOpen && 'pointer-events-none select-none opacity-60')}>
               <div className='flex flex-wrap gap-2 sm:flex-nowrap lg:flex-wrap'>
                 <div className='basis-full shrink overflow-hidden sm:basis-1/2 lg:basis-full'>
@@ -243,37 +253,12 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                 </div>
               </div>
               <div className='my-4 text-center'>
-                <Button
-                  className={cn(
-                    'bg-info rounded-full hover:bg-info/90 px-3',
-                    metadata.isLive && 'text-white gradient-background border-0'
-                  )}
-                  size='sm'
-                  type='submit'
-                  title='Download with selected option'
-                  disabled={isValidating}
-                >
-                  {isValidating && <Loader2 className='h-4 w-4 animate-spin' />}
-                  {metadata.isLive && (
-                    <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
-                      <PingSvg />
-                    </div>
-                  )}
-                  {selectVideo && formatToFormatDescription('video', selectVideo)}
-                  {selectVideo && selectAudio && ' + '}
-                  {selectAudio && formatToFormatDescription('audio', selectAudio)}
-                  {!selectVideo && !selectAudio ? <span>Optional Download</span> : null}
-                </Button>
-                <div className='text-xs text-muted-foreground'></div>
-                <div className='text-xs text-muted-foreground'>
-                  {selectVideo && !selectAudio
-                    ? 'Video only'
-                    : !selectVideo && selectAudio
-                    ? 'Audio only'
-                    : selectVideo && selectAudio
-                    ? 'Video + Audio Download'
-                    : ''}
-                </div>
+                <OptionalDownloadButton
+                  selectVideo={selectVideo}
+                  selectAudio={selectAudio}
+                  isLive={metadata.isLive}
+                  isValidating={isValidating}
+                />
               </div>
             </div>
           </form>
@@ -398,4 +383,53 @@ function formatToFormatDescription(type: 'audio' | 'video', format: VideoFormat)
       return '';
     }
   }
+}
+
+type OptionalDownloadButtonProps = {
+  selectVideo: VideoFormat | null;
+  selectAudio: VideoFormat | null;
+  isLive: boolean;
+  isValidating: boolean;
+};
+function OptionalDownloadButton({
+  isLive,
+  selectAudio,
+  selectVideo,
+  isValidating
+}: OptionalDownloadButtonProps) {
+  return (
+    <>
+      <Button
+        className={cn(
+          'bg-info rounded-full hover:bg-info/90 px-3',
+          isLive && 'text-white gradient-background border-0'
+        )}
+        size='sm'
+        type='submit'
+        title='Download with selected option'
+        disabled={isValidating}
+      >
+        {isValidating && <Loader2 className='h-4 w-4 animate-spin' />}
+        {isLive && (
+          <div className='inline-flex items-center align-text-top text-xl text-rose-600'>
+            <PingSvg />
+          </div>
+        )}
+        {selectVideo && formatToFormatDescription('video', selectVideo)}
+        {selectVideo && selectAudio && ' + '}
+        {selectAudio && formatToFormatDescription('audio', selectAudio)}
+        {!selectVideo && !selectAudio ? <span>Optional Download</span> : null}
+      </Button>
+      <div className='text-xs text-muted-foreground'></div>
+      <div className='text-xs text-muted-foreground'>
+        {selectVideo && !selectAudio
+          ? 'Video only'
+          : !selectVideo && selectAudio
+          ? 'Audio only'
+          : selectVideo && selectAudio
+          ? 'Video + Audio Download'
+          : ''}
+      </div>
+    </>
+  );
 }
