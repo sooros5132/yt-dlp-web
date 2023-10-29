@@ -604,7 +604,7 @@ export class YtDlpHelper {
         videoInfo.file.name = fileDestination.replace(DOWNLOAD_PATH + '/', '');
         videoInfo.file.path = fileDestination;
 
-        if (metadata.isLive) {
+        if (metadata.isLive && !cachingInterval) {
           cachingInterval = setInterval(async () => {
             videoInfo.updatedAt = Date.now();
             videoInfo.download.pid = ytdlp?.pid || null;
@@ -645,6 +645,19 @@ export class YtDlpHelper {
 
       if (message.startsWith('[Fixup')) {
         videoInfo.status = 'merging';
+        return;
+      }
+
+      if (message.startsWith('ERROR: ffmpeg exited')) {
+        if (cachingInterval) clearInterval(cachingInterval);
+        videoInfo.status = 'failed';
+        videoInfo.error = message;
+
+        if (ytdlp?.pid) {
+          ytdlp?.kill(2);
+          videoInfo.download.pid = null;
+        }
+        await CacheHelper.set(uuid, videoInfo);
         return;
       }
 
@@ -1056,11 +1069,13 @@ export class YtDlpHelper {
       }
     };
 
-    cachingInterval = setInterval(async () => {
-      videoInfo.updatedAt = Date.now();
-      videoInfo.download.pid = ytdlp?.pid || null;
-      await throttleCacheSet(uuid, videoInfo);
-    }, 3000);
+    if (!cachingInterval) {
+      cachingInterval = setInterval(async () => {
+        videoInfo.updatedAt = Date.now();
+        videoInfo.download.pid = ytdlp?.pid || null;
+        await throttleCacheSet(uuid, videoInfo);
+      }, 3000);
+    }
 
     ytdlp.stdout.on('data', videoDownloadListener);
     ytdlp.stderr.on('data', videoDownloadListener);
