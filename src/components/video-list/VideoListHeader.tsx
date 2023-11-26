@@ -289,7 +289,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Do you want to delete the selected video and item?</DialogTitle>
+                  <DialogTitle>Remove selected videos from storage and list</DialogTitle>
                 </DialogHeader>
                 <DialogFooter className='flex flex-row justify-end space-x-2'>
                   <Button variant='outline' size='sm' onClick={handleCloseDeleteFile}>
@@ -300,7 +300,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
                     className='bg-error hover:bg-error/90 text-foreground'
                     onClick={handleClickDelete('deleteFile')}
                   >
-                    Yes, Delete Selected
+                    Remove
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -318,7 +318,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Do you want to delete the selected item?</DialogTitle>
+                  <DialogTitle>Remove selected videos from list</DialogTitle>
                 </DialogHeader>
                 <DialogFooter className='flex flex-row justify-end space-x-2'>
                   <Button variant='outline' size='sm' onClick={handleCloseDeleteList}>
@@ -329,7 +329,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
                     className='bg-warning hover:bg-warning/90'
                     onClick={handleClickDelete('deleteList')}
                   >
-                    Yes, Delete Selected
+                    Remove
                   </Button>
                 </DialogFooter>
               </DialogContent>

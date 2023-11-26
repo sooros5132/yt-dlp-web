@@ -488,7 +488,9 @@ encode speed ${video.download.ffmpeg.speed}`
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align='start' className='max-w-xs'>
-                    <DropdownMenuLabel>Do you want to delete item and files?</DropdownMenuLabel>
+                    <DropdownMenuLabel className='text-md'>
+                      Remove from storage and list
+                    </DropdownMenuLabel>
                     <DropdownMenuLabel className='flex items-center justify-end gap-x-2'>
                       <Button
                         variant='outline'
@@ -503,7 +505,7 @@ encode speed ${video.download.ffmpeg.speed}`
                         className='grow bg-error hover:bg-error/90 text-foreground'
                         onClick={handleClickDelete(video, 'deleteFile')}
                       >
-                        Delete
+                        Remove
                       </Button>
                     </DropdownMenuLabel>
                   </DropdownMenuContent>
@@ -525,7 +527,7 @@ encode speed ${video.download.ffmpeg.speed}`
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align='start' className='max-w-xs'>
-                  <DropdownMenuLabel>Do you want to delete the item?</DropdownMenuLabel>
+                  <DropdownMenuLabel className='text-md'>Remove from list</DropdownMenuLabel>
                   <DropdownMenuLabel className='flex items-center justify-end gap-x-2'>
                     <Button
                       variant='outline'
@@ -540,7 +542,7 @@ encode speed ${video.download.ffmpeg.speed}`
                       className='grow bg-warning hover:bg-warning/90'
                       onClick={handleClickDelete(video, 'deleteList')}
                     >
-                      Delete
+                      Remove
                     </Button>
                   </DropdownMenuLabel>
                 </DropdownMenuContent>
