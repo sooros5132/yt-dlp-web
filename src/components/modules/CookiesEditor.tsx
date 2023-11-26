@@ -17,12 +17,12 @@ export type CookiesEditorProps = {
 };
 
 export const CookiesEditor = memo(({ onClose }: CookiesEditorProps) => {
-  const _initSecretKey = useCookiesEditorStore.getState().secretKey;
+  const initSecretKey = useCookiesEditorStore.getState().secretKey;
   const [cookies, setCookies] = useState('');
   const [isLoading, setLoading] = useState(false);
   const [isExisted, setExisted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [secretKey, setSecretKey] = useState(_initSecretKey);
+  const [secretKey, setSecretKey] = useState(initSecretKey);
 
   useEffect(() => {
     getCookies();
@@ -97,7 +97,11 @@ export const CookiesEditor = memo(({ onClose }: CookiesEditorProps) => {
     setExisted(false);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDownSecretKeyInput = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    // 이미 불러왔을 경우엔 쿠키를 불러오지 않게
+    if (cookies) {
+      return;
+    }
     if (event.key === 'Enter') {
       getCookies();
     }
@@ -128,10 +132,15 @@ export const CookiesEditor = memo(({ onClose }: CookiesEditorProps) => {
           placeholder='1 character or more password'
           value={secretKey}
           onChange={handleChangeSecretKey}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleKeyDownSecretKeyInput}
           disabled={isLoading}
         />
       </div>
+      {initSecretKey && initSecretKey !== secretKey && (
+        <div className='text-sm text-warning-foreground mb-1'>
+          The secret key has been changed. It will be saved as the changed key.
+        </div>
+      )}
       <div className='mt-1'>
         <div className='font-bold'>Cookies</div>
         <div className='text-muted-foreground text-xs'>
