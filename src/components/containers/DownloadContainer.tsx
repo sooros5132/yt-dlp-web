@@ -285,23 +285,28 @@ const DownloadNowOption = () => {
         disabled={isNotHydrated}
         onValueChange={handleChangeSelectQuality}
       >
-        <SelectTrigger className='w-auto h-auto py-1 px-2'>
+        <SelectTrigger className='w-auto h-auto py-1 px-2 capitalize'>
           <SelectValue placeholder='Select a quality' />
         </SelectTrigger>
         <SelectContent align='start'>
           <SelectGroup>
             <SelectLabel>Quality</SelectLabel>
-            <SelectItem value='best'>best</SelectItem>
+            <SelectItem value='best'>Best</SelectItem>
             <SelectItem value='4320p'>4320p</SelectItem>
             <SelectItem value='2160p'>2160p</SelectItem>
             <SelectItem value='1440p'>1440p</SelectItem>
             <SelectItem value='1080p'>1080p</SelectItem>
             <SelectItem value='720p'>720p</SelectItem>
             <SelectItem value='480p'>480p</SelectItem>
+            <SelectItem value='audio'>Audio</SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
-      quality
+      {/*
+       audio only
+       1080p quality
+       */}
+      {selectQuality === 'audio' ? 'only' : 'quality'}
     </Label>
   );
 };

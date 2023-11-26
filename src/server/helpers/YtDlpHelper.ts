@@ -67,6 +67,9 @@ export function qualityToYtDlpFormat(heightQuality: SelectQuality) {
       const height = heightQuality.replace('p', '');
       return `bv*[height<=${height}]+ba/b[height<=${height}]`;
     }
+    case 'audio': {
+      return 'ba';
+    }
     default: {
       return 'bv+ba/b';
     }

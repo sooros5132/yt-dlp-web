@@ -37,7 +37,16 @@ export interface VideoMetadata {
   type: 'video' | 'playlist';
 }
 
-export type SelectQuality = '' | 'best' | '4320p' | '2160p' | '1440p' | '1080p' | '720p' | '480p';
+export type SelectQuality =
+  | ''
+  | 'best'
+  | '4320p'
+  | '2160p'
+  | '1440p'
+  | '1080p'
+  | '720p'
+  | '480p'
+  | 'audio';
 
 export interface VideoInfo {
   uuid: string;
