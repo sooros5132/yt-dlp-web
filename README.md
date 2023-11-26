@@ -54,13 +54,13 @@ You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it,
 - [ ] ~~Table View~~ _canceld_
 
 # Tested
-- Ubuntu 22.4 LTS
-- macOS Ventura v13.5.2
+- Ubuntu 22.04.2 LTS
+- macOS Sonoma v14.1.1
 
 # Used stack
 - [yt-dlp v2023.11.16](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
 - [Next.js v13.5](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
-- [Typescript v5](https://www.typescriptlang.org/)
+- [TypeScript v5](https://www.typescriptlang.org/)
 - [Docker](https://www.docker.com/)
