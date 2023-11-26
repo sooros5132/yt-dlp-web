@@ -606,8 +606,17 @@ export class YtDlpHelper {
 
         if (metadata.isLive && !cachingInterval) {
           cachingInterval = setInterval(async () => {
+            const filePath = videoInfo?.file?.path;
             videoInfo.updatedAt = Date.now();
             videoInfo.download.pid = ytdlp?.pid || null;
+            if (filePath) {
+              try {
+                const stat = await fs.stat(filePath);
+                if (stat) {
+                  videoInfo.file.size = stat.size;
+                }
+              } catch (e) {}
+            }
             await throttleCacheSet(uuid, videoInfo);
           }, 3000);
         }
