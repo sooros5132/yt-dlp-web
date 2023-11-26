@@ -672,7 +672,7 @@ const ProxyOption = () => {
     <div className='flex items-center gap-x-1'>
       <Label
         className='inline-flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer'
-        title='Enable Proxy'
+        title='Proxy'
       >
         <Checkbox
           name='enableProxy'
@@ -680,7 +680,7 @@ const ProxyOption = () => {
           disabled={isNotHydrated}
           onClick={handleClickEnableProxyCheckbox}
         />
-        <span className='text-sm'>Enable Proxy</span>
+        <span className='text-sm'>Proxy</span>
       </Label>
       <Input
         className='h-auto max-w-[300px] px-1 py-0.5 leading-[1]'
