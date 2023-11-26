@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Divider } from '@/components/Divider';
 import { initialDownloadFormState, useDownloadFormStore } from '@/store/downloadForm';
-import { isDevelopment, jsonStringifyPrettier } from '@/lib/utils';
+import { isDevelopment, jsonStringifyPrettier, qualityToYtDlpCmdOptions } from '@/lib/utils';
 
 export type DownloadOptionsInfoDialogProps = {
   open: boolean;
@@ -49,7 +49,12 @@ export function DownloadOptionsInfoDialog({
           <div>
             Up to quality:{' '}
             {video?.selectQuality ? (
-              <b>{video.selectQuality}</b>
+              <span>
+                <b>{video.selectQuality}</b> -&gt;{' '}
+                <code className='bg-foreground/10 px-1 py-0.5'>
+                  {qualityToYtDlpCmdOptions(video.selectQuality)?.join?.(' ') || ''}
+                </code>
+              </span>
             ) : video?.format === 'bv+ba/b' ? (
               <b>{initialDownloadFormState.selectQuality}</b>
             ) : (

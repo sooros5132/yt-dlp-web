@@ -306,7 +306,7 @@ const DownloadNowOption = () => {
        audio only
        1080p quality
        */}
-      {selectQuality === 'audio' ? 'only' : 'quality'}
+      {selectQuality === 'audio' ? 'only' : selectQuality === 'best' ? 'quality' : 'resolution'}
     </Label>
   );
 };

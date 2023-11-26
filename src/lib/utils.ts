@@ -21,8 +21,8 @@ export function jsonStringifyPrettier(object: {}) {
  *
  * @returns 마지막 인덱스는 foramt 옵션의 값 입니다.
  */
-export function qualityToYtDlpCmdOptions(heightQuality: SelectQuality) {
-  switch (heightQuality) {
+export function qualityToYtDlpCmdOptions(resolution: SelectQuality) {
+  switch (resolution) {
     case 'audio': {
       return ['-f', 'ba'];
     }
@@ -32,8 +32,8 @@ export function qualityToYtDlpCmdOptions(heightQuality: SelectQuality) {
     case '1080p':
     case '720p':
     case '480p': {
-      const height = heightQuality.replace('p', '');
-      return ['-f', `bv*[height<=${height}]+ba/b[height<=${height}]`];
+      const res = resolution.replace('p', '');
+      return ['-S', `res:${res},codec,br,fps`, '-f', 'bv+ba/b'];
     }
     case 'best':
     default: {
