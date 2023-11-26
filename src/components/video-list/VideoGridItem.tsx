@@ -131,6 +131,9 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
     if (!isCompleted || video?.type === 'playlist') {
       return;
     }
+    if (!video?.file?.duration) {
+      return;
+    }
     const videoEl = videoRef.current;
     if (videoEl) {
       try {
@@ -198,18 +201,19 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
   };
 
   const handleClickVideo = async () => {
-    if (video.status !== 'completed') {
+    if (!isCompleted) {
       return;
     }
     if (video?.type === 'playlist') {
       setOpenPlaylistView(true);
       return;
     }
+
     const NOT_SUPPORTED = 'not supported';
     const videoEl = videoRef.current;
     if (videoEl) {
       try {
-        if (!isMobile()) {
+        if (!isMobile() && video?.file?.duration) {
           try {
             await videoEl?.play?.();
             setNotSupportedCodec(false);
