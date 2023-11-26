@@ -368,7 +368,7 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
               )}
             </figure>
             {!isCompleted && (
-              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/80 text-2xl text-white dark:text-base-content'>
+              <div className='absolute top-0 left-0 w-full h-full flex flex-col p-3 gap-y-2 items-center justify-center bg-black/80 text-2xl text-white break-words dark:text-base-content'>
                 {isStandby || isFailed || isAlready ? (
                   <span
                     className={cn(
