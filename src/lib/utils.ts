@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import isEquals from 'react-fast-compare';
+import type { SelectQuality } from '@/types/video';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,4 +15,29 @@ export const isTest = process.env.NODE_ENV === 'test';
 
 export function jsonStringifyPrettier(object: {}) {
   return JSON.stringify(object, null, '\t');
+}
+
+/**
+ *
+ * @returns 마지막 인덱스는 foramt 옵션의 값 입니다.
+ */
+export function qualityToYtDlpCmdOptions(heightQuality: SelectQuality) {
+  switch (heightQuality) {
+    case 'audio': {
+      return ['-f', 'ba'];
+    }
+    case '4320p':
+    case '2160p':
+    case '1440p':
+    case '1080p':
+    case '720p':
+    case '480p': {
+      const height = heightQuality.replace('p', '');
+      return ['-f', `bv*[height<=${height}]+ba/b[height<=${height}]`];
+    }
+    case 'best':
+    default: {
+      return ['-f', 'bv+ba/b'];
+    }
+  }
 }

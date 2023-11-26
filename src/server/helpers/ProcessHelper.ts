@@ -1,6 +1,6 @@
+import { qualityToYtDlpCmdOptions } from '@/lib/utils';
 import { SelectQuality } from '@/types/video';
 import { spawn } from 'child_process';
-import { qualityToYtDlpFormat } from './YtDlpHelper';
 
 export class ProcessHelper {
   private readonly pid;
@@ -36,26 +36,49 @@ export class ProcessHelper {
     });
   }
 
-  async isRunningAsYtdlpProcess(url: string, _format: string, selectQuality?: SelectQuality) {
+  async isRunningAsYtdlpProcess(url: string, format: string, selectQuality?: SelectQuality) {
     try {
-      const executedCommand = await this.getCommandLine();
-      const format = selectQuality ? qualityToYtDlpFormat(selectQuality) || _format : _format;
+      const executedCommand = await this.getCommandLineWithNullCharactersRemoved();
 
       if (
-        (executedCommand.includes('/usr/bin/yt-dlp') ||
-          executedCommand.includes('/usr/local/bin/yt-dlp')) &&
-        executedCommand.includes(url) &&
-        executedCommand.includes(format)
+        //! array includes로 하면 작동안됨.
+        //! Should not be changed to ['/usr/bin/yt-dlp', '/usr/local/bin/yt-dlp'].includes(executedCommand)
+        (!executedCommand.includes('/usr/bin/yt-dlp') &&
+          !executedCommand.includes('/usr/local/bin/yt-dlp')) ||
+        !executedCommand.includes(url)
       ) {
-        return true;
+        return false;
       }
-      throw '';
+      if (selectQuality) {
+        const cmdOptions = qualityToYtDlpCmdOptions(selectQuality);
+        for (const option of cmdOptions) {
+          if (!executedCommand.includes(option)) {
+            return false;
+          }
+        }
+      } else {
+        if (!executedCommand.includes(format)) {
+          return false;
+        }
+      }
+      console.log(true);
+
+      return true;
     } catch (e) {
       return false;
     }
   }
 
-  async getCommandLine() {
+  /**
+   * \x00(binary null) 문자를 지운 명령줄을 리턴함.
+   */
+  private async getCommandLineWithNullCharactersRemoved() {
+    const cmdline = await this.getCommandLine();
+
+    return cmdline.replace(/\x00/g, '');
+  }
+
+  private async getCommandLine() {
     const process = spawn('cat', [`/proc/${this.pid}/cmdline`], {
       shell: true
     });

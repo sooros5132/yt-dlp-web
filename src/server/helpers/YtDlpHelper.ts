@@ -12,7 +12,7 @@ import type {
   VideoMetadata
 } from '@/types/video';
 import { randomUUID } from 'crypto';
-import { isDevelopment } from '@/lib/utils';
+import { isDevelopment, qualityToYtDlpCmdOptions } from '@/lib/utils';
 import { COOKIES_FILE, DOWNLOAD_PATH } from '@/server/constants';
 
 const downloadProgressRegex =
@@ -54,27 +54,6 @@ const convertToMinutes = function (_timeString: string) {
     }, 0) + (Number(`0.${millisecond}`) || 0)
   );
 };
-
-export function qualityToYtDlpFormat(heightQuality: SelectQuality) {
-  switch (heightQuality) {
-    // case 'best':
-    case '4320p':
-    case '2160p':
-    case '1440p':
-    case '1080p':
-    case '720p':
-    case '480p': {
-      const height = heightQuality.replace('p', '');
-      return `bv*[height<=${height}]+ba/b[height<=${height}]`;
-    }
-    case 'audio': {
-      return 'ba';
-    }
-    default: {
-      return 'bv+ba/b';
-    }
-  }
-}
 
 export class YtDlpHelper {
   public readonly url: string;
@@ -245,11 +224,15 @@ export class YtDlpHelper {
 
     switch (metadata.type) {
       case 'video': {
-        const format = this.videoInfo.selectQuality
-          ? qualityToYtDlpFormat(this.videoInfo.selectQuality) || this.videoInfo.format
-          : this.videoInfo.format;
-
-        options.push('-f', format);
+        const selectQuality = this.videoInfo.selectQuality;
+        if (selectQuality) {
+          const cmdOptions = qualityToYtDlpCmdOptions(selectQuality);
+          const format = cmdOptions[cmdOptions.length - 1];
+          this.videoInfo.format = format;
+          options.push(...cmdOptions);
+        } else {
+          options.push('-f', this.videoInfo.format);
+        }
         options.push('--no-playlist');
 
         if (this.videoInfo?.outputFilename) {
