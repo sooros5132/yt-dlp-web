@@ -41,8 +41,6 @@ export class ProcessHelper {
       const executedCommand = await this.getCommandLineWithNullCharactersRemoved();
 
       if (
-        //! array includes로 하면 작동안됨.
-        //! Should not be changed to ['/usr/bin/yt-dlp', '/usr/local/bin/yt-dlp'].includes(executedCommand)
         (!executedCommand.includes('/usr/bin/yt-dlp') &&
           !executedCommand.includes('/usr/local/bin/yt-dlp')) ||
         !executedCommand.includes(url)
