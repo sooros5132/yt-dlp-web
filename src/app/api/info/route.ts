@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 
-const encoder = new TextEncoder();
+// const encoder = new TextEncoder();
 
 export async function GET(request: Request, context: { params: { url: string } }) {
   const urlObject = new URL(request.url);
@@ -11,8 +11,8 @@ export async function GET(request: Request, context: { params: { url: string } }
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
   // const url = context?.params?.url;
-  const abortController = new AbortController();
-  const { signal } = abortController;
+  // const abortController = new AbortController();
+  // const { signal } = abortController;
 
   try {
     if (typeof url !== 'string') {
@@ -77,9 +77,9 @@ export async function GET(request: Request, context: { params: { url: string } }
     //   }
     // });
   } catch (error) {
-    if (!signal.aborted) {
-      abortController?.abort?.();
-    }
+    // if (!signal.aborted) {
+    //   abortController?.abort?.();
+    // }
     return NextResponse.json(
       {
         error

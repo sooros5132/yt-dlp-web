@@ -59,7 +59,6 @@ export class ProcessHelper {
           return false;
         }
       }
-      console.log(true);
 
       return true;
     } catch (e) {

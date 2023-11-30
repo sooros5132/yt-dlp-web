@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { VideoListHeader } from '@/components/video-list/VideoListHeader';
 import { VideoListBody } from '@/components/video-list/VideoListBody';
 import { GetVideoList } from '@/server/yt-dlp-web';
-import { Skeleton } from '../ui/skeleton';
 
 const MAX_INTERVAL_Time = 120 * 1000;
 const MIN_INTERVAL_Time = 3 * 1000;
