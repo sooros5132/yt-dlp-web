@@ -2,12 +2,18 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { lruCache } from '@/server/lruCache';
 import { CACHE_PATH, CACHE_FILE_PREFIX } from '@/server/constants';
+import crypto from 'crypto';
 
 export function getCacheFilePath(uuid: string, extention = 'json') {
   return path.join(CACHE_PATH, `${CACHE_FILE_PREFIX}${uuid}.${extention}`);
 }
 
 export class CacheHelper {
+  private static lastModified = {
+    date: new Date(),
+    ETag: generateETag()
+  };
+
   static async get<T = any>(uuid: string) {
     const cacheData = lruCache.get(uuid);
 
@@ -44,6 +50,10 @@ export class CacheHelper {
 
       await fs.writeFile(filePath, parsedData, 'utf-8');
       lruCache.set(uuid, content);
+      this.lastModified = {
+        date: new Date(),
+        ETag: generateETag()
+      };
 
       return true;
     } catch (e) {
@@ -81,6 +91,10 @@ export class CacheHelper {
     try {
       await fs.unlink(filePath);
       lruCache.delete(uuid);
+      this.lastModified = {
+        date: new Date(),
+        ETag: generateETag()
+      };
 
       return true;
     } catch (e) {
@@ -96,9 +110,29 @@ export class CacheHelper {
     try {
       await fs.rm(CACHE_PATH, { recursive: true, force: true, maxRetries: 1 });
       lruCache.clear();
+      this.lastModified = {
+        date: new Date(),
+        ETag: generateETag()
+      };
       return true;
     } catch (e) {
       return false;
     }
   }
+
+  static getLastModified() {
+    try {
+      if (!this.lastModified.ETag || !this.lastModified.date) throw '';
+
+      return {
+        ...this.lastModified
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+function generateETag() {
+  return crypto.randomBytes(10).toString('hex');
 }
