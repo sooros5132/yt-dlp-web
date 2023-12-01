@@ -23,7 +23,6 @@ export class CacheHelper {
 
     try {
       const filePath = getCacheFilePath(uuid);
-
       const content = await fs.readFile(filePath, 'utf-8');
       const parsedData = JSON.parse(content);
 
@@ -50,10 +49,7 @@ export class CacheHelper {
 
       await fs.writeFile(filePath, parsedData, 'utf-8');
       lruCache.set(uuid, content);
-      this.lastModified = {
-        date: new Date(),
-        ETag: generateETag()
-      };
+      CacheHelper.updateLastModified();
 
       return true;
     } catch (e) {
@@ -61,6 +57,7 @@ export class CacheHelper {
       return false;
     }
   }
+
   static async access(uuid: string) {
     const cachePath = getCacheFilePath(uuid);
 
@@ -91,10 +88,7 @@ export class CacheHelper {
     try {
       await fs.unlink(filePath);
       lruCache.delete(uuid);
-      this.lastModified = {
-        date: new Date(),
-        ETag: generateETag()
-      };
+      CacheHelper.updateLastModified();
 
       return true;
     } catch (e) {
@@ -110,10 +104,8 @@ export class CacheHelper {
     try {
       await fs.rm(CACHE_PATH, { recursive: true, force: true, maxRetries: 1 });
       lruCache.clear();
-      this.lastModified = {
-        date: new Date(),
-        ETag: generateETag()
-      };
+      CacheHelper.updateLastModified();
+
       return true;
     } catch (e) {
       return false;
@@ -122,14 +114,21 @@ export class CacheHelper {
 
   static getLastModified() {
     try {
-      if (!this.lastModified.ETag || !this.lastModified.date) throw '';
+      if (!CacheHelper.lastModified.ETag || !CacheHelper.lastModified.date) throw '';
 
       return {
-        ...this.lastModified
+        ...CacheHelper.lastModified
       };
     } catch (e) {
       return null;
     }
+  }
+
+  static updateLastModified() {
+    CacheHelper.lastModified = {
+      date: new Date(),
+      ETag: generateETag()
+    };
   }
 }
 
