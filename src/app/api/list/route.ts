@@ -17,12 +17,10 @@ export async function GET(request: Request) {
 
         if (executed) {
           let [, isWeak, clientETag] = executed;
-          console.log(serverETag, clientETag);
           if (isWeak) {
             serverETag = serverETag.toLocaleLowerCase();
             clientETag = clientETag.toLocaleLowerCase();
           }
-          console.log(serverETag, clientETag);
 
           if (clientETag === serverETag) {
             return new Response(null, {
