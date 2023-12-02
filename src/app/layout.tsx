@@ -4,8 +4,7 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import { ToastContainerProvider } from '@/components/provider/ToastContainerProvider';
 import { RehydrateProvider } from '@/components/RehydrateProvider';
-import { VideoPlayer } from '@/components/modules/VideoPlayer';
-import { BodyScrollControl } from '@/components/BodyScrollControl';
+import { VideoPlayerContainer } from '@/components/modules/VideoPlayer';
 import { ThemeProvider } from '@/components/provider/ThemeProvider';
 import { cn } from '@/lib/utils';
 
@@ -18,8 +17,8 @@ export default function RootLayout({ children }: PropsWithChildren) {
         <meta property='og:image' content='/api/og' />
       </head>
       <body className={cn(inter.className, 'min-w-[var(--site-min-width)]')}>
-        <VideoPlayer />
         {/* <Header /> */}
+        <VideoPlayerContainer />
         <ThemeProvider
           attribute='class'
           defaultTheme='system'
@@ -30,7 +29,6 @@ export default function RootLayout({ children }: PropsWithChildren) {
         </ThemeProvider>
         <ToastContainerProvider />
         <RehydrateProvider />
-        <BodyScrollControl />
       </body>
     </html>
   );

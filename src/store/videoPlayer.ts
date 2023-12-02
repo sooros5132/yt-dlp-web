@@ -6,29 +6,32 @@ import { shallow } from 'zustand/shallow';
 interface VideoPlayerState {
   openVideoPlayer: boolean;
   isNotSupportedCodec: boolean;
-  enableWideScreen: boolean;
-  enableTopSticky: boolean;
+  isWideScreen: boolean;
+  isTopSticky: boolean;
+  isLoopVideo: boolean;
   videoUuid: string;
   video: VideoInfo | null;
   currentTime: number;
   volume: number;
 }
 
-interface VideoPlayerStore extends VideoPlayerState {
+export interface VideoPlayerStore extends VideoPlayerState {
   open: (video: VideoInfo | null) => void;
   close: () => void;
   setVolume: (volume: number) => void;
   setCurrentTime: (currentTime: number) => void;
   setNotSupportedCodec: (isNotSupportedCodec: boolean) => void;
-  setEnableWideScreen: (enableWideScreen: boolean) => void;
-  setEnableTopSticky: (enableTopSticky: boolean) => void;
+  setWideScreen: (isWideScreen: boolean) => void;
+  setTopSticky: (isTopSticky: boolean) => void;
+  setLoopVideo: (isLoopVideo: boolean) => void;
 }
 
 const initialState: VideoPlayerState = {
   openVideoPlayer: false,
   isNotSupportedCodec: false,
-  enableWideScreen: false,
-  enableTopSticky: false,
+  isWideScreen: false,
+  isTopSticky: false,
+  isLoopVideo: false,
   video: null,
   videoUuid: '',
   currentTime: 0,
@@ -59,20 +62,23 @@ export const useVideoPlayerStore = createWithEqualityFn(
           video: null
         });
       },
-      setVolume(volume: number) {
+      setVolume(volume) {
         set({ volume });
       },
-      setCurrentTime(currentTime: number) {
+      setCurrentTime(currentTime) {
         set({ currentTime });
       },
-      setNotSupportedCodec(isNotSupportedCodec: boolean) {
+      setNotSupportedCodec(isNotSupportedCodec) {
         set({ isNotSupportedCodec });
       },
-      setEnableWideScreen(enableWideScreen: boolean) {
-        set({ enableWideScreen });
+      setWideScreen(isWideScreen) {
+        set({ isWideScreen });
       },
-      setEnableTopSticky(enableTopSticky: boolean) {
-        set({ enableTopSticky });
+      setTopSticky(isTopSticky) {
+        set({ isTopSticky });
+      },
+      setLoopVideo(isLoopVideo) {
+        set({ isLoopVideo });
       }
     }),
     {
