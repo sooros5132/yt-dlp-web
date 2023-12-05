@@ -87,7 +87,8 @@ export function DownloadOptionsInfoDialog({
             Force key frames at cuts: <b>{video.enableForceKeyFramesAtCuts ? 'Yes' : 'No'}</b>
           </div>
           <div>
-            Embed subtitles: <b>{video.embedSubs ? 'Yes' : 'No'}</b>
+            Embed subtitles:{' '}
+            <b>{video.embedSubs ? `${video.subLangs?.join?.(', ') || 'Yes'}` : 'No'}</b>
           </div>
           <div>
             Embed chapter markers: <b>{video.embedChapters ? 'Yes' : 'No'}</b>

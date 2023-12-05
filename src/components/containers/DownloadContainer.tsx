@@ -1,11 +1,16 @@
 'use client';
 
-import React, { memo, useState, type ChangeEvent, FormEvent } from 'react';
-import { mutate } from 'swr';
+import { memo, useState } from 'react';
+import useSWR, { mutate } from 'swr';
 import { toast } from 'react-toastify';
 import { IoClose } from 'react-icons/io5';
-import { AiOutlineCloudDownload, AiOutlineLink, AiOutlineSearch } from 'react-icons/ai';
-import { HiOutlinePencil } from 'react-icons/hi2';
+import {
+  AiOutlineCloudDownload,
+  AiOutlineLink,
+  AiOutlineLoading3Quarters,
+  AiOutlineSearch
+} from 'react-icons/ai';
+import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp, HiOutlinePencil } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
 import type { PlaylistMetadata, SelectQuality, VideoMetadata } from '@/types/video';
 import { useDownloadFormStore } from '@/store/downloadForm';
@@ -65,7 +70,7 @@ export function DownloadContainer() {
     }
 
     if (!url || !/^https?:\/?\/?/i.test(url)) {
-      toast.warn('Please check url format \nex) https://www.youtube.com/xxxxx', {
+      toast.warn('Please check url \nex) https://www.youtube.com/xxxxx', {
         autoClose: 5000
       });
       return;
@@ -96,11 +101,17 @@ export function DownloadContainer() {
 
         return;
       } else {
-        const metadata = await getMetadata();
-        if (metadata?.error) {
-          toast.error(metadata?.error || 'search failed');
-        } else if (metadata?.id) {
-          setVideoMetadata(metadata);
+        try {
+          const metadata = await getMetadata();
+          if (metadata?.error) {
+            toast.error(metadata?.error || 'search failed');
+          } else if (metadata?.id) {
+            setVideoMetadata(metadata);
+          }
+        } catch (err) {
+          if (typeof err === 'string') {
+            toast.error(err);
+          }
         }
         return;
       }
@@ -120,7 +131,7 @@ export function DownloadContainer() {
 }
 
 type DownloadFormProps = {
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 };
 
 const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
@@ -161,7 +172,7 @@ const UrlFieldOption = () => {
   );
   const isNotHydrated = !hydrated;
 
-  const handleChangeUrl = (evt: ChangeEvent<HTMLInputElement>) => {
+  const handleChangeUrl = (evt: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(evt.target.value || '');
   };
 
@@ -269,45 +280,47 @@ const DownloadNowOption = () => {
   };
 
   return (
-    <Label
-      className='flex items-center pl-1 gap-x-1 cursor-pointer'
-      title='Download immediately in the best quality'
-    >
-      <Checkbox
-        name='enableDownloadNow'
-        checked={enableDownloadNow}
-        disabled={isNotHydrated}
-        onClick={handleClickCheckBox}
-      />
-      <span className='text-sm'>Download now in </span>
-      <Select
-        value={isNotHydrated ? 'best' : selectQuality}
-        disabled={isNotHydrated}
-        onValueChange={handleChangeSelectQuality}
+    <div className='flex'>
+      <Label
+        className='flex items-center pl-1 gap-x-1 cursor-pointer'
+        title='Download immediately in the best quality'
       >
-        <SelectTrigger className='w-auto h-auto py-1 px-2 capitalize'>
-          <SelectValue placeholder='Select a quality' />
-        </SelectTrigger>
-        <SelectContent align='start'>
-          <SelectGroup>
-            <SelectLabel>Quality</SelectLabel>
-            <SelectItem value='best'>Best</SelectItem>
-            <SelectItem value='4320p'>4320p</SelectItem>
-            <SelectItem value='2160p'>2160p</SelectItem>
-            <SelectItem value='1440p'>1440p</SelectItem>
-            <SelectItem value='1080p'>1080p</SelectItem>
-            <SelectItem value='720p'>720p</SelectItem>
-            <SelectItem value='480p'>480p</SelectItem>
-            <SelectItem value='audio'>Audio</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      {/*
+        <Checkbox
+          name='enableDownloadNow'
+          checked={enableDownloadNow}
+          disabled={isNotHydrated}
+          onClick={handleClickCheckBox}
+        />
+        <span className='text-sm'>Download now in </span>
+        <Select
+          value={isNotHydrated ? 'best' : selectQuality}
+          disabled={isNotHydrated}
+          onValueChange={handleChangeSelectQuality}
+        >
+          <SelectTrigger className='w-auto h-auto py-1 px-2 capitalize'>
+            <SelectValue placeholder='Select a quality' />
+          </SelectTrigger>
+          <SelectContent align='start'>
+            <SelectGroup>
+              <SelectLabel>Quality</SelectLabel>
+              <SelectItem value='best'>Best</SelectItem>
+              <SelectItem value='4320p'>4320p</SelectItem>
+              <SelectItem value='2160p'>2160p</SelectItem>
+              <SelectItem value='1440p'>1440p</SelectItem>
+              <SelectItem value='1080p'>1080p</SelectItem>
+              <SelectItem value='720p'>720p</SelectItem>
+              <SelectItem value='480p'>480p</SelectItem>
+              <SelectItem value='audio'>Audio</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        {/*
        audio only
        1080p quality
        */}
-      {selectQuality === 'audio' ? 'only' : selectQuality === 'best' ? 'quality' : 'resolution'}
-    </Label>
+        {selectQuality === 'audio' ? 'only' : selectQuality === 'best' ? 'quality' : 'resolution'}
+      </Label>
+    </div>
   );
 };
 
@@ -556,10 +569,13 @@ const CutVideoOption = () => {
 };
 
 const EmbedSubtitlesOption = () => {
-  const { hydrated, embedSubs, setEmbedSubs } = useDownloadFormStore(
-    ({ hydrated, embedSubs, setEmbedSubs }) => ({
+  const [open, setOpen] = useState(false);
+  const { url, hydrated, embedSubs, subLangs, setEmbedSubs } = useDownloadFormStore(
+    ({ url, hydrated, embedSubs, subLangs, setEmbedSubs }) => ({
+      url,
       hydrated,
       embedSubs,
+      subLangs,
       setEmbedSubs
     }),
     shallow
@@ -570,21 +586,198 @@ const EmbedSubtitlesOption = () => {
     setEmbedSubs(!embedSubs);
   };
 
+  const handleClickSubtitlesButton = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setOpen(!open);
+  };
+
   return (
-    <Label
-      className='inline-flex items-center w-fit pl-1 gap-x-1 cursor-pointer'
-      title='Embed Subs'
-    >
-      <Checkbox
-        name='embedSubs'
-        checked={embedSubs}
-        disabled={isNotHydrated}
-        onClick={handleClickEmbedSubsCheckbox}
-      />
-      <span className='text-sm'>Embed subtitles</span>
-    </Label>
+    <div>
+      <Label className='flex items-center w-fit pl-1 gap-x-1 cursor-pointer' title='Embed Subs'>
+        <Checkbox
+          name='embedSubs'
+          checked={embedSubs}
+          disabled={isNotHydrated}
+          onClick={handleClickEmbedSubsCheckbox}
+        />
+        <span className='flex-auto shrink-0 text-sm'>Embed subtitles</span>
+        {embedSubs && (
+          <>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              className='w-auto h-auto px-2 gap-x-1'
+              onClick={handleClickSubtitlesButton}
+            >
+              Choose subtitles
+              {open ? (
+                <HiOutlineBarsArrowUp className='inline' />
+              ) : (
+                <HiOutlineBarsArrowDown className='inline' />
+              )}
+            </Button>
+          </>
+        )}
+      </Label>
+      {embedSubs && (
+        <div className='pl-6 flex-auto'>
+          {open ? (
+            <SubtitleList url={url} />
+          ) : (
+            <span className='text-sm p-0.5'>
+              {Boolean(subLangs?.length)
+                ? `Selected: ${subLangs.join(', ')}`
+                : 'All subtitles selected'}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
+
+type SubtitleListProps = { url: string };
+
+function SubtitleList({ url }: SubtitleListProps) {
+  const { subLangs, setSubLangs } = useDownloadFormStore(
+    ({ subLangs, setSubLangs }) => ({ subLangs, setSubLangs }),
+    shallow
+  );
+  const {
+    data: subtitles,
+    isLoading,
+    isValidating,
+    error,
+    mutate
+  } = useSWR(
+    `/api/info?url=${encodeURIComponent(url)}`,
+    async () => {
+      const getSubtitles = useDownloadFormStore.getState().getSubtitles;
+
+      const subtitles = await getSubtitles();
+
+      const langs = Object.keys(subtitles)
+        .map((lang) => ({
+          name: subtitles?.[lang]?.[0]?.name || lang,
+          lang
+        }))
+        .filter((lang) => Boolean(lang.name));
+
+      return langs;
+    },
+    {
+      errorRetryCount: 1,
+      revalidateOnFocus: false
+    }
+  );
+
+  if (isLoading || isValidating) {
+    return (
+      <div className='flex items-center justify-center py-1 gap-x-1 text-sm animate-pulse'>
+        Loading subtitles...
+        <span className='w-[1em] h-[1em] animate-spin'>
+          <AiOutlineLoading3Quarters />
+        </span>
+      </div>
+    );
+  }
+
+  if (!subtitles || subtitles.length === 0 || error) {
+    return (
+      <div>
+        <span className='text-zinc-400 text-sm'>
+          This url is not subtitled. Try setting up a proxy or cookie.
+        </span>
+        <div>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            className='w-auto h-auto px-2 gap-x-1'
+            onClick={() => mutate()}
+          >
+            Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleClickAllCheckButton = () => {
+    const langs = subtitles.map((s) => s.lang);
+    setSubLangs(langs);
+  };
+
+  const handleClickUncheckButton = () => {
+    setSubLangs([]);
+  };
+
+  const handleClickLangCheckbox = (lang: string) => () => {
+    if (subLangs.includes(lang)) {
+      const newLangs = subLangs.filter((oldLang) => oldLang !== lang);
+      setSubLangs(newLangs);
+    } else {
+      setSubLangs([...subLangs, lang]);
+    }
+  };
+
+  return (
+    <div className='mt-2'>
+      <div className='text-zinc-400 text-sm'>
+        If nothing is selected, all subtitles will be downloaded.
+      </div>
+      <div className='flex justify-between my-1 gap-x-1'>
+        <div className='space-x-1'>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            className='w-auto h-auto px-2 gap-x-1'
+            onClick={handleClickAllCheckButton}
+          >
+            All
+          </Button>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            className='w-auto h-auto px-2 gap-x-1'
+            onClick={handleClickUncheckButton}
+          >
+            Uncheck
+          </Button>
+        </div>
+        <div>
+          <Button
+            type='button'
+            size='sm'
+            variant='outline'
+            className='w-auto h-auto px-2 gap-x-1'
+            onClick={() => mutate()}
+          >
+            Try again
+          </Button>
+        </div>
+      </div>
+      {subtitles.map((subtitle) => {
+        const { lang, name } = subtitle;
+        const checked = subLangs.includes(lang);
+        return (
+          <div key={lang} className='flex my-1'>
+            <Label
+              className='flex items-center pl-1 gap-x-1 cursor-pointer'
+              title='select subtitle'
+            >
+              <Checkbox name='subLangs' checked={checked} onClick={handleClickLangCheckbox(lang)} />
+              <span className='text-sm'>{name}</span>
+            </Label>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const EmbedChapterMarkersOption = () => {
   const { hydrated, embedChapters, setEmbedChapters } = useDownloadFormStore(
@@ -633,20 +826,22 @@ const LiveFromStartOption = () => {
   };
 
   return (
-    <Label
-      className='inline-flex items-center pl-1 gap-x-1 cursor-pointer'
-      title='Enable Live From Start'
-    >
-      <Checkbox
-        name='enableLiveFromStart'
-        checked={enableLiveFromStart}
-        disabled={isNotHydrated}
-        onClick={handleClickEnableLiveFromStart}
-      />
-      <span className='text-sm'>
-        Download livestreams from the start. Only supported for YouTube.(Experimental)
-      </span>
-    </Label>
+    <div className='flex'>
+      <Label
+        className='flex items-center pl-1 gap-x-1 cursor-pointer'
+        title='Enable Live From Start'
+      >
+        <Checkbox
+          name='enableLiveFromStart'
+          checked={enableLiveFromStart}
+          disabled={isNotHydrated}
+          onClick={handleClickEnableLiveFromStart}
+        />
+        <span className='text-sm'>
+          Download livestreams from the start. Only supported for YouTube.(Experimental)
+        </span>
+      </Label>
+    </div>
   );
 };
 

@@ -34,7 +34,14 @@ export interface VideoMetadata {
     height: string;
   };
   formats: Array<VideoFormat>;
+  subtitles: Record<string, Array<Subtitle>>;
   type: 'video' | 'playlist';
+}
+
+export interface Subtitle {
+  ext: string;
+  url: string;
+  name: string;
 }
 
 export type SelectQuality =
@@ -66,6 +73,7 @@ export interface VideoInfo {
   embedChapters: boolean;
   // embedMetadata: boolean;
   embedSubs: boolean;
+  subLangs: Array<string>;
   enableProxy: boolean;
   enableLiveFromStart: boolean;
   proxyAddress: string;

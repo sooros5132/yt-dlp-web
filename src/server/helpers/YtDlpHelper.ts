@@ -74,6 +74,7 @@ export class YtDlpHelper {
     embedChapters: false,
     // embedMetadata: false,
     embedSubs: false,
+    subLangs: [],
     enableProxy: false,
     proxyAddress: '',
     enableLiveFromStart: false,
@@ -113,6 +114,7 @@ export class YtDlpHelper {
     embedChapters?: boolean;
     // embedMetadata?: boolean;
     embedSubs?: boolean;
+    subLangs?: Array<string>;
     enableProxy?: boolean;
     proxyAddress?: string;
     enableLiveFromStart?: boolean;
@@ -133,6 +135,7 @@ export class YtDlpHelper {
     this.videoInfo.usingCookies = querys.usingCookies;
     this.videoInfo.embedChapters = querys.embedChapters || false;
     this.videoInfo.embedSubs = querys.embedSubs || false;
+    this.videoInfo.subLangs = querys.subLangs || [];
     this.videoInfo.enableProxy = querys.enableProxy || false;
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
@@ -254,8 +257,12 @@ export class YtDlpHelper {
           if (this.videoInfo?.embedChapters) {
             options.push('--embed-chapters');
           }
-          if (this.videoInfo?.embedSubs) {
+          if (this.videoInfo?.embedSubs || this.videoInfo.subLangs.length > 0) {
+            if (this.videoInfo.subLangs.length === 0 || this.videoInfo.subLangs.includes('all')) {
+              this.videoInfo.subLangs = ['all'];
+            }
             options.push('--embed-subs');
+            options.push('--sub-langs', this.videoInfo.subLangs.join(','));
           }
 
           if (this.videoInfo?.cutVideo) {
@@ -396,7 +403,6 @@ export class YtDlpHelper {
             reject(stderrMessage || 'Not found. Please check the url again.');
             return;
           }
-
           const json = JSON.parse(buffer.toString());
           const type = json?._type;
 
@@ -458,7 +464,8 @@ export class YtDlpHelper {
                         url: format?.url ?? ''
                       } as VideoFormat;
                     })
-                    .filter((format: any) => format.format_note !== 'storyboard') || []
+                    .filter((format: any) => format.format_note !== 'storyboard') || [],
+                subtitles: json.subtitles
               };
               this.metadata = metadata;
               resolve(metadata);

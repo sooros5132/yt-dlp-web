@@ -40,6 +40,7 @@ export async function GET(request: Request) {
     embedChapters: videoInfo?.embedChapters || false,
     // embedMetadata: videoInfo?.embedMetadata || false,
     embedSubs: videoInfo?.embedSubs || false,
+    subLangs: videoInfo?.subLangs || [],
     enableProxy: videoInfo?.enableProxy || false,
     proxyAddress: videoInfo?.proxyAddress || '',
     enableLiveFromStart: videoInfo?.enableLiveFromStart || false,

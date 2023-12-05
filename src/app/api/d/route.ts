@@ -15,6 +15,7 @@ export async function GET(request: Request) {
   const embedChapters = searchParams.get('embedChapters') === 'true';
   // const embedMetadata = searchParams.get('embedMetadata') === 'true';
   const embedSubs = searchParams.get('embedSubs') === 'true';
+  const subLangs = searchParams.getAll('subLangs[]') || searchParams.getAll('subLangs');
   const enableProxy = searchParams.get('enableProxy') === 'true';
   const proxyAddress = searchParams.get('proxyAddress') || '';
   const enableLiveFromStart = searchParams.get('enableLiveFromStart') === 'true';
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
       embedChapters,
       // embedMetadata,
       embedSubs,
+      subLangs,
       enableProxy,
       enableLiveFromStart,
       cutVideo,

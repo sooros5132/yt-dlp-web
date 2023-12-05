@@ -26,6 +26,7 @@ interface State {
   outputFilename: string;
   selectQuality: SelectQuality;
   enableForceKeyFramesAtCuts: boolean;
+  subLangs: Array<string>;
 }
 
 interface Store extends State {
@@ -38,10 +39,14 @@ interface Store extends State {
     url: string;
     videoId?: string;
     audioId?: string;
+    embedSubs?: boolean;
+    subLangs?: string[];
   }) => Promise<AxiosResponse<DownloadResponse>>;
   getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
+  getSubtitles: () => Promise<AxiosResponse<VideoMetadata['subtitles']>>;
   setUsingCookies: (usingCookies: boolean) => void;
   setEmbedSubs: (embedSubs: boolean) => void;
+  setSubLangs: (subLangs: State['subLangs']) => void;
   setEmbedChapters: (embedChapters: boolean) => void;
   setEnableProxy: (enableProxy: boolean) => void;
   setProxyAddress: (proxyAddress: string) => void;
@@ -74,7 +79,8 @@ const initialState: State = {
   enableOutputFilename: false,
   outputFilename: '%(title)s (%(id)s)',
   selectQuality: 'best',
-  enableForceKeyFramesAtCuts: false
+  enableForceKeyFramesAtCuts: false,
+  subLangs: []
 };
 
 export const initialDownloadFormState = { ...initialState };
@@ -83,7 +89,7 @@ export const useDownloadFormStore = createWithEqualityFn(
   persist<Store>(
     (set, get) => ({
       ...initialState,
-      async requestDownload(_params) {
+      async requestDownload(defaultPrams) {
         const {
           url,
           usingCookies,
@@ -100,18 +106,34 @@ export const useDownloadFormStore = createWithEqualityFn(
           outputFilename,
           enableDownloadNow,
           selectQuality,
-          enableForceKeyFramesAtCuts
+          enableForceKeyFramesAtCuts,
+          subLangs
         } = get();
+        if (!url || !/^https?:\/?\/?/i.test(url)) {
+          throw 'Please check url \nex) https://www.youtube.com/xxxxx';
+        }
 
         const params: Partial<Record<keyof VideoInfo, any>> = {
-          ..._params,
-          url: _params?.url || url,
+          ...defaultPrams,
+          url: defaultPrams?.url || url,
           usingCookies,
           embedChapters,
-          embedSubs,
           enableLiveFromStart,
           enableForceKeyFramesAtCuts
         };
+
+        if (defaultPrams?.embedSubs && defaultPrams?.subLangs && defaultPrams.subLangs.length > 0) {
+          // OptionalDownload에서 직접 선택한 경우이므로 이미 설정되어 있는 상태에선 덮어쓰지 않음.
+          params.embedSubs = defaultPrams.embedSubs;
+          params.subLangs = defaultPrams.subLangs;
+        } else if (embedSubs) {
+          params.embedSubs = embedSubs;
+          if (subLangs.length > 0) {
+            params.subLangs = subLangs;
+          } else {
+            params.subLangs = ['all'];
+          }
+        }
 
         if (enableOutputFilename) {
           params.outputFilename = `${outputFilename}.%(ext)s`;
@@ -141,6 +163,9 @@ export const useDownloadFormStore = createWithEqualityFn(
       },
       async getMetadata() {
         const { url, usingCookies, enableProxy, proxyAddress } = get();
+        if (!url || !/^https?:\/?\/?/i.test(url)) {
+          throw 'Please check url \nex) https://www.youtube.com/xxxxx';
+        }
         const metadata = await axios
           .get('/api/info', {
             params: {
@@ -153,7 +178,26 @@ export const useDownloadFormStore = createWithEqualityFn(
           .then((res) => res.data)
           .catch((res) => res.response.data);
 
-        return metadata as AxiosResponse<VideoMetadata>;
+        return metadata as VideoMetadata;
+      },
+      async getSubtitles() {
+        const { url, usingCookies, enableProxy, proxyAddress } = get();
+        if (!url || !/^https?:\/?\/?/i.test(url)) {
+          throw 'Please check url \nex) https://www.youtube.com/xxxxx';
+        }
+        const metadata = await axios
+          .get('/api/subtitles', {
+            params: {
+              url,
+              usingCookies,
+              enableProxy,
+              proxyAddress
+            }
+          })
+          .then((res) => res.data)
+          .catch((res) => res.response.data);
+
+        return metadata as VideoMetadata['subtitles'];
       },
       setHydrated() {
         set({ hydrated: true });
@@ -178,6 +222,9 @@ export const useDownloadFormStore = createWithEqualityFn(
       },
       setEmbedSubs(embedSubs) {
         set({ embedSubs });
+      },
+      setSubLangs(subLangs) {
+        set({ subLangs });
       },
       setEnableProxy(enableProxy) {
         set({ enableProxy });
@@ -227,6 +274,7 @@ export const useDownloadFormStore = createWithEqualityFn(
           enableForceKeyFramesAtCuts:
             video.enableForceKeyFramesAtCuts ?? initialState.enableForceKeyFramesAtCuts,
           embedSubs: video.embedSubs ?? initialState.embedSubs,
+          subLangs: video.subLangs ?? initialState.subLangs,
           embedChapters: video.embedChapters ?? initialState.embedChapters,
           enableLiveFromStart: video.enableLiveFromStart ?? initialState.enableLiveFromStart,
           enableProxy: video.enableProxy ?? initialState.enableProxy,
@@ -249,6 +297,7 @@ export const useDownloadFormStore = createWithEqualityFn(
           'usingCookies',
           'embedChapters',
           'embedSubs',
+          'subLangs',
           'enableProxy',
           'proxyAddress',
           'enableLiveFromStart',
