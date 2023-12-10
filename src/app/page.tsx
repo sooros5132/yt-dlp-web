@@ -13,7 +13,7 @@ export default function Home() {
         <ThemeToggle />
       </div>
       <div className='p-4 pt-0 lg:flex lg:gap-3'>
-        <div className='lg:shrink-0 lg:w-96'>
+        <div className='lg:flex flex-col lg:shrink-0 lg:w-96 lg:py-8 lg:supports-[max-height:100dvh]:max-h-[100dvh] lg:max-h-[100vh] lg:sticky lg:top-0 lg:left-0'>
           <DownloadContainer />
         </div>
         <div className='lg:grow'>

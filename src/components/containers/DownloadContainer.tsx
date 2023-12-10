@@ -121,7 +121,7 @@ export function DownloadContainer() {
   };
 
   return (
-    <Card className='my-8 px-4 py-2 border-none shadow-md'>
+    <Card className='px-4 py-2 border-none shadow-md overflow-auto'>
       <DownloadForm onSubmit={handleSubmit} />
       {!isFetching && videoMetadata && (
         <SearchResult videoMetadata={videoMetadata} onClose={handleCloseMetadata} />
