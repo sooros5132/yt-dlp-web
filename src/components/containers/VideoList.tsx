@@ -60,7 +60,7 @@ export function VideoList() {
   const handleClickReloadButton = mutate;
 
   return (
-    <Card className='my-8 p-4 overflow-hidden border-none shadow-md'>
+    <Card className='p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
         orders={newData?.orders}
         isValidating={isValidating}

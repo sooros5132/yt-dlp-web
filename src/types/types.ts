@@ -16,3 +16,10 @@ export type Cookie = {
   secretKey: string;
   // content: string;
 };
+
+export type DiskSpace = {
+  total: number;
+  free: number;
+  usage: number;
+  usageInPercentage: number;
+};
