@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { forwardRef, memo, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { mutate } from 'swr';
 import numeral from 'numeral';
@@ -35,7 +35,7 @@ export type VideoGridItemProps = {
   video: VideoInfo;
 };
 
-export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
+const GridItem = forwardRef<HTMLDivElement, VideoGridItemProps>(({ video }, ref) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
@@ -308,7 +308,7 @@ export const VideoGridItem = memo(({ video }: VideoGridItemProps) => {
   }, [video]);
 
   return (
-    <div className={cn(isSelectMode && 'select-none')}>
+    <div ref={ref} className={cn(isSelectMode && 'select-none')}>
       <Card className='relative bg-card-nested flex flex-col rounded-xl overflow-hidden border-none'>
         <div
           className={cn(
@@ -460,7 +460,7 @@ encode speed ${video.download.ffmpeg.speed}`
         </div>
         <div className='grow-0 shrink p-2 overflow-hidden'>
           <h2
-            className='line-clamp-2 text-base font-bold min-h-[3em] mb-2 break-all'
+            className='line-clamp-2 text-base font-bold min-h-[3rem] mb-2 break-all'
             title={video.title || undefined}
           >
             {video.isLive && isRecording && (
@@ -661,6 +661,8 @@ encode speed ${video.download.ffmpeg.speed}`
       )}
     </div>
   );
-}, isPropsEquals);
+});
 
-VideoGridItem.displayName = 'VideoGridItem';
+GridItem.displayName = 'GridItem';
+
+export const VideoGridItem = memo(GridItem, isPropsEquals);
