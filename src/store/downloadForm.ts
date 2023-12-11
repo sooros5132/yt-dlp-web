@@ -35,13 +35,7 @@ interface Store extends State {
   setUrl: (url: string) => void;
   setFormat: (format: string) => void;
   setEnableDownloadNow: (enableDownloadNow: boolean) => void;
-  requestDownload: (params?: {
-    url: string;
-    videoId?: string;
-    audioId?: string;
-    embedSubs?: boolean;
-    subLangs?: string[];
-  }) => Promise<AxiosResponse<DownloadResponse>>;
+  requestDownload: (params?: DownloadRequestParams) => Promise<AxiosResponse<DownloadResponse>>;
   getMetadata: () => Promise<AxiosResponse<VideoMetadata>>;
   getSubtitles: () => Promise<AxiosResponse<VideoMetadata['subtitles']>>;
   setUsingCookies: (usingCookies: boolean) => void;
@@ -60,6 +54,14 @@ interface Store extends State {
   setForceKeyFramesAtCuts: (enableForceKeyFramesAtCuts: boolean) => void;
   loadDownloadedOptions: (video: VideoInfo) => void;
 }
+
+export type DownloadRequestParams = {
+  url: string;
+  videoId?: string;
+  audioId?: string;
+  embedSubs?: boolean;
+  subLangs?: string[];
+};
 
 const initialState: State = {
   hydrated: false,

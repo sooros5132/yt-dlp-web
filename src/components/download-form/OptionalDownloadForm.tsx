@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import numeral from 'numeral';
 import { PingSvg } from '@/components/modules/PingSvg';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp } from 'react-icons/hi2';
-import { useDownloadFormStore } from '@/store/downloadForm';
+import { DownloadRequestParams, useDownloadFormStore } from '@/store/downloadForm';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Divider } from '@/components/Divider';
@@ -141,7 +141,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
     }
   };
 
-  const requestDownload = async (params: NonNullable<Parameters<typeof requestDownload>[0]>) => {
+  const requestDownload = async (params: NonNullable<DownloadRequestParams>) => {
     if (isValidating) {
       return;
     }
