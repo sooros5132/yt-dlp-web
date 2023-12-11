@@ -32,16 +32,23 @@ import { TbPlaylistX } from 'react-icons/tb';
 import { cn, isDevelopment } from '@/lib/utils';
 import { LayoutList } from 'lucide-react';
 import { VideoListProps } from '@/components/containers/VideoList';
+import { Input } from '../ui/input';
+import { IoClose } from 'react-icons/io5';
+import { AiOutlineSearch } from 'react-icons/ai';
 
 export type VideoListHeaderProps = {
   orders: VideoListProps['orders'];
   isValidating: boolean;
+  search: string;
   onClickReloadButton: () => void;
+  setSearch: (search: string) => void;
 };
 
 export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
   orders,
   isValidating,
+  search,
+  setSearch,
   onClickReloadButton
 }) => {
   const {
@@ -191,24 +198,39 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
         }
       }
     };
+  const handleChangeSearchValue = (evt: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearch = evt.target.value;
+    setSearch(newSearch);
+  };
+
+  const handleClickClearSearchButton = () => {
+    setSearch('');
+  };
+
+  const handleClickSearchButton = () => {};
 
   return (
-    <div className='flex justify-between items-center mb-4 flex-wrap'>
+    <div
+      className={cn(
+        'flex justify-between items-center mb-4 flex-nowrap',
+        isSelectMode && 'flex-wrap'
+      )}
+    >
       <div className='flex items-center'>
-        <h1 className='text-center text-3xl font-bold'>
+        <h1 className='text-center text-2xl font-bold'>
           {isSelectMode ? 'Select Mode' : 'Videos'}
         </h1>
         <Button
           variant='ghost'
           size='icon'
-          className='text-2xl rounded-full'
+          className='text-xl rounded-full'
           disabled={isValidating}
           onClick={handleClickReloadButton}
         >
           <VscRefresh className={isValidating ? 'animate-spin' : undefined} />
         </Button>
       </div>
-      <div className='flex items-center justify-end ml-auto gap-x-2'>
+      <div className='flex items-center justify-end ml-auto gap-x-2 flex-nowrap'>
         {isDevelopment && !isSelectMode && (
           <div className='flex items-center border-join'>
             <Button
@@ -250,6 +272,40 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
                 <path d='M12 3v18' />
               </svg>
             </Button>
+          </div>
+        )}
+        {!isSelectMode && (
+          <div className='flex items-center justify-between rounded-full shadow-sm flex-auto'>
+            <Input
+              type='text'
+              className='shrink flex-auto rounded-full rounded-r-none border-none'
+              value={search}
+              placeholder='Search title, filename'
+              onChange={handleChangeSearchValue}
+            />
+            {search ? (
+              <Button
+                key={'clear-search'}
+                type='button'
+                variant='outline'
+                size='icon'
+                className='px-1 text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+                onClick={handleClickClearSearchButton}
+              >
+                <IoClose />
+              </Button>
+            ) : (
+              <Button
+                key={'search'}
+                type='button'
+                variant='outline'
+                size='icon'
+                className='px-1 text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+                onClick={handleClickSearchButton}
+              >
+                <AiOutlineSearch />
+              </Button>
+            )}
           </div>
         )}
         {isSelectMode && (

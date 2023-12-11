@@ -43,8 +43,8 @@ function VideoGridViewer({ items, orders, isLoading }: VideoListBodyProps) {
             return <VideoGridItem key={uuid} video={video} />;
           })
         ) : (
-          <div className='w-full col-start-1 col-end-4 py-10 text-3xl text-center text-muted-foreground opacity-50 select-none'>
-            Empty
+          <div className='flex items-center justify-center w-full min-h-[40vh] col-start-1 col-end-4 py-10'>
+            <span className='text-3xl text-muted-foreground opacity-50 select-none'>Empty</span>
           </div>
         )
       ) : (

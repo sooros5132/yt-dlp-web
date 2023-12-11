@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import axios from 'axios';
 import useSWR from 'swr';
 import { Card } from '@/components/ui/card';
@@ -15,6 +15,7 @@ export type VideoListProps = Partial<GetVideoList>;
 
 export function VideoList() {
   const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
+  const [search, setSearch] = useState('');
 
   const {
     data: newData,
@@ -59,14 +60,31 @@ export function VideoList() {
 
   const handleClickReloadButton = mutate;
 
+  const filteredOrder =
+    newData && search
+      ? newData.orders.filter((uuid) => {
+          const item = newData.items[uuid];
+          if (!item) return false;
+          const lowerCaseSearch = search.toLowerCase();
+          const title = item?.title?.toLowerCase();
+          const filename = item?.file?.name?.toLowerCase();
+          if (title?.includes(lowerCaseSearch) || filename?.includes(lowerCaseSearch)) {
+            return true;
+          }
+          return false;
+        })
+      : newData?.orders;
+
   return (
     <Card className='p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
         orders={newData?.orders}
         isValidating={isValidating}
+        search={search}
+        setSearch={setSearch}
         onClickReloadButton={handleClickReloadButton}
       />
-      <VideoListBody orders={newData?.orders} items={newData?.items} isLoading={isLoading} />
+      <VideoListBody orders={filteredOrder} items={newData?.items} isLoading={isLoading} />
     </Card>
   );
 }
