@@ -82,18 +82,12 @@ function VideoGridItemWithIntersectionObserver({
   sequence,
   ...props
 }: VideoGridItemProps & { sequence: number }) {
-  const [isIntersecting, setIsIntersecting] = useState<boolean>(false);
-
-  const onIntersect: IntersectionObserverCallback = (entries) => {
-    const isIntersecting = entries?.[0]?.isIntersecting || false;
-    setIsIntersecting(isIntersecting);
-    console.log(props.video.uuid, isIntersecting);
-  };
-  const { setTarget: setTargetRef } = useIntersectionObserver(onIntersect);
+  const { setTarget: setTargetRef, isIntersecting } = useIntersectionObserver();
 
   //? 첫번째 sequence는 높이를 측정하고 grid layout에 의해 모두 같은 높이로 된다.
   if (sequence !== 1 && !isIntersecting) {
     return <div ref={setTargetRef} />;
   }
+
   return <VideoGridItem ref={setTargetRef} {...props} />;
 }
