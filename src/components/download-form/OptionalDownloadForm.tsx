@@ -12,8 +12,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn, isPropsEquals } from '@/lib/utils';
 import { BsLink45Deg } from 'react-icons/bs';
 import type { PlaylistMetadata, VideoFormat, VideoMetadata } from '@/types/video';
-import { Label } from '../ui/label';
-import { Checkbox } from '../ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type VideoDownloadFormProps = { metadata: VideoMetadata };
 

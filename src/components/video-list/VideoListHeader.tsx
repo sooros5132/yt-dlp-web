@@ -32,7 +32,7 @@ import { TbPlaylistX } from 'react-icons/tb';
 import { cn, isDevelopment } from '@/lib/utils';
 import { LayoutList } from 'lucide-react';
 import { VideoListProps } from '@/components/containers/VideoList';
-import { Input } from '../ui/input';
+import { Input } from '@/components/ui/input';
 import { IoClose } from 'react-icons/io5';
 import { AiOutlineSearch } from 'react-icons/ai';
 
