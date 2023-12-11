@@ -649,10 +649,10 @@ encode speed ${video.download.ffmpeg.speed}`
           </div>
         )}
       </Card>
-      {video.type === 'playlist' && video.playlist && video.playlist.length && (
+      {openPlaylistView && video.type === 'playlist' && video.playlist && video.playlist.length && (
         <PlaylistViewer open={openPlaylistView} video={video} onClose={handleClosePlaylistView} />
       )}
-      {video.type === 'video' && (
+      {openDownloadOptionsInfo && video.type === 'video' && (
         <DownloadOptionsInfoDialog
           open={openDownloadOptionsInfo}
           video={video}
