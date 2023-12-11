@@ -320,6 +320,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                         size='sm'
                         className='h-[1.75em] py-1 px-2'
                         onClick={handleClickAllCheck('subtitles')}
+                        disabled={langs.length === 0}
                       >
                         All
                       </Button>
@@ -329,6 +330,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                         size='sm'
                         className='h-[1.75em] py-1 px-2'
                         onClick={handleClickUncheck('subtitles')}
+                        disabled={langs.length === 0}
                       >
                         Uncheck
                       </Button>
@@ -354,6 +356,9 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
                         </div>
                       );
                     })}
+                    {langs.length === 0 && (
+                      <div className='text-zinc-400 text-center'>No subtitles</div>
+                    )}
                   </div>
                 )}
               </div>

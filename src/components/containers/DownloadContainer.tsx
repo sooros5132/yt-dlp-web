@@ -687,7 +687,8 @@ function SubtitleList({ url }: SubtitleListProps) {
     return (
       <div>
         <span className='text-zinc-400 text-sm'>
-          This url is not subtitled. Try setting up a proxy or cookie.
+          This url does not have subtitles. If it&apos;s a permissions issue. Try setting up a proxy
+          or cookie.
         </span>
         <div>
           <Button
