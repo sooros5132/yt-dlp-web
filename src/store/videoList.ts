@@ -17,7 +17,8 @@ const initialState: VideoListState = {
 interface VideoListStore extends VideoListState {
   setSelectMode: (isSelectMode: boolean) => void;
   addUuid: (uuid: string) => void;
-  addUuids: (uuid: Array<string>) => void;
+  addUuids: (uuids: Array<string>) => void;
+  reaplceUuids: (uuids: Array<string>) => void;
   deleteUuid: (uuid: string) => void;
   clearUuids: () => void;
   setLayoutMode: (layoutMode: LayoutMode) => void;
@@ -43,6 +44,12 @@ export const useVideoListStore = createWithEqualityFn<VideoListStore>(
       const { selectedUuids } = get();
       const newUuids = new Set(selectedUuids);
       uuids.forEach((uuid) => newUuids.add(uuid));
+      set({
+        selectedUuids: newUuids
+      });
+    },
+    reaplceUuids(uuids) {
+      const newUuids = new Set(uuids);
       set({
         selectedUuids: newUuids
       });

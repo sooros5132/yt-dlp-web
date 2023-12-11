@@ -50,7 +50,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
     isSelectMode,
     selectedUuids,
     setSelectMode,
-    addUuids,
+    reaplceUuids,
     clearUuids
   } = useVideoListStore();
   const [openDeleteList, setOpenDeleteList] = useState(false);
@@ -102,7 +102,13 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
   };
 
   const handleClickSelectMode = () => {
-    setSelectMode(!isSelectMode);
+    const nextSelectMode = !isSelectMode;
+
+    if (nextSelectMode && orders) {
+      const newUuids = [...selectedUuids].filter((uuid) => orders.includes(uuid));
+      reaplceUuids(newUuids);
+    }
+    setSelectMode(nextSelectMode);
   };
 
   const handleClickLeaveSelectMode = () => {
@@ -114,7 +120,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
       return;
     }
     const uuids = [...orders];
-    addUuids(uuids);
+    reaplceUuids(uuids);
   };
   const handleClickClearAll = () => {
     clearUuids();
@@ -263,7 +269,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
                 className='text-lg text-blue-400 hover:text-blue-400/90'
                 onClick={handleClickClearAll}
               >
-                Clear Selected
+                Clear All Selected
               </Button>
             ) : (
               <Button

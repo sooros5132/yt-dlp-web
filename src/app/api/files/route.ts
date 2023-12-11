@@ -26,9 +26,7 @@ export async function DELETE(request: Request) {
 
         if (!videoInfo) {
           await CacheHelper.delete(uuid);
-          return NextResponse.json({
-            success: false
-          });
+          continue;
         }
 
         if (videoInfo?.download?.pid) {
