@@ -15,6 +15,10 @@ export default function RootLayout({ children }: PropsWithChildren) {
     <html lang='en' suppressHydrationWarning>
       <head>
         <meta property='og:image' content='/api/og' />
+        <link rel='icon' href='/favicon_48x48.png' sizes='48x48' />
+        <link rel='icon' href='/favicon_92x92.png' sizes='92x92' />
+        <link rel='icon' href='/favicon_144x144.png' sizes='144x144' />
+        <link rel='icon' href='/favicon.ico' sizes='14x14' />
       </head>
       <body className={cn(inter.className, 'min-w-[var(--site-min-width)]')}>
         {/* <Header /> */}
@@ -35,12 +39,12 @@ export default function RootLayout({ children }: PropsWithChildren) {
 }
 
 export const metadata: Metadata = {
-  title: 'yt-dlp-web Download Station',
-  description: 'yt-dlp-web Download Station',
+  title: 'yt-dlp-web',
+  description: 'yt-dlp-web',
   generator: 'yt-dlp-web',
   applicationName: 'yt-dlp-web',
   referrer: 'origin-when-cross-origin',
-  keywords: ['yt-dlp', 'yt-dlp-web', 'Next.js', 'React'],
+  keywords: ['yt-dlp-web', 'yt-dlp', 'Next.js', 'React'],
   formatDetection: {
     email: false,
     address: false,
