@@ -18,8 +18,8 @@ export async function GET(request: Request) {
         if (executed) {
           let [, isWeak, clientETag] = executed;
           if (isWeak) {
-            serverETag = serverETag.toLocaleLowerCase();
-            clientETag = clientETag.toLocaleLowerCase();
+            serverETag = serverETag.toLowerCase();
+            clientETag = clientETag.toLowerCase();
           }
 
           if (clientETag === serverETag) {
