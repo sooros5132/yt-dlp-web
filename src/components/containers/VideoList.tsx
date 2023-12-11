@@ -61,11 +61,11 @@ export function VideoList() {
   const handleClickReloadButton = mutate;
 
   const filteredOrder =
-    newData && search
+    newData && search.trim()
       ? newData.orders.filter((uuid) => {
           const item = newData.items[uuid];
           if (!item) return false;
-          const lowerCaseSearch = search.toLowerCase();
+          const lowerCaseSearch = search.trim().toLowerCase();
           const title = item?.title?.toLowerCase();
           const filename = item?.file?.name?.toLowerCase();
           if (title?.includes(lowerCaseSearch) || filename?.includes(lowerCaseSearch)) {
