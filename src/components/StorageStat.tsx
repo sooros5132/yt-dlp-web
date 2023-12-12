@@ -28,7 +28,7 @@ function StorageStatInner() {
     },
     {
       revalidateOnFocus: true,
-      refreshInterval: 30 * 1000,
+      refreshInterval: 10 * 1000,
       errorRetryCount: 1
     }
   );
