@@ -1,4 +1,4 @@
-import { forwardRef, memo, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { mutate } from 'swr';
 import numeral from 'numeral';
@@ -15,7 +15,7 @@ import { CgPlayListSearch } from 'react-icons/cg';
 import type { VideoInfo } from '@/types/video';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn, isPropsEquals } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { LinkIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { BsCheckCircleFill } from 'react-icons/bs';
@@ -35,7 +35,7 @@ export type VideoGridItemProps = {
   video: VideoInfo;
 };
 
-const GridItem = forwardRef<HTMLDivElement, VideoGridItemProps>(({ video }, ref) => {
+export const VideoGridItem = ({ video }: VideoGridItemProps) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
@@ -308,7 +308,7 @@ const GridItem = forwardRef<HTMLDivElement, VideoGridItemProps>(({ video }, ref)
   }, [video]);
 
   return (
-    <div ref={ref} className={cn(isSelectMode && 'select-none')}>
+    <div className={cn(isSelectMode && 'select-none')}>
       <Card className='relative bg-card-nested flex flex-col rounded-xl overflow-hidden border-none'>
         <div
           className={cn(
@@ -661,8 +661,6 @@ encode speed ${video.download.ffmpeg.speed}`
       )}
     </div>
   );
-});
+};
 
-GridItem.displayName = 'GridItem';
-
-export const VideoGridItem = memo(GridItem, isPropsEquals);
+VideoGridItem.displayName = 'VideoGridItem';

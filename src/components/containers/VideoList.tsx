@@ -17,12 +17,7 @@ export function VideoList() {
   const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
   const [search, setSearch] = useState('');
 
-  const {
-    data: newData,
-    isValidating,
-    isLoading,
-    mutate
-  } = useSWR<GetVideoList>(
+  const { data, isValidating, isLoading, mutate } = useSWR<GetVideoList>(
     '/api/list',
     async () => {
       const data = await axios.get<GetVideoList>('/api/list').then((res) => res.data);
@@ -61,30 +56,28 @@ export function VideoList() {
   const handleClickReloadButton = mutate;
 
   const filteredOrder =
-    newData && search.trim()
-      ? newData.orders.filter((uuid) => {
-          const item = newData.items[uuid];
+    data && search.trim()
+      ? data.orders.filter((uuid) => {
+          const item = data.items[uuid];
           if (!item) return false;
           const lowerCaseSearch = search.trim().toLowerCase();
           const title = item?.title?.toLowerCase();
           const filename = item?.file?.name?.toLowerCase();
-          if (title?.includes(lowerCaseSearch) || filename?.includes(lowerCaseSearch)) {
-            return true;
-          }
-          return false;
+
+          return title?.includes(lowerCaseSearch) || filename?.includes(lowerCaseSearch);
         })
-      : newData?.orders;
+      : data?.orders;
 
   return (
-    <Card className='p-4 overflow-hidden border-none shadow-md'>
+    <Card className='relative p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
-        orders={newData?.orders}
+        orders={data?.orders}
         isValidating={isValidating}
         search={search}
         setSearch={setSearch}
         onClickReloadButton={handleClickReloadButton}
       />
-      <VideoListBody orders={filteredOrder} items={newData?.items} isLoading={isLoading} />
+      <VideoListBody orders={filteredOrder} items={data?.items} isLoading={isLoading} />
     </Card>
   );
 }
