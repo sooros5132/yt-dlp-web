@@ -8,13 +8,13 @@ import { VideoListHeader } from '@/components/video-list/VideoListHeader';
 import { VideoListBody } from '@/components/video-list/VideoListBody';
 import { GetVideoList } from '@/server/yt-dlp-web';
 
-const MAX_INTERVAL_Time = 120 * 1000;
-const MIN_INTERVAL_Time = 3 * 1000;
+const MAX_INTERVAL_TIME = 120 * 1000;
+const MIN_INTERVAL_TIME = 3 * 1000;
 
 export type VideoListProps = Partial<GetVideoList>;
 
 export function VideoList() {
-  const refreshIntervalTimeRef = useRef(MIN_INTERVAL_Time);
+  const refreshIntervalTimeRef = useRef(MIN_INTERVAL_TIME);
   const [search, setSearch] = useState('');
 
   const { data, isValidating, isLoading, mutate } = useSWR<GetVideoList>(
@@ -30,8 +30,8 @@ export function VideoList() {
       }
 
       let nextIntervalTime = Math.min(
-        Math.max(MIN_INTERVAL_Time, refreshIntervalTimeRef.current * 2),
-        MAX_INTERVAL_Time
+        Math.max(MIN_INTERVAL_TIME, refreshIntervalTimeRef.current * 2),
+        MAX_INTERVAL_TIME
       );
       const { items } = data;
       const videos = Object.values(items);
