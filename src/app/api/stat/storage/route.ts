@@ -1,6 +1,5 @@
 import { DOWNLOAD_PATH } from '@/server/constants';
 import { NextResponse } from 'next/server';
-import numeral from 'numeral';
 import checkDiskSpace from 'check-disk-space';
 
 export const dynamic = 'force-dynamic';
