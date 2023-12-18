@@ -465,7 +465,7 @@ export class YtDlpHelper {
                       } as VideoFormat;
                     })
                     .filter((format: any) => format.format_note !== 'storyboard') || [],
-                subtitles: json.subtitles
+                subtitles: json.subtitles ?? {}
               };
               this.metadata = metadata;
               resolve(metadata);

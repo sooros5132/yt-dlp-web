@@ -170,7 +170,7 @@ export const VideoDownloadForm = memo(({ metadata }: VideoDownloadFormProps) => 
     setValidating(false);
   };
 
-  const langs = Object.keys(metadata.subtitles);
+  const langs = Object.keys(metadata?.subtitles ?? {});
 
   let bestVideo = metadata.best?.height ? metadata.best?.height + 'p' : metadata.best?.resolution;
   let bestAudio = metadata.best?.acodec;
