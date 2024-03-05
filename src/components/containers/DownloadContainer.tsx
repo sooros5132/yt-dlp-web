@@ -969,7 +969,7 @@ const SearchedMetadataCard = memo(({ metadata }: SearchedMetadataCardProps) => {
             <FcRemoveImage />
           </div>
         )}
-        {!!metadata.duration && (
+        {Boolean(metadata?.duration) && (
           <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
             {numeral(metadata.duration).format('00:00:00')}
           </div>
