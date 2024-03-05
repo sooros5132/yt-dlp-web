@@ -71,7 +71,8 @@ export function VideoList() {
   return (
     <Card className='relative p-4 overflow-hidden border-none shadow-md'>
       <VideoListHeader
-        orders={data?.orders}
+        items={data?.items}
+        orders={filteredOrder}
         isValidating={isValidating}
         search={search}
         setSearch={setSearch}
