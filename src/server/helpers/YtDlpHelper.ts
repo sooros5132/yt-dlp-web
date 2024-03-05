@@ -433,6 +433,7 @@ export class YtDlpHelper {
                 thumbnail: json.thumbnail || '',
                 isLive: json.is_live || false,
                 type,
+                duration: json.duration || 0,
                 best: {
                   formatId: json.format_id ?? '',
                   formatNote: json.format_note ?? '',

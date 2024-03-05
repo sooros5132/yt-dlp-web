@@ -41,6 +41,7 @@ import { FcRemoveImage } from 'react-icons/fc';
 import { RiArrowUpSLine } from 'react-icons/ri';
 import { Divider } from '@/components/Divider';
 import { isPropsEquals } from '@/lib/utils';
+import numeral from 'numeral';
 
 type AllMetadata = VideoMetadata | PlaylistMetadata | null;
 
@@ -952,7 +953,7 @@ const SearchedMetadataCard = memo(({ metadata }: SearchedMetadataCardProps) => {
 
   return (
     <Card className='flex flex-col bg-card-nested rounded-xl border-none overflow-hidden sm:flex-row-reverse sm:h-[220px] lg:flex-col lg:h-auto'>
-      <div className='flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%] lg:max-w-none'>
+      <div className='relative flex items-center basis-[40%] shrink-0 grow-0 min-w-[100px] max-h-[220px] overflow-hidden sm:max-w-[40%] lg:max-w-none'>
         {!isImageError && metadata.thumbnail ? (
           <figure className='w-full h-full'>
             <img
@@ -960,11 +961,17 @@ const SearchedMetadataCard = memo(({ metadata }: SearchedMetadataCardProps) => {
               src={metadata.thumbnail}
               alt={'thumbnail'}
               onError={() => setImageError(true)}
+              loading='lazy'
             />
           </figure>
         ) : (
           <div className='w-full h-full min-h-[100px] flex items-center justify-center text-4xl select-none bg-neutral-950/10 dark:bg-neutral-950/20'>
             <FcRemoveImage />
+          </div>
+        )}
+        {!!metadata.duration && (
+          <div className='absolute right-1.5 bottom-1.5 text-xs text-white bg-black/80 py-0.5 px-1.5 rounded-md'>
+            {numeral(metadata.duration).format('00:00:00')}
           </div>
         )}
       </div>

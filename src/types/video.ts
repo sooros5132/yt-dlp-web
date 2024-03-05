@@ -21,6 +21,7 @@ export interface VideoMetadata {
   description: string;
   thumbnail: string;
   isLive: boolean;
+  duration: number;
   best: {
     formatId: string;
     formatNote: string;
