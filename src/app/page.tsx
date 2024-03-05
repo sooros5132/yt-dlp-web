@@ -17,7 +17,7 @@ export default function Home() {
         <ThemeToggle />
       </div>
       <div className='flex flex-col gap-4 lg:flex-row '>
-        <div className='lg:flex flex-col lg:shrink-0 lg:w-96 lg:py-4 lg:supports-[max-height:100dvh]:max-h-[100dvh] lg:max-h-[100vh] lg:sticky lg:top-0 lg:left-0'>
+        <div className='lg:flex flex-col lg:shrink-0 lg:w-96 lg:py-4 lg:max-h-screen lg:sticky lg:top-0 lg:left-0'>
           <DownloadContainer />
         </div>
         <div className='lg:grow lg:py-4'>
