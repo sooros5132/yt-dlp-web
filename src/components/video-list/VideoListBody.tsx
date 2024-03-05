@@ -48,7 +48,7 @@ function VideoGridViewer({ items, orders, isLoading }: VideoListBodyProps) {
         data={orders}
         listClassName={gridClassName}
         itemClassName=''
-        itemContent={(index, uuid) => <VideoGridItemWithMemo video={items[uuid]} />}
+        itemContent={(index, uuid) => <VideoGridItemWithMemo key={uuid} video={items[uuid]} />}
       />
     </>
   ) : (

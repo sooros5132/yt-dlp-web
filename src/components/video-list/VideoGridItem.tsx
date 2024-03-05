@@ -265,18 +265,21 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
   };
 
   useEffect(() => {
+    if (video?.uuid) {
+      const { selectedUuids } = useVideoListStore.getState();
+      const newIsSelected = selectedUuids.has(video.uuid);
+      setSelected(newIsSelected);
+    }
     const unsubscribe = useVideoListStore.subscribe((state) => {
       if (video?.uuid) {
         const newIsSelected = state.selectedUuids.has(video.uuid);
-        if (newIsSelected !== isSelected) {
-          setSelected(newIsSelected);
-        }
+        setSelected(newIsSelected);
       }
     });
     return () => {
       unsubscribe();
     };
-  });
+  }, [video]);
 
   useEffect(() => {
     if (
