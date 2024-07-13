@@ -320,7 +320,7 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
 
   return (
     <div className={cn(isSelectMode && 'select-none')}>
-      <Card className='relative bg-card-nested flex flex-col rounded-xl overflow-hidden border-none'>
+      <Card className='relative bg-background flex flex-col rounded-xl overflow-hidden border-none'>
         <div
           className={cn(
             'relative flex items-center shrink-0 grow-0 min-w-[100px] max-h-[250px] overflow-hidden aspect-video',

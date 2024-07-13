@@ -9,9 +9,11 @@ export default function Home() {
   return (
     <main className='mx-auto max-w-8xl p-4 space-y-4'>
       <UrlParameterWatcher />
-      <div className='flex gap-x-2 items-center justify-between'>
-        <h1 className='grow flex items-center text-2xl'>yt-dlp-web</h1>
-        <div className='grow max-w-[--site-min-width] ml-auto text-right'>
+      <div className='flex gap-x-1 sm:gap-x-2 items-center justify-between'>
+        <h1 className='grow shrink-0 inline-flex text-xl sm:text-2xl whitespace-nowrap'>
+          yt-dlp-web
+        </h1>
+        <div className='flex-auto max-w-[--site-min-width] ml-auto text-right'>
           <StorageStat />
         </div>
         <ThemeToggle />
