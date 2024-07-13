@@ -1,6 +1,3 @@
-export const dynamic = 'auto';
-export const revalidate = 600;
-
 export async function GET(request: Request) {
   try {
     const getUrlObject = new URL(request.url);
@@ -10,18 +7,23 @@ export async function GET(request: Request) {
       throw 'Param `url` is only string type';
     }
 
-    const response = await fetch(url).then(async (response) => {
-      return response;
-    });
-    if (!response) {
-      return new Response('Not Found', {
-        status: 404
-      });
+    const image = await fetch(url);
+
+    if (!image.ok) {
+      throw 'not found';
     }
 
-    return new Response(await response.arrayBuffer(), {
-      status: response.status,
-      statusText: response.statusText
+    const contentType = image.headers.get('Content-Type');
+
+    const imageBase64 = await image.arrayBuffer();
+
+    return new Response(imageBase64, {
+      headers: {
+        'Content-Type': contentType || 'image/png',
+        'Content-Length': String(imageBase64.byteLength || 0),
+        'Cache-Control': 'public, max-age=600'
+      },
+      status: 200
     });
   } catch (error) {
     return new Response(error as string, {

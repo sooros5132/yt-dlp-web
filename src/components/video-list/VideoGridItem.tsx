@@ -39,6 +39,8 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
   const [isValidating, setValidating] = useState(false);
   const [isMouseEntered, setMouseEntered] = useState(false);
   const [isThumbnailImageError, setThumbnailImageError] = useState(false);
+  const [proxyThumbnailUrl, setProxyThumbnailUrl] = useState('');
+  const [isProxyThumbnailImageError, setProxyThumbnailImageError] = useState(false);
   const [isNotSupportedCodec, setNotSupportedCodec] = useState(false);
   const [recommendedDownloadRetry, setRecommendedDownloadRetry] = useState(false);
   const [openPlaylistView, setOpenPlaylistView] = useState(false);
@@ -198,6 +200,12 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
 
   const handleImageError = () => {
     setThumbnailImageError(true);
+    if (typeof video.thumbnail === 'string' && video.thumbnail.startsWith('http')) {
+      setProxyThumbnailUrl(`/api/image?url=${encodeURIComponent(video.thumbnail)}`);
+    }
+  };
+  const handleProxyImageError = () => {
+    setProxyThumbnailImageError(true);
   };
 
   const handleClickVideo = async () => {
@@ -345,17 +353,24 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
             className={cn('w-full h-full', isMouseEntered ? 'hidden' : 'block')}
             onClick={handleMouseEnter}
           >
-            <figure className='relative w-full h-full bg-black/30'>
+            <figure className='relative w-full h-full bg-black'>
               {video.thumbnail && !isThumbnailImageError ? (
                 <img
-                  className='w-full h-full object-cover'
-                  src={
-                    isCompleted && video.localThumbnail
-                      ? '/api/thumbnail?uuid=' + video.uuid
-                      : video.thumbnail
-                  }
-                  alt={'thumbnail'}
+                  className='w-full h-full object-contain'
+                  src={video.thumbnail}
+                  alt='thumbnail'
                   onError={handleImageError}
+                  loading='lazy'
+                />
+              ) : video.thumbnail &&
+                isThumbnailImageError &&
+                proxyThumbnailUrl &&
+                !isProxyThumbnailImageError ? (
+                <img
+                  className='w-full h-full object-contain'
+                  src={proxyThumbnailUrl}
+                  alt='thumbnail'
+                  onError={handleProxyImageError}
                   loading='lazy'
                 />
               ) : (
@@ -369,7 +384,7 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
                   onClick={(event) => event.stopPropagation()}
                 >
                   <div className='w-full bg-black/70 text-white text-sm md:text-base py-2'>
-                    {`The file does not exist or cannot be played.`}
+                    The file does not exist or cannot be played.
                   </div>
                 </div>
               )}
