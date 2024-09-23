@@ -58,7 +58,7 @@ You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it,
 - macOS Sonoma v14.1.1
 
 # Used stack
-- [yt-dlp v2024.07.09](https://github.com/yt-dlp/yt-dlp)
+- [yt-dlp v2024.08.06](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
 - [Next.js v13.5](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
