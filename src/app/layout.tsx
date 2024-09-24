@@ -1,7 +1,7 @@
 import './globals.css';
 import type { PropsWithChildren } from 'react';
 import { Inter } from 'next/font/google';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { ToastContainerProvider } from '@/components/provider/ToastContainerProvider';
 import { RehydrateProvider } from '@/components/RehydrateProvider';
 import { VideoPlayerContainer } from '@/components/modules/VideoPlayer';
@@ -54,15 +54,16 @@ export const metadata: Metadata = {
     index: false,
     follow: false,
     nocache: false
-  },
+  }
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  minimumScale: 1,
+  initialScale: 1,
+  userScalable: false,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#e4e4e7' },
     { media: '(prefers-color-scheme: dark)', color: '#141211' }
-  ],
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false
-  }
+  ]
 };

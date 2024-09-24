@@ -5,6 +5,11 @@ services:
     image: sooros5132/yt-dlp-web
     container_name: yt-dlp-web
     user: 1000:1000
+    # environment:
+    #   If you need to protect the site, set AUTH_SECRET, CREDENTIAL_USERNAME, CREDENTIAL_PASSWORD.
+    #   AUTH_SECRET: "Random_string,_40+_characters_recommended"
+    #   CREDENTIAL_USERNAME: "username"
+    #   CREDENTIAL_PASSWORD: "password"
     volumes:
       - ~/Desktop/downloads:/downloads
       - ~/Desktop/cache:/cache

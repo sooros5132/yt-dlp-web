@@ -23,3 +23,8 @@ export type DiskSpace = {
   usage: number;
   usageInPercentage: number;
 };
+
+export type PageContext<T> = {
+  params: T;
+  searchParams: Record<string, string | string[]>;
+};

@@ -4,8 +4,10 @@ import { cn } from '@/lib/utils';
 
 export function Loading({ className }: { className?: ClassValue }) {
   return (
-    <div className={cn('text-xl flex justify-center animate-spin', className)}>
-      <AiOutlineLoading3Quarters />
+    <div className={cn('text-xl flex justify-center', className)}>
+      <span className='w-[1em] h-[1em] animate-spin'>
+        <AiOutlineLoading3Quarters />
+      </span>
     </div>
   );
 }
