@@ -42,7 +42,7 @@ docker compose up -d
 
 # iOS Shortcut
 You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it, please enter the domain where yt-dlp-web is deployed in the text box in the shortcut's settings below.
-[https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155](https://www.icloud.com/shortcuts/cde2880ff1cc47b4be37e5b6ce05b155)
+[https://www.icloud.com/shortcuts/8b038411c518474bbfe566f9fbe1e046](https://www.icloud.com/shortcuts/8b038411c518474bbfe566f9fbe1e046)
 
 <br />
 
