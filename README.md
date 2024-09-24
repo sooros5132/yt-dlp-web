@@ -48,13 +48,13 @@ docker compose up -d
 
 # Change yt-dlp version
 If you change versions, it might not work correctly.
-```
+```BASH
 # To update to nightly from stable executable/binary:
 docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to nightly
 
 # Specifying versions, releases: https://github.com/yt-dlp/yt-dlp/releases
 docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to stable@<releases date>
-ex) docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to stable@2024.08.06
+# ex) docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to stable@2024.08.06
 ```
 
 # iOS Shortcut
