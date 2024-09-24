@@ -23,6 +23,12 @@ services:
     image: sooros5132/yt-dlp-web
     container_name: yt-dlp-web
     user: 1000:1000 # User Id, Group Id Setting
+    # environment:
+    #   If you need to protect the site, set AUTH_SECRET, CREDENTIAL_USERNAME, CREDENTIAL_PASSWORD.
+    #   ex)
+    #   AUTH_SECRET: "Random_string,_40+_characters_recommended"
+    #   CREDENTIAL_USERNAME: "username"
+    #   CREDENTIAL_PASSWORD: "password"
     volumes:
       - /path/to/downloads:/downloads # Downloads folder
       - /path/to/cache:/cache         # Cache folder
@@ -40,6 +46,17 @@ docker-compose up -d
 docker compose up -d
 ```
 
+# Change yt-dlp version
+If you change versions, it might not work correctly.
+```
+# To update to nightly from stable executable/binary:
+docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to nightly
+
+# Specifying versions, releases: https://github.com/yt-dlp/yt-dlp/releases
+docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to stable@<releases date>
+ex) docker exec -u 0 -it yt-dlp-web /usr/local/bin/yt-dlp --update-to stable@2024.08.06
+```
+
 # iOS Shortcut
 You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it, please enter the domain where yt-dlp-web is deployed in the text box in the shortcut's settings below.
 [https://www.icloud.com/shortcuts/8b038411c518474bbfe566f9fbe1e046](https://www.icloud.com/shortcuts/8b038411c518474bbfe566f9fbe1e046)
@@ -55,12 +72,12 @@ You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it,
 
 # Tested
 - Ubuntu 22.04.2 LTS
-- macOS Sonoma v14.1.1
+- macOS Sonoma v14.6.1
 
 # Used stack
 - [yt-dlp v2024.08.06](https://github.com/yt-dlp/yt-dlp)
 - [ffmpeg v6](https://ffmpeg.org/)
-- [Next.js v13.5](https://nextjs.org/)
+- [Next.js v14.2.13](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
 - [TypeScript v5](https://www.typescriptlang.org/)
 - [Docker](https://www.docker.com/)
