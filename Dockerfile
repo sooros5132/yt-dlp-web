@@ -45,13 +45,9 @@ RUN apk update && \
 RUN wget https://github.com/yt-dlp/yt-dlp/releases/download/2024.08.06/yt-dlp -O /usr/local/bin/yt-dlp && \
   chmod a+rx /usr/local/bin/yt-dlp
 
-# Set default values for UID and GID environment variables
-ENV UID=1001
-ENV GID=1001
-
 # Use environment variables in the addgroup and adduser commands
-RUN addgroup --system --gid $GID nodejs && \
-    adduser --system --uid $UID --ingroup nodejs nextjs
+RUN addgroup --system --gid ${GID:-1001} nodejs && \
+    adduser --system --uid ${UID:-1001} --ingroup nodejs nextjs
 
 COPY --from=builder /app/public ./public
 
