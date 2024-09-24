@@ -11,7 +11,7 @@ import type { DiskSpace } from '@/types/types';
 export const StorageStat = () => {
   return (
     <div>
-      <div className='mb-1'>Storage</div>
+      <div className='text-sm mb-1'>Storage</div>
       <Suspense fallback={<Loading />}>
         <StorageStatInner />
       </Suspense>
@@ -20,7 +20,11 @@ export const StorageStat = () => {
 };
 
 function StorageStatInner() {
-  const { data: space, error } = useSWR<DiskSpace>(
+  const {
+    data: space,
+    error,
+    isLoading
+  } = useSWR<DiskSpace>(
     '/api/stat/storage',
     async (url) => {
       const data = await axios.get(url).then((res) => res.data);
@@ -33,14 +37,18 @@ function StorageStatInner() {
     }
   );
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
   if (!space || error) {
-    return <div className='text-sm text-zinc-400'>Unable to get storage information</div>;
+    return <div className='text-xs text-zinc-400'>Unable to get storage information</div>;
   }
 
   return (
     <div>
       <Progress className='h-2' value={space.usageInPercentage} />
-      <div className='text-sm text-foreground/80'>
+      <div className='text-xs text-foreground/80'>
         {numeral(space.usage).format('0.0b')} of {numeral(space.total).format('0.0b')} used
       </div>
     </div>

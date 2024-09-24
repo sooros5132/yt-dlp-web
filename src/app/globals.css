@@ -76,7 +76,7 @@
 
   html,
   body {
-    @apply bg-background text-foreground min-h-full min-w-[--site-min-width];
+    @apply bg-background text-foreground h-full min-w-[--site-min-width];
   }
   html {
     scrollbar-width: thin;
