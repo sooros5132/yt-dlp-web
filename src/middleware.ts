@@ -32,9 +32,17 @@ const publicApiPaths = new Set([
 export async function middleware(request: NextRequest) {
   if (isRequiredAuthentication) {
     if (request.nextUrl.pathname === '/') {
-      return (await getSession())
-        ? NextResponse.next()
-        : NextResponse.redirect(new URL('/signin', request.url));
+      if (await getSession()) {
+        return NextResponse.next();
+      }
+      let callback = '';
+      try {
+        callback = encodeURIComponent(`${request.nextUrl.pathname}${request.nextUrl.search}`);
+      } catch (e) {}
+
+      return NextResponse.redirect(
+        new URL(`/signin${callback ? `?callback=${callback}` : ''}`, request.url)
+      );
     } else if (request.nextUrl.pathname === '/signin') {
       return (await getSession())
         ? NextResponse.redirect(new URL('/', request.url))

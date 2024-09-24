@@ -10,12 +10,20 @@ import {
 
 import type { NextAuthResult, Session } from 'next-auth';
 
-export const signIn = async ({ username, password }: { username: string; password: string }) => {
+export const signIn = async ({
+  username,
+  password,
+  redirectTo
+}: {
+  username: string;
+  password: string;
+  redirectTo?: string;
+}) => {
   try {
     await NextAuthSignIn('credentials', {
       username,
       password,
-      redirectTo: '/'
+      redirectTo: redirectTo ? redirectTo : '/'
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

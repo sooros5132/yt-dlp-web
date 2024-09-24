@@ -5,6 +5,7 @@ import { signIn } from '@/server/actions/auth';
 import { useState, useTransition } from 'react';
 
 import type { FormEvent } from 'react';
+import type { PageContext } from '@/types/types';
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,11 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Footer } from '@/components/modules/Footer';
 import { Loading } from '@/components/modules/Loading';
 
-export default function SignInPage() {
+export default function SignInPage(context: PageContext<{}>) {
+  const callback = Array.isArray(context.searchParams.callback)
+    ? context.searchParams.callback[0]
+    : context.searchParams.callback;
+
   const [errorMessage, setErrorMessage] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -26,7 +31,8 @@ export default function SignInPage() {
 
         await signIn({
           username: target.username.value,
-          password: target.password.value
+          password: target.password.value,
+          redirectTo: callback ? decodeURIComponent(callback || '') : undefined
         }).then((res) => {
           if (typeof res === 'string') {
             setErrorMessage(res);
