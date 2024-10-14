@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'react-toastify';
 import { IoClose } from 'react-icons/io5';
@@ -161,6 +161,7 @@ const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
 DownloadForm.displayName = 'DownloadForm';
 
 const UrlFieldOption = () => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const { hydrated, isFetching, enableDownloadNow, url, setUrl } = useDownloadFormStore(
     ({ hydrated, isFetching, enableDownloadNow, url, setUrl }) => ({
       hydrated,
@@ -179,6 +180,7 @@ const UrlFieldOption = () => {
 
   const handleClickDeleteUrlButton = () => {
     setUrl('');
+    inputRef?.current?.focus?.();
   };
 
   const handleClickPasteClipboardButton = async () => {
@@ -193,6 +195,7 @@ const UrlFieldOption = () => {
     <div className='flex justify-between gap-x-2'>
       <div className='flex items-center justify-between rounded-full shadow-sm flex-auto'>
         <Input
+          ref={inputRef}
           name='url'
           type='text'
           className='flex-auto rounded-full rounded-r-none border-none'
