@@ -41,6 +41,7 @@ export const {
   auth,
   unstable_update: update
 } = NextAuth({
+  secret: !isRequiredAuthentication ? 'DISABLED_AUTHENTICATION' : AUTH_SECRET,
   trustHost: true,
   session: {
     strategy: 'jwt', // JSON Web Token 사용
