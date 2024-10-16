@@ -308,12 +308,17 @@ export class YtDlpHelper {
     }
 
     return new Promise(async (resolve) => {
-      const ytdlp = spawn('yt-dlp', [...options, this.url], {
+      const downloadOptions = [...options, this.url];
+      const ytdlp = spawn('yt-dlp', downloadOptions, {
         killSignal: 'SIGINT',
         cwd: DOWNLOAD_PATH
       });
 
-      console.log(`new process, \`${ytdlp.pid}\``);
+      console.info(
+        `[${new Date().toISOString()}] [new process] [yt-dlp pid: ${ytdlp.pid}]`,
+        'downloadOptions:',
+        JSON.stringify(downloadOptions)
+      );
 
       if (ytdlp.pid) {
         this.videoInfo.download.pid = ytdlp.pid;
@@ -326,10 +331,10 @@ export class YtDlpHelper {
       ytdlp.stderr.setEncoding('utf-8');
       if (isDevelopment) {
         ytdlp.stdout.on('data', (data) => {
-          console.log('[stdout]', data?.trim?.());
+          console.debug('[stdout]', data?.trim?.());
         });
         ytdlp.stderr.on('data', (data) => {
-          console.log('[stderr]', data?.trim?.());
+          console.debug('[stderr]', data?.trim?.());
         });
       }
 
@@ -473,12 +478,23 @@ export class YtDlpHelper {
               break;
             }
             default: {
-              reject(stderrMessage || 'Failed fetching formats');
+              const errorMessage = stderrMessage || 'Failed fetching formats';
+              console.info(
+                `[${new Date().toISOString()}] [failed get metadata] [yt-dlp pid: ${ytdlp.pid}]`,
+                errorMessage
+              );
+              reject(errorMessage);
               break;
             }
           }
-        } catch (e) {
-          reject(e || 'Failed fetching formats, downloading best available');
+        } catch (err) {
+          const errorMessage = err || 'Failed fetching formats, downloading best available';
+          console.info(
+            `[${new Date().toISOString()}] [failed get metadata] [yt-dlp pid: ${ytdlp.pid}]`,
+            errorMessage
+          );
+
+          reject(errorMessage);
         }
       });
     });
@@ -575,6 +591,10 @@ export class YtDlpHelper {
           this.videoInfo.status = 'failed';
           this.videoInfo.error = error;
           await CacheHelper.set(uuid, this.videoInfo);
+          console.info(
+            `[${new Date().toISOString()}] [failed download] [yt-dlp pid: ${ytdlp.pid}]`,
+            error
+          );
           return downloadErrorCallback?.(error);
         }
 
@@ -661,6 +681,10 @@ export class YtDlpHelper {
           videoInfo.download.pid = null;
         }
         await CacheHelper.set(uuid, videoInfo);
+        console.info(
+          `[${new Date().toISOString()}] [failed download] [yt-dlp pid: ${ytdlp.pid}]`,
+          message
+        );
         return;
       }
 
@@ -683,6 +707,10 @@ export class YtDlpHelper {
           this.videoInfo.status = 'failed';
           this.videoInfo.error = error;
           await CacheHelper.set(uuid, this.videoInfo);
+          console.info(
+            `[${new Date().toISOString()}] [failed download] [yt-dlp pid: ${ytdlp.pid}]`,
+            message
+          );
           return;
         }
 
@@ -788,6 +816,9 @@ export class YtDlpHelper {
         videoInfo.file.size = stat.size;
         videoInfo.updatedAt = Date.now();
         await CacheHelper.set(uuid, videoInfo);
+        console.info(
+          `[${new Date().toISOString()}] [complete download] [yt-dlp pid: ${ytdlp.pid}]`
+        );
 
         try {
           const ffmpeg = new FFmpegHelper({
@@ -829,6 +860,7 @@ export class YtDlpHelper {
       }
       videoInfo.updatedAt = Date.now();
       await CacheHelper.set(uuid, videoInfo);
+      console.info(`[${new Date().toISOString()}] [complete download] [yt-dlp pid: ${ytdlp.pid}]`);
     };
 
     const downloadListener = async (_text: string) => {
@@ -1053,6 +1085,9 @@ export class YtDlpHelper {
         );
 
         await throttleCacheSet(uuid, videoInfo);
+        console.info(
+          `[${new Date().toISOString()}] [complete download] [yt-dlp pid: ${ytdlp.pid}]`
+        );
       }
 
       const filePath = fileRegex.exec(message)?.[1];

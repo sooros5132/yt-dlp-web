@@ -32,7 +32,10 @@ export class ProcessHelper {
   // 2와 15 사용을 추천, 9번은 클린업 코드가 실행 안된다.
   async kill(code = 2) {
     spawn('kill', [`-${code}`, String(this.pid)]).on('exit', () => {
-      console.log(`stopped process \`${this.pid}\``);
+      console.info(
+        `[${new Date().toISOString()}] [kill process] [yt-dlp pid: ${this.pid}]`,
+        `SIGCODE: ${code}`
+      );
     });
   }
 
