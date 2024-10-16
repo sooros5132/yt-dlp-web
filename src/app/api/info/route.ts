@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
+import {
+  checkRequiredFoldersAreAccessible,
+  checkRequiredFoldersAreMounted
+} from '@/server/helpers/PermissionHelper';
 
 // const encoder = new TextEncoder();
 
@@ -21,6 +25,9 @@ export async function GET(request: Request, context: { params: { url: string } }
     if (!/^https?:\/?\/?/i.test(url)) {
       throw 'Please add `http://` or `https://`. ex) https://www.youtube.com/xxxxx';
     }
+
+    await checkRequiredFoldersAreMounted();
+    await checkRequiredFoldersAreAccessible();
 
     const ytdlp = new YtDlpHelper({
       url,
