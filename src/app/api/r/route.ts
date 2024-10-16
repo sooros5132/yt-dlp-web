@@ -3,6 +3,7 @@ import type { VideoInfo } from '@/types/video';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { ProcessHelper } from '@/server/helpers/ProcessHelper';
+import { checkRequiredFoldersAreAccessible } from '@/server/helpers/PermissionHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +14,12 @@ export async function GET(request: Request) {
   const urlObject = new URL(request.url);
   const searchParams = urlObject.searchParams;
   const uuid = searchParams.get('uuid');
+
   if (typeof uuid !== 'string') {
     return NextResponse.json({ error: 'Param `uuid` is only string type' }, { status: 400 });
   }
+
+  await checkRequiredFoldersAreAccessible();
 
   const videoInfo = await CacheHelper.get<VideoInfo>(uuid);
   if (!videoInfo || !videoInfo?.format) {
