@@ -72,11 +72,11 @@ You can open yt-dlp-web in the app's share with a shortcut.<br/>Before using it,
 
 # Tested
 - Ubuntu 22.04.2 LTS
-- macOS Sonoma v14.6.1
+- macOS Sequoia v15.0.1
 
 # Used stack
-- [yt-dlp v2024.08.06](https://github.com/yt-dlp/yt-dlp)
-- [ffmpeg v6](https://ffmpeg.org/)
+- [yt-dlp v2024.10.07](https://github.com/yt-dlp/yt-dlp)
+- [ffmpeg v6.0.1](https://ffmpeg.org/)
 - [Next.js v14.2.13](https://nextjs.org/)
 - [React v18.2](https://react.dev/)
 - [TypeScript v5](https://www.typescriptlang.org/)

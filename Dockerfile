@@ -42,12 +42,12 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN apk update && \
   apk add ffmpeg python3
-RUN wget https://github.com/yt-dlp/yt-dlp/releases/download/2024.08.06/yt-dlp -O /usr/local/bin/yt-dlp && \
+RUN wget https://github.com/yt-dlp/yt-dlp/releases/download/2024.10.07/yt-dlp -O /usr/local/bin/yt-dlp && \
   chmod a+rx /usr/local/bin/yt-dlp
 
 # Use environment variables in the addgroup and adduser commands
 RUN addgroup --system --gid ${GID:-1001} nodejs && \
-    adduser --system --uid ${UID:-1001} --ingroup nodejs nextjs
+  adduser --system --uid ${UID:-1001} --ingroup nodejs nextjs
 
 COPY --from=builder /app/public ./public
 
