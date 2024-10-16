@@ -3,7 +3,10 @@ import type { VideoInfo } from '@/types/video';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { ProcessHelper } from '@/server/helpers/ProcessHelper';
-import { checkRequiredFoldersAreAccessible } from '@/server/helpers/PermissionHelper';
+import {
+  checkRequiredFoldersAreAccessible,
+  checkRequiredFoldersAreMounted
+} from '@/server/helpers/PermissionHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +22,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Param `uuid` is only string type' }, { status: 400 });
   }
 
+  await checkRequiredFoldersAreMounted();
   await checkRequiredFoldersAreAccessible();
 
   const videoInfo = await CacheHelper.get<VideoInfo>(uuid);

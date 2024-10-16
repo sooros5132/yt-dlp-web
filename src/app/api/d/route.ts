@@ -4,7 +4,10 @@ import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { randomUUID } from 'crypto';
 import type { SelectQuality } from '@/types/video';
 import { VIDEO_LIST_FILE } from '@/server/constants';
-import { checkRequiredFoldersAreAccessible } from '@/server/helpers/PermissionHelper';
+import {
+  checkRequiredFoldersAreAccessible,
+  checkRequiredFoldersAreMounted
+} from '@/server/helpers/PermissionHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +40,7 @@ export async function GET(request: Request) {
       throw 'Please add `http://` or `https://`. ex) https://www.youtube.com/xxxxx';
     }
 
+    await checkRequiredFoldersAreMounted();
     await checkRequiredFoldersAreAccessible();
 
     const videoId =
