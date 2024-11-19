@@ -365,7 +365,7 @@ export const VideoListHeader: React.FC<VideoListHeaderProps> = ({
             className='text-base text-blue-400 hover:text-blue-400/90'
             onClick={handleClickClearAll}
           >
-            Unselecte All
+            Unselect All
           </Button>
           <Button
             variant='outline'
