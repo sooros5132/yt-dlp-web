@@ -1,9 +1,13 @@
-import { cn, isPropsEquals } from '@/lib/utils';
-import { type VideoInfo } from '@/types/video';
-import { LinkIcon } from 'lucide-react';
-import numeral from 'numeral';
 import { memo } from 'react';
+import numeral from 'numeral';
+import { LinkIcon } from 'lucide-react';
 import { AiOutlineCloudDownload } from 'react-icons/ai';
+import { FaPlay } from 'react-icons/fa6';
+
+import type { VideoInfo } from '@/types/video';
+
+import { cn, isPropsEquals } from '@/lib/utils';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
 import { Divider } from '@/components/Divider';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -19,6 +23,17 @@ export const PlaylistViewer = memo(({ open, video, onClose }: PlaylistViewerProp
     if (!open) {
       onClose();
     }
+  };
+
+  const handleClickPlayVideo = (playlistVideo: VideoInfo['playlist'][number]) => () => {
+    useVideoPlayerStore.getState().open({
+      uuid: video.uuid,
+      size: playlistVideo.size,
+      url: playlistVideo.url || '',
+      playlistVideoUuid: playlistVideo.uuid,
+      title: playlistVideo.name || '',
+      type: video.type
+    });
   };
 
   return (
@@ -78,7 +93,13 @@ export const PlaylistViewer = memo(({ open, video, onClose }: PlaylistViewerProp
                       ) : item.isLive ? (
                         <span className='text-muted-foreground'>Live has been excluded.</span>
                       ) : (
-                        <span title={item.name || ''}>{item.name}</span>
+                        <span
+                          className='hover:underline cursor-pointer'
+                          title={item.name || ''}
+                          onClick={handleClickPlayVideo(item)}
+                        >
+                          {item.name}
+                        </span>
                       )}
                     </div>
                     <span className='shrink-0'>
@@ -88,7 +109,14 @@ export const PlaylistViewer = memo(({ open, video, onClose }: PlaylistViewerProp
                   <div className='flex items-center shrink-0 leading-4'>
                     <Button
                       size='sm'
-                      className='p-0 h-[1.5em] text-lg bg-info hover:bg-info/90 rounded-xl rounded-r-none'
+                      className='px-3 h-[1.5em] text-lg bg-warning hover:bg-warning/90 rounded-xl rounded-r-none'
+                      onClick={handleClickPlayVideo(item)}
+                    >
+                      <FaPlay className='text-sm' />
+                    </Button>
+                    <Button
+                      size='sm'
+                      className='p-0 h-[1.5em] text-lg bg-info hover:bg-info/90 rounded-none'
                     >
                       <a
                         href={item.url || ''}

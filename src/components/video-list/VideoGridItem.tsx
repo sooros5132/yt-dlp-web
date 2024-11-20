@@ -234,7 +234,13 @@ export const VideoGridItem = ({ video }: VideoGridItemProps) => {
         }
         const openVideo = useVideoPlayerStore.getState().open;
         setMouseEntered(false);
-        openVideo(video);
+        openVideo({
+          title: video.title,
+          type: video.type,
+          url: video.url,
+          uuid: video.uuid,
+          size: video?.file?.size
+        });
       } catch (e) {
         if (e === NOT_SUPPORTED) {
           setNotSupportedCodec(true);
