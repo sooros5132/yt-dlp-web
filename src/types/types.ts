@@ -28,3 +28,7 @@ export type PageContext<T> = {
   params: T;
   searchParams: Record<string, string | string[]>;
 };
+
+export type WithoutNullableKeys<T> = {
+  [Key in keyof T]-?: NonNullable<T[Key]>;
+};

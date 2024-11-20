@@ -1,7 +1,7 @@
 import { createWithEqualityFn } from 'zustand/traditional';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { VideoInfo } from '@/types/video';
 import { shallow } from 'zustand/shallow';
+import type { VideoPlayerVideoInfo } from '@/components/modules/VideoPlayer';
 
 interface VideoPlayerState {
   openVideoPlayer: boolean;
@@ -10,13 +10,14 @@ interface VideoPlayerState {
   isTopSticky: boolean;
   isLoopVideo: boolean;
   videoUuid: string;
-  video: VideoInfo | null;
+  playlistVideoUuid: string;
+  video: VideoPlayerVideoInfo | null;
   currentTime: number;
   volume: number;
 }
 
 export interface VideoPlayerStore extends VideoPlayerState {
-  open: (video: VideoInfo | null) => void;
+  open: (video: VideoPlayerVideoInfo | null) => void;
   close: () => void;
   setVolume: (volume: number) => void;
   setCurrentTime: (currentTime: number) => void;
@@ -34,6 +35,7 @@ const initialState: VideoPlayerState = {
   isLoopVideo: false,
   video: null,
   videoUuid: '',
+  playlistVideoUuid: '',
   currentTime: 0,
   volume: 0.75
 };
@@ -44,13 +46,19 @@ export const useVideoPlayerStore = createWithEqualityFn(
       ...initialState,
       open(video) {
         set((prev) => {
-          const nextCurrentTime = video && prev?.videoUuid === video?.uuid ? prev.currentTime : 0;
+          const nextCurrentTime =
+            video &&
+            prev?.videoUuid === video?.uuid &&
+            (!video?.playlistVideoUuid || prev?.playlistVideoUuid === video?.playlistVideoUuid)
+              ? prev.currentTime
+              : 0;
 
           return {
             openVideoPlayer: true,
             isNotSupportedCodec: false,
             video,
             videoUuid: video?.uuid || '',
+            playlistVideoUuid: video?.playlistVideoUuid || '',
             currentTime: nextCurrentTime
           };
         });

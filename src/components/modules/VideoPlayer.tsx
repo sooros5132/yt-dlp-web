@@ -1,82 +1,57 @@
 'use client';
 
 import { ChangeEvent, useEffect, useRef } from 'react';
-import { VideoPlayerStore, useVideoPlayerStore } from '@/store/videoPlayer';
+import { LinkIcon } from 'lucide-react';
+import { TiArrowLoop } from 'react-icons/ti';
 import { TbPin, TbPinnedOff, TbViewportNarrow, TbViewportWide } from 'react-icons/tb';
 import { HiOutlineArrowLeft } from 'react-icons/hi2';
 import { AiOutlineFullscreen } from 'react-icons/ai';
 import { CgClose } from 'react-icons/cg';
-import { Button } from '@/components/ui/button';
-import { LinkIcon } from 'lucide-react';
+
+import type { WithoutNullableKeys } from '@/types/types';
+import type { VideoInfo } from '@/types/video';
+import type { VideoPlayerStore } from '@/store/videoPlayer';
+
 import { cn } from '@/lib/utils';
-import { TiArrowLoop } from 'react-icons/ti';
+import { useVideoPlayerStore } from '@/store/videoPlayer';
+import { Button } from '@/components/ui/button';
 
-export const VideoPlayerContainer = () => {
-  const {
-    isLoopVideo,
-    isNotSupportedCodec,
-    isTopSticky,
-    isWideScreen,
-    openVideoPlayer,
-    video,
-    volume
-  } = useVideoPlayerStore();
-
-  if (!openVideoPlayer || !video) {
-    return null;
-  }
-
-  return (
-    <VideoPlayer
-      isLoopVideo={isLoopVideo}
-      isNotSupportedCodec={isNotSupportedCodec}
-      isTopSticky={isTopSticky}
-      isWideScreen={isWideScreen}
-      openVideoPlayer={openVideoPlayer}
-      video={video}
-      volume={volume}
-    />
-  );
+export type VideoPlayerVideoInfo = {
+  uuid: string;
+  title?: string | null;
+  url: string;
+  playlistVideoUuid?: string;
+  size?: number;
+  type: VideoInfo['type'];
 };
 
-type VideoPlayerProps = Pick<
+export type VideoPlayerProps = {
+  videoInfo: VideoPlayerVideoInfo;
+} & Pick<
   VideoPlayerStore,
-  | 'video'
-  | 'openVideoPlayer'
-  | 'isNotSupportedCodec'
-  | 'isWideScreen'
-  | 'isTopSticky'
-  | 'isLoopVideo'
-  | 'volume'
+  'isNotSupportedCodec' | 'isWideScreen' | 'isTopSticky' | 'isLoopVideo' | 'volume'
 >;
 
-type WithoutNullableKeys<T> = {
-  [Key in keyof T]-?: NonNullable<T[Key]>;
-};
-
-function VideoPlayer({
+export function VideoPlayer({
   isLoopVideo,
   isNotSupportedCodec,
-  isTopSticky,
+  isTopSticky: _isTopSticky,
   isWideScreen,
-  openVideoPlayer,
-  video,
+  videoInfo,
   volume
 }: WithoutNullableKeys<VideoPlayerProps>) {
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (isTopSticky) return;
-
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isTopSticky]);
+  const isTopSticky = _isTopSticky && videoInfo.type === 'video';
+  const videoFileUrl =
+    videoInfo.type === 'playlist' && videoInfo.playlistVideoUuid
+      ? `/api/playlist/file?uuid=${videoInfo.uuid}${
+          videoInfo.playlistVideoUuid ? `&itemUuid=${videoInfo.playlistVideoUuid}` : ''
+        }`
+      : `/api/file?uuid=${videoInfo.uuid}`;
 
   useEffect(() => {
     const videoEl = videoRef.current;
-    if (!openVideoPlayer || !video || !videoEl) {
+    if (!videoInfo || !videoEl) {
       return;
     }
     (async function () {
@@ -127,9 +102,14 @@ function VideoPlayer({
     videoEl.addEventListener('playing', handlePlayingVideo);
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
-      videoEl?.removeEventListener('playing', handlePlayingVideo);
+      if (videoEl) {
+        const { setCurrentTime } = useVideoPlayerStore.getState();
+        const currentTime = Number(videoEl.currentTime) || 0;
+        if (currentTime) setCurrentTime(currentTime);
+        videoEl.removeEventListener('playing', handlePlayingVideo);
+      }
     };
-  }, [openVideoPlayer, video]);
+  }, [videoInfo]);
 
   const handleClose = () => {
     const close = useVideoPlayerStore.getState().close;
@@ -138,7 +118,8 @@ function VideoPlayer({
       const { setVolume, setCurrentTime } = useVideoPlayerStore.getState();
       const volume = videoEl.volume;
       setVolume(typeof volume === 'number' ? volume : 0.75);
-      setCurrentTime(Number(videoEl.currentTime) || 0);
+      const currentTime = Number(videoEl.currentTime) || 0;
+      if (currentTime) setCurrentTime(currentTime);
     }
 
     close();
@@ -198,12 +179,7 @@ function VideoPlayer({
   };
 
   return (
-    <div
-      className={cn(
-        'group top-0 left-0 w-full min-w-[var(--site-min-width)] flex flex-col items-center space-between bg-black/90 dark:bg-black/70 backdrop-blur-lg z-10 overflow-hidden',
-        isTopSticky ? 'sticky min-h-[200px] h-[35vh] md:h-[30vh]' : 'fixed h-full'
-      )}
-    >
+    <div className='group w-full h-full min-w-[var(--site-min-width)] flex flex-col items-center space-between overflow-hidden'>
       <div
         className={cn(
           'flex w-full min-h-14 max-h-30 p-2 grow-0 shrink-0 items-center justify-between bg-black/30 text-white transition-opacity duration-500',
@@ -221,15 +197,15 @@ function VideoPlayer({
           >
             <HiOutlineArrowLeft />
           </Button>
-          <div className='pl-2 font-bold line-clamp-2' title={video.title || ''}>
-            {video.title}
+          <div className='pl-2 font-bold line-clamp-2' title={videoInfo.title || ''}>
+            {videoInfo.title}
           </div>
         </div>
         <div className='flex gap-x-1 whitespace-nowrap'>
           <Button variant='ghost' size='icon' className='w-[1.5em] h-[1.5em] text-lg rounded-full'>
             <a
               className='flex w-full h-full justify-center items-center'
-              href={video.url || ''}
+              href={videoInfo.url || ''}
               rel='noopener noreferrer'
               target='_blank'
               onClick={handleClickExternalLink}
@@ -238,15 +214,17 @@ function VideoPlayer({
               <LinkIcon className='text-base' size='1em' />
             </a>
           </Button>
-          <Button
-            variant='ghost'
-            size='icon'
-            className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
-            onClick={handleTopStickyButton}
-            title={isTopSticky ? 'Not fixing on top' : 'Fixing on top'}
-          >
-            {isTopSticky ? <TbPinnedOff /> : <TbPin />}
-          </Button>
+          {videoInfo.type === 'video' && (
+            <Button
+              variant='ghost'
+              size='icon'
+              className='w-[1.5em] h-[1.5em] shrink-0 text-xl rounded-full'
+              onClick={handleTopStickyButton}
+              title={isTopSticky ? 'Not fixing on top' : 'Fixing on top'}
+            >
+              {isTopSticky ? <TbPinnedOff /> : <TbPin />}
+            </Button>
+          )}
           <Button
             variant='ghost'
             size='icon'
@@ -299,7 +277,7 @@ function VideoPlayer({
             'max-w-full max-h-full object-contain outline-none',
             isWideScreen && 'w-full'
           )}
-          src={`/api/file?uuid=${video.uuid}`}
+          src={videoFileUrl}
           controls
           playsInline
           onVolumeChange={handleVolumeChange}

@@ -4,9 +4,9 @@ import { Inter } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import { ToastContainerProvider } from '@/components/provider/ToastContainerProvider';
 import { RehydrateProvider } from '@/components/RehydrateProvider';
-import { VideoPlayerContainer } from '@/components/modules/VideoPlayer';
 import { ThemeProvider } from '@/components/provider/ThemeProvider';
 import { cn } from '@/lib/utils';
+import { VideoPlayerContainer } from '@/components/containers/VideoPlayerContainerDialog';
 
 const inter = Inter({ subsets: ['latin'] });
 
