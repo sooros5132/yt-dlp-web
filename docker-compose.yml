@@ -2,7 +2,7 @@ version: "3"
 
 services:
   yt-dlp-web:
-    image: sooros5132/yt-dlp-web
+    image: cergeyn/yt-dlp-web
     container_name: yt-dlp-web
     user: 1000:1000
     # environment:
