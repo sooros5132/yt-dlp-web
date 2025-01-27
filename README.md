@@ -1,16 +1,16 @@
 # yt-dlp-web
-![docker latest version](https://img.shields.io/docker/v/sooros5132/yt-dlp-web?color=#4c1) ![docker image size](https://img.shields.io/docker/image-size/sooros5132/yt-dlp-web) ![docker pulls](https://img.shields.io/docker/pulls/sooros5132/yt-dlp-web)
+![docker latest version](https://img.shields.io/docker/v/cergeyn/yt-dlp-web?color=#4c1) ![docker image size](https://img.shields.io/docker/image-size/cergeyn/yt-dlp-web) ![docker pulls](https://img.shields.io/docker/pulls/cergeyn/yt-dlp-web)
 
 Self-hosted [yt-dlp](https://github.com/yt-dlp/yt-dlp) with the Web UI.<br />
 You can watch or download videos downloaded to a remote server.
 
-[Docker Hub](https://hub.docker.com/r/sooros5132/yt-dlp-web) | [Supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
+[Docker Hub](https://hub.docker.com/r/cergeyn/yt-dlp-web) | [Supported Sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 <br />
 
 # Preview
 | Mobile | Desktop | 
 |--|--|
-| ![DarkMode View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) | ![Desktop View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d) |
+| ![DarkMode View](https://github.com/cergeyn/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) | ![Desktop View](https://github.com/cergeyn/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d) |
 
 # Getting Started
 1. Star this repo ⭐️
@@ -20,7 +20,7 @@ version: "3"
 
 services:
   yt-dlp-web:
-    image: sooros5132/yt-dlp-web
+    image: cergeyn/yt-dlp-web
     container_name: yt-dlp-web
     user: 1000:1000 # User Id, Group Id Setting
     # environment:
