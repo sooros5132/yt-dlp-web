@@ -139,7 +139,7 @@ const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
   return (
     <form className='flex flex-col py-2 gap-y-2' method='GET' onSubmit={onSubmit}>
       <UrlFieldOption />
-      <DownloadNowOption />
+      <ResolutionAndCodecOptions />
       <CookieOption />
       <Card className='p-2 rounded-md bg-card-nested border-none'>
         <CardDescription className='text-warning-foreground text-sm mb-1'>
@@ -198,7 +198,7 @@ const UrlFieldOption = () => {
           ref={inputRef}
           name='url'
           type='text'
-          className='flex-auto rounded-full rounded-r-none border-none'
+          className='h-8 p-1 pl-3 flex-auto rounded-full rounded-r-none border-none shadow-none'
           value={url}
           disabled={isNotHydrated}
           placeholder='https://...'
@@ -206,35 +206,35 @@ const UrlFieldOption = () => {
         />
         {hydrated && (url || !navigator?.clipboard) ? (
           <Button
-            key={'delete-url'}
+            key='delete-url'
             type='button'
             variant='outline'
             size='icon'
             disabled={isNotHydrated}
-            className='text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+            className='w-8 h-8 pr-1 text-xl rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
             onClick={handleClickDeleteUrlButton}
           >
-            <IoClose />
+            <IoClose className='w-4 h-4' />
           </Button>
         ) : (
           <Button
-            key={'paste-url'}
+            key='paste-url'
             type='button'
             variant='outline'
             size='icon'
             disabled={isNotHydrated}
-            className='text-lg rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
+            className='w-8 h-8 pr-1 text-lg rounded-full rounded-l-none border-none text-muted-foreground hover:text-muted-foreground'
             onClick={handleClickPasteClipboardButton}
           >
-            <MdContentPaste />
+            <MdContentPaste className='w-4 h-4' />
           </Button>
         )}
       </div>
-      <div className='flex items-center justify-end'>
+      <div className='shrink-0 flex items-center justify-end'>
         <Button
           type='submit'
           size='sm'
-          className='px-3 gap-x-1'
+          className='min-w-[32px] h-8 px-2 xs:px-3 gap-x-1 rounded-full'
           disabled={isNotHydrated || isFetching}
           title={enableDownloadNow ? 'Download' : 'Search'}
         >
@@ -243,14 +243,18 @@ const UrlFieldOption = () => {
               {isFetching ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
               ) : (
-                <AiOutlineCloudDownload />
+                <AiOutlineCloudDownload className='h-4 w-4' />
               )}
-              <span>Download</span>
+              <span className='hidden xs:inline'>Download</span>
             </>
           ) : (
             <>
-              {isFetching ? <Loader2 className='h-4 w-4 animate-spin' /> : <AiOutlineSearch />}
-              <span>Search</span>
+              {isFetching ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <AiOutlineSearch className='h-4 w-4' />
+              )}
+              <span className='hidden xs:inline'>Search</span>
             </>
           )}
         </Button>
@@ -259,7 +263,7 @@ const UrlFieldOption = () => {
   );
 };
 
-const DownloadNowOption = () => {
+const ResolutionAndCodecOptions = () => {
   const { hydrated, enableDownloadNow, selectQuality, setEnableDownloadNow, setSelectQuality } =
     useDownloadFormStore(
       ({ hydrated, enableDownloadNow, selectQuality, setEnableDownloadNow, setSelectQuality }) => ({
@@ -283,11 +287,15 @@ const DownloadNowOption = () => {
     setEnableDownloadNow(!enableDownloadNow);
   };
 
+  const optionValue = isNotHydrated ? 'best' : selectQuality;
+  const optionSuffix =
+    selectQuality === 'audio' ? 'only' : selectQuality === 'best' ? 'quality' : 'resolution';
+
   return (
     <div className='flex'>
       <Label
         className='flex items-center pl-1 gap-x-1 cursor-pointer'
-        title='Download immediately in the best quality'
+        title={`Download now in the ${optionValue} ${optionSuffix}`}
       >
         <Checkbox
           name='enableDownloadNow'
@@ -297,7 +305,7 @@ const DownloadNowOption = () => {
         />
         <span className='text-sm'>Download now in </span>
         <Select
-          value={isNotHydrated ? 'best' : selectQuality}
+          value={optionValue}
           disabled={isNotHydrated}
           onValueChange={handleChangeSelectQuality}
         >
@@ -318,11 +326,7 @@ const DownloadNowOption = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-        {/*
-       audio only
-       1080p quality
-       */}
-        {selectQuality === 'audio' ? 'only' : selectQuality === 'best' ? 'quality' : 'resolution'}
+        {optionSuffix}
       </Label>
     </div>
   );
