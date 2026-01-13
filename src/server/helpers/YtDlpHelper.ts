@@ -302,6 +302,13 @@ export class YtDlpHelper {
           '-o',
           `${playlistFolderPrefix} %(playlist_title)s(%(playlist_id)s)/%(title)s (%(id)s).%(ext)s`
         );
+        if (this.videoInfo?.embedSubs || this.videoInfo.subLangs.length > 0) {
+          if (this.videoInfo.subLangs.length === 0 || this.videoInfo.subLangs.includes('all')) {
+            this.videoInfo.subLangs = ['all'];
+          }
+          options.push('--embed-subs');
+          options.push('--sub-langs', this.videoInfo.subLangs.join(','));
+        }
         this.videoInfo.format = 'bv+ba/b';
         break;
       }

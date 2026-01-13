@@ -143,7 +143,7 @@ const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
       <CookieOption />
       <Card className='p-2 rounded-md bg-card-nested border-none'>
         <CardDescription className='text-warning-foreground text-sm mb-1'>
-          The options below are excluded for <b>livestreams</b> and <b>playlist</b> downloads.
+          The options below are excluded for <b>livestreams</b> downloads.
         </CardDescription>
         <div className='flex flex-col gap-y-2'>
           <FileNameOption />
