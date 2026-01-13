@@ -12,7 +12,7 @@ import {
 } from 'react-icons/ai';
 import { HiOutlineBarsArrowDown, HiOutlineBarsArrowUp, HiOutlinePencil } from 'react-icons/hi2';
 import { MdContentPaste } from 'react-icons/md';
-import type { PlaylistMetadata, SelectQuality, VideoMetadata } from '@/types/video';
+import type { OutputFormat, PlaylistMetadata, SelectQuality, VideoMetadata } from '@/types/video';
 import { useDownloadFormStore } from '@/store/downloadForm';
 import { CookiesEditor } from '@/components/modules/CookiesEditor';
 import { shallow } from 'zustand/shallow';
@@ -147,6 +147,7 @@ const DownloadForm = memo(({ onSubmit }: DownloadFormProps) => {
         </CardDescription>
         <div className='flex flex-col gap-y-2'>
           <FileNameOption />
+          <OutputFormatOption />
           <CutVideoOption />
           <EmbedSubtitlesOption />
           <EmbedChapterMarkersOption />
@@ -450,6 +451,45 @@ const FileNameOption = () => {
           }}
         />
       </div>
+    </div>
+  );
+};
+
+const OutputFormatOption = () => {
+  const { hydrated, outputFormat, setOutputFormat } = useDownloadFormStore(
+    ({ hydrated, outputFormat, setOutputFormat }) => ({
+      hydrated,
+      outputFormat,
+      setOutputFormat
+    }),
+    shallow
+  );
+  const isNotHydrated = !hydrated;
+
+  const handleChangeOutputFormat = (format: OutputFormat) => {
+    if (!isNotHydrated) {
+      setOutputFormat(format);
+    }
+  };
+
+  return (
+    <div className='flex items-center gap-x-1 flex-wrap'>
+      <Label className='flex items-center pl-1 gap-x-1 shrink-0 cursor-pointer' title='Output Format'>
+        <span className='text-sm'>Output format</span>
+      </Label>
+      <Select value={outputFormat} disabled={isNotHydrated} onValueChange={handleChangeOutputFormat}>
+        <SelectTrigger className='w-auto h-auto py-1 px-2 capitalize'>
+          <SelectValue placeholder='Select format' />
+        </SelectTrigger>
+        <SelectContent align='start'>
+          <SelectGroup>
+            <SelectLabel>Format</SelectLabel>
+            <SelectItem value='mp4'>MP4</SelectItem>
+            <SelectItem value='mkv'>MKV</SelectItem>
+            <SelectItem value='webm'>WebM</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
     </div>
   );
 };

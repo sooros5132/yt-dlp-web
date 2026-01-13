@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { CacheHelper } from '@/server/helpers/CacheHelper';
 import { YtDlpHelper } from '@/server/helpers/YtDlpHelper';
 import { randomUUID } from 'crypto';
-import type { SelectQuality } from '@/types/video';
+import type { OutputFormat, SelectQuality } from '@/types/video';
 import { VIDEO_LIST_FILE } from '@/server/constants';
 import {
   checkRequiredFoldersAreAccessible,
@@ -27,6 +27,7 @@ export async function GET(request: Request) {
   const cutStartTime = searchParams.get('cutStartTime') || '';
   const cutEndTime = searchParams.get('cutEndTime') || '';
   const outputFilename = searchParams.get('outputFilename') || '';
+  const outputFormat = (searchParams.get('outputFormat') || 'mp4') as OutputFormat;
   const selectQuality = (searchParams.get('selectQuality') || '') as SelectQuality;
   const enableForceKeyFramesAtCuts = searchParams.get('enableForceKeyFramesAtCuts') === 'true';
 
@@ -87,6 +88,7 @@ export async function GET(request: Request) {
       cutEndTime,
       proxyAddress: typeof proxyAddress === 'string' ? proxyAddress : '',
       outputFilename,
+      outputFormat,
       selectQuality: !videoId && !audioId ? selectQuality : '',
       enableForceKeyFramesAtCuts
     });

@@ -82,6 +82,7 @@ export class YtDlpHelper {
     cutStartTime: '',
     cutEndTime: '',
     outputFilename: '',
+    outputFormat: 'mp4' as any,
     selectQuality: '',
     enableForceKeyFramesAtCuts: false,
     file: {
@@ -122,6 +123,7 @@ export class YtDlpHelper {
     cutStartTime?: string;
     cutEndTime?: string;
     outputFilename?: string;
+    outputFormat?: string;
     selectQuality?: SelectQuality;
     enableForceKeyFramesAtCuts?: boolean;
   }) {
@@ -140,6 +142,7 @@ export class YtDlpHelper {
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
     this.videoInfo.outputFilename = querys.outputFilename || '';
+    this.videoInfo.outputFormat = (querys.outputFormat || 'mp4') as any;
     this.videoInfo.selectQuality = querys.selectQuality || '';
     this.videoInfo.enableForceKeyFramesAtCuts = querys.enableForceKeyFramesAtCuts || false;
 
@@ -204,7 +207,7 @@ export class YtDlpHelper {
       // '--print',
       // 'after_move:filepath',
       '--merge-output-format',
-      'mp4',
+      this.videoInfo.outputFormat || 'mp4',
       '-P',
       DOWNLOAD_PATH
     ];
