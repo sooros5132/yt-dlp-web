@@ -46,6 +46,10 @@ docker-compose up -d
 docker compose up -d
 ```
 
+# Hosted option
+
+If you don’t want to self-host with Docker, [Vid Kraken](https://vidkraken.com) is a managed YouTube download API (info / mp3 / mp4 endpoints).
+
 # Change yt-dlp version
 If you change versions, it might not work correctly.
 ```BASH
