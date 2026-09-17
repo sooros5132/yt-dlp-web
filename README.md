@@ -13,7 +13,7 @@ You can watch or download videos downloaded to a remote server.
 | ![DarkMode View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/438d6fb9-18e5-4e89-949f-1b25e072af88) | ![Desktop View](https://github.com/sooros5132/yt-dlp-web/assets/74892930/5bb2d22a-2c93-4428-be02-02e1b65a361d) |
 
 # Getting Started
-1. Star this repo â­ï¸
+1. Star this repo ⭐️
 2. Create a `docker-compose.yml` file, set `user`, `volumes`, and `ports` to your environment
 ```YML
 version: "3"
@@ -48,7 +48,7 @@ docker compose up -d
 
 # Hosted option
 
-If you donât want to self-host with Docker, [Vid Kraken](https://vidkraken.com) is a managed YouTube download API (info / mp3 / mp4 endpoints).
+If you don’t want to self-host with Docker, [Vid Kraken](https://vidkraken.com) is a managed YouTube download API (info / mp3 / mp4 endpoints).
 
 # Change yt-dlp version
 If you change versions, it might not work correctly.
