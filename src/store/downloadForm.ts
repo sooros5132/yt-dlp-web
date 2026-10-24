@@ -1,5 +1,5 @@
 import { AxiosResponse, DownloadResponse } from '@/types/types';
-import { SelectQuality, VideoInfo, VideoMetadata } from '@/types/video';
+import { OutputFormat, SelectQuality, VideoInfo, VideoMetadata } from '@/types/video';
 import axios from 'axios';
 import { createWithEqualityFn } from 'zustand/traditional';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -24,6 +24,7 @@ interface State {
   cutEndTime: string;
   enableOutputFilename: boolean;
   outputFilename: string;
+  outputFormat: OutputFormat;
   selectQuality: SelectQuality;
   enableForceKeyFramesAtCuts: boolean;
   subLangs: Array<string>;
@@ -50,6 +51,7 @@ interface Store extends State {
   setCutEndTime: (cutEndTime: string) => void;
   setEnableOutputFilename: (enableOutputFilename: boolean) => void;
   setOutputFilename: (outputFilename: string) => void;
+  setOutputFormat: (outputFormat: OutputFormat) => void;
   setSelectQuality: (selectQuality: SelectQuality) => void;
   setForceKeyFramesAtCuts: (enableForceKeyFramesAtCuts: boolean) => void;
   loadDownloadedOptions: (video: VideoInfo) => void;
@@ -80,6 +82,7 @@ const initialState: State = {
   cutEndTime: '',
   enableOutputFilename: false,
   outputFilename: '%(title)s (%(id)s)',
+  outputFormat: 'mp4',
   selectQuality: 'best',
   enableForceKeyFramesAtCuts: false,
   subLangs: []
@@ -106,6 +109,7 @@ export const useDownloadFormStore = createWithEqualityFn(
           cutEndTime,
           enableOutputFilename,
           outputFilename,
+          outputFormat,
           enableDownloadNow,
           selectQuality,
           enableForceKeyFramesAtCuts,
@@ -121,7 +125,8 @@ export const useDownloadFormStore = createWithEqualityFn(
           usingCookies,
           embedChapters,
           enableLiveFromStart,
-          enableForceKeyFramesAtCuts
+          enableForceKeyFramesAtCuts,
+          outputFormat
         };
 
         if (defaultPrams?.embedSubs && defaultPrams?.subLangs && defaultPrams.subLangs.length > 0) {
@@ -252,6 +257,9 @@ export const useDownloadFormStore = createWithEqualityFn(
       setOutputFilename(outputFilename) {
         set({ outputFilename });
       },
+      setOutputFormat(outputFormat: OutputFormat) {
+        set({ outputFormat });
+      },
       setSelectQuality(selectQuality: SelectQuality) {
         set({ selectQuality });
       },
@@ -269,6 +277,7 @@ export const useDownloadFormStore = createWithEqualityFn(
             video.outputFilename && video.outputFilename !== '%(title)s (%(id)s).%(ext)s'
           ),
           outputFilename: newOutputFilename,
+          outputFormat: video.outputFormat ?? initialState.outputFormat,
           usingCookies: video.usingCookies ?? initialState.usingCookies,
           cutVideo: video.cutVideo ?? initialState.cutVideo,
           cutStartTime: video.cutStartTime ?? initialState.cutStartTime,
@@ -305,6 +314,7 @@ export const useDownloadFormStore = createWithEqualityFn(
           'enableLiveFromStart',
           'enableOutputFilename',
           'outputFilename',
+          'outputFormat',
           'selectQuality',
           // 'cutVideo',
           // 'cutStartTime',

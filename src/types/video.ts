@@ -56,6 +56,8 @@ export type SelectQuality =
   | '480p'
   | 'audio';
 
+export type OutputFormat = 'mp4' | 'mkv' | 'webm';
+
 export interface VideoInfo {
   uuid: string;
   id: string | null;
@@ -82,6 +84,7 @@ export interface VideoInfo {
   cutStartTime: string;
   cutEndTime: string;
   outputFilename: string;
+  outputFormat: OutputFormat;
   selectQuality: SelectQuality;
   enableForceKeyFramesAtCuts: boolean;
   file: Streams & {

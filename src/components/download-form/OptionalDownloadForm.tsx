@@ -427,6 +427,12 @@ type PlaylistDownloadFormProps = {
 
 export const PlaylistDownloadForm = memo(({ metadata }: PlaylistDownloadFormProps) => {
   const [isValidating, setValidating] = useState(false);
+  const { embedSubs, subLangs } = useDownloadFormStore(
+    ({ embedSubs, subLangs }) => ({
+      embedSubs,
+      subLangs
+    })
+  );
 
   const handleClickDownloadButton = async () => {
     if (isValidating || !metadata?.originalUrl) {
@@ -435,7 +441,11 @@ export const PlaylistDownloadForm = memo(({ metadata }: PlaylistDownloadFormProp
     setValidating(true);
     const { requestDownload } = useDownloadFormStore.getState();
     try {
-      const result = await requestDownload({ url: metadata.originalUrl });
+      const result = await requestDownload({
+        url: metadata.originalUrl,
+        embedSubs,
+        subLangs
+      });
 
       if (result?.error) {
         toast.error(result?.error || 'Download Failed');
@@ -461,7 +471,12 @@ export const PlaylistDownloadForm = memo(({ metadata }: PlaylistDownloadFormProp
     <div className='my-2'>
       <div className='text-zinc-400 text-sm text-center'>
         <p>This url is a playlist.</p>
-        <p>Live is excluded and all are downloaded in the best quality.</p>
+        <p>Live is excluded and all are downloaded in best quality.</p>
+        {embedSubs && subLangs.length > 0 && (
+          <p className='mt-1'>
+            Subtitles will be embedded: {subLangs.join(', ') || 'all available'}
+          </p>
+        )}
         <Button
           size='sm'
           className={cn('rounded-full my-2', isValidating && 'loading')}

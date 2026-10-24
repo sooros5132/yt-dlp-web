@@ -1,4 +1,4 @@
-FROM node:18.20.0-alpine3.18 AS base
+FROM node:24.22.1-alpine AS base
 # 참고 https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
 
 # Install dependencies only when needed
@@ -43,7 +43,7 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN apk update && \
   apk add ffmpeg python3
 
-RUN wget https://github.com/yt-dlp/yt-dlp/releases/download/2025.05.22/yt-dlp -O /usr/local/bin/yt-dlp && \
+RUN wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && \
   chmod a+rx /usr/local/bin/yt-dlp
 
 # Use environment variables in the addgroup and adduser commands

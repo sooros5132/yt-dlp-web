@@ -82,6 +82,7 @@ export class YtDlpHelper {
     cutStartTime: '',
     cutEndTime: '',
     outputFilename: '',
+    outputFormat: 'mp4' as any,
     selectQuality: '',
     enableForceKeyFramesAtCuts: false,
     file: {
@@ -122,6 +123,7 @@ export class YtDlpHelper {
     cutStartTime?: string;
     cutEndTime?: string;
     outputFilename?: string;
+    outputFormat?: string;
     selectQuality?: SelectQuality;
     enableForceKeyFramesAtCuts?: boolean;
   }) {
@@ -140,6 +142,7 @@ export class YtDlpHelper {
     this.videoInfo.proxyAddress = querys.proxyAddress || '';
     this.videoInfo.enableLiveFromStart = querys.enableLiveFromStart || false;
     this.videoInfo.outputFilename = querys.outputFilename || '';
+    this.videoInfo.outputFormat = (querys.outputFormat || 'mp4') as any;
     this.videoInfo.selectQuality = querys.selectQuality || '';
     this.videoInfo.enableForceKeyFramesAtCuts = querys.enableForceKeyFramesAtCuts || false;
 
@@ -204,7 +207,7 @@ export class YtDlpHelper {
       // '--print',
       // 'after_move:filepath',
       '--merge-output-format',
-      'mp4',
+      this.videoInfo.outputFormat || 'mp4',
       '-P',
       DOWNLOAD_PATH
     ];
@@ -302,6 +305,13 @@ export class YtDlpHelper {
           '-o',
           `${playlistFolderPrefix} %(playlist_title)s(%(playlist_id)s)/%(title)s (%(id)s).%(ext)s`
         );
+        if (this.videoInfo?.embedSubs || this.videoInfo.subLangs.length > 0) {
+          if (this.videoInfo.subLangs.length === 0 || this.videoInfo.subLangs.includes('all')) {
+            this.videoInfo.subLangs = ['all'];
+          }
+          options.push('--embed-subs');
+          options.push('--sub-langs', this.videoInfo.subLangs.join(','));
+        }
         this.videoInfo.format = 'bv+ba/b';
         break;
       }
